@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Radio } from "lucide-react";
+import { Radio, Settings } from "lucide-react";
 import RadioScreen from "@/components/RadioScreen";
 import NumPad from "@/components/NumPad";
 import PTTButton from "@/components/PTTButton";
@@ -12,7 +12,7 @@ const Index = () => {
   const [channelB, setChannelB] = useState("435.00000");
   const [activeChannel, setActiveChannel] = useState<"A" | "B">("A");
   const [inputBuffer, setInputBuffer] = useState("");
-  const [activeTab, setActiveTab] = useState<"voice" | "aprs">("voice");
+  const [activeTab, setActiveTab] = useState<"voice" | "aprs" | "settings">("voice");
 
   const setActiveFreq = activeChannel === "A" ? setChannelA : setChannelB;
 
@@ -93,8 +93,14 @@ const Index = () => {
               <PTTButton />
             </section>
           </>
-        ) : (
+        ) : activeTab === "aprs" ? (
           <APRSMessaging />
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground gap-3">
+            <Settings className="h-8 w-8 opacity-30" />
+            <span className="font-mono-display text-xs tracking-wider">SETTINGS</span>
+            <span className="text-[11px] text-muted-foreground/60">Coming soon</span>
+          </div>
         )}
       </main>
 
