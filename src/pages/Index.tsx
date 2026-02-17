@@ -7,6 +7,81 @@ import ConnectionStatus from "@/components/ConnectionStatus";
 import BottomTabBar from "@/components/BottomTabBar";
 import APRSMessaging from "@/components/APRSMessaging";
 
+/* ── Decorative side button used on the radio body ── */
+const SideButton = ({
+  label,
+  top,
+  accent,
+}: {
+  label: string;
+  top?: boolean;
+  accent?: boolean;
+}) => (
+  <div
+    className="relative flex items-center justify-center cursor-pointer select-none"
+    style={{
+      width: "14px",
+      height: top ? "44px" : "32px",
+      borderRadius: "3px 0 0 3px",
+      background: accent
+        ? "linear-gradient(180deg, hsl(185 70% 30%), hsl(185 60% 20%))"
+        : "linear-gradient(180deg, hsl(220 12% 22%), hsl(220 10% 14%))",
+      border: "1px solid hsl(220 10% 28%)",
+      borderRight: "none",
+      boxShadow:
+        "inset 0 1px 0 hsl(0 0% 50% / 0.15), inset 0 -1px 0 hsl(0 0% 0% / 0.4), -3px 2px 6px hsl(220 30% 2% / 0.6)",
+    }}
+  >
+    <span
+      className="font-mono-display text-[6px] tracking-wider"
+      style={{
+        writingMode: "vertical-rl",
+        textOrientation: "mixed",
+        transform: "rotate(180deg)",
+        color: accent ? "hsl(185 70% 65%)" : "hsl(0 0% 35%)",
+      }}
+    >
+      {label}
+    </span>
+    {/* Grip ridge */}
+    {[0, 1, 2].map((i) => (
+      <div
+        key={i}
+        className="absolute"
+        style={{
+          left: "3px",
+          top: `${30 + i * 5}%`,
+          width: "5px",
+          height: "1px",
+          borderRadius: "1px",
+          background: "hsl(0 0% 0% / 0.3)",
+        }}
+      />
+    ))}
+  </div>
+);
+
+/* ── Speaker grille dots ── */
+const SpeakerGrille = () => (
+  <div
+    className="w-full grid gap-[3px] px-3 py-2"
+    style={{ gridTemplateColumns: "repeat(12, 1fr)" }}
+  >
+    {Array.from({ length: 48 }).map((_, i) => (
+      <div
+        key={i}
+        className="rounded-full"
+        style={{
+          width: "4px",
+          height: "4px",
+          background: "hsl(220 15% 10%)",
+          boxShadow: "inset 0 1px 1px hsl(0 0% 0% / 0.8), 0 0.5px 0 hsl(0 0% 20% / 0.2)",
+        }}
+      />
+    ))}
+  </div>
+);
+
 const Index = () => {
   const [channelA, setChannelA] = useState("027.00000");
   const [channelB, setChannelB] = useState("435.00000");
@@ -46,7 +121,7 @@ const Index = () => {
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-mesh">
-      {/* Header */}
+      {/* App header */}
       <header className="glass-header sticky top-0 z-50 flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
@@ -59,40 +134,131 @@ const Index = () => {
         <ConnectionStatus connected={false} />
       </header>
 
-      {/* Main Content */}
-      <main className="flex flex-1 flex-col items-center px-4 py-4 max-w-sm mx-auto w-full gap-4">
+      {/* ── Radio body shell ── */}
+      <main className="flex flex-1 flex-col items-center justify-start px-2 py-3 max-w-sm mx-auto w-full">
         {activeTab === "voice" ? (
-          <>
-            {/* Radio Screen */}
-            <section className="w-full animate-fade-in" style={{ animationDelay: "0.05s" }}>
-              <RadioScreen
-                channelA={channelA}
-                channelB={channelB}
-                onChannelAChange={setChannelA}
-                onChannelBChange={setChannelB}
-                activeChannel={activeChannel}
-                onActiveChannelChange={setActiveChannel}
-                rssi={5}
+          /* Outer radio chassis */
+          <div
+            className="w-full flex flex-col animate-fade-in"
+            style={{
+              background:
+                "linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
+              border: "1px solid hsl(220 10% 22%)",
+              borderRadius: "24px 24px 18px 18px",
+              boxShadow:
+                "inset 0 1px 0 hsl(0 0% 45% / 0.18), inset 0 -2px 0 hsl(0 0% 0% / 0.6), inset 1px 0 0 hsl(0 0% 30% / 0.1), inset -1px 0 0 hsl(0 0% 5% / 0.4), 0 20px 60px hsl(220 30% 2% / 0.95), 0 8px 24px hsl(220 20% 2% / 0.7)",
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E\"), linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
+              backgroundBlendMode: "overlay, normal",
+            }}
+          >
+            {/* Top sheen */}
+            <div
+              className="absolute inset-x-12 pointer-events-none h-[1px] rounded-full"
+              style={{
+                marginTop: "1px",
+                background: "linear-gradient(90deg, transparent, hsl(0 0% 65% / 0.14), transparent)",
+              }}
+            />
+
+            {/* ── Antenna stub ── */}
+            <div className="flex justify-end pr-5 pt-2">
+              <div
+                style={{
+                  width: "8px",
+                  height: "32px",
+                  borderRadius: "4px 4px 2px 2px",
+                  background:
+                    "linear-gradient(180deg, hsl(220 10% 28%) 0%, hsl(220 8% 18%) 100%)",
+                  border: "1px solid hsl(220 8% 32%)",
+                  boxShadow:
+                    "inset 0 1px 0 hsl(0 0% 40% / 0.2), 0 2px 6px hsl(220 30% 2% / 0.5)",
+                }}
               />
-            </section>
+            </div>
 
-            {/* Numeric Keypad */}
-            <section className="w-full animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              <NumPad
-                onDigit={handleDigit}
-                onBackspace={handleBackspace}
-                onEnter={handleEnter}
-              />
-            </section>
+            {/* ── Side buttons + content ── */}
+            <div className="flex w-full items-stretch">
+              {/* Left side buttons */}
+              <div className="flex flex-col items-end justify-start gap-3 pt-4 pl-1 pr-0">
+                <SideButton label="VOL" top accent />
+                <SideButton label="CH" />
+                <SideButton label="MON" />
+              </div>
 
-            {/* Spacer */}
-            <div className="flex-1" />
+              {/* Main body content */}
+              <div className="flex flex-1 flex-col px-3 pb-3 gap-3 min-w-0">
+                {/* Radio screen */}
+                <RadioScreen
+                  channelA={channelA}
+                  channelB={channelB}
+                  onChannelAChange={setChannelA}
+                  onChannelBChange={setChannelB}
+                  activeChannel={activeChannel}
+                  onActiveChannelChange={setActiveChannel}
+                  rssi={5}
+                />
 
-            {/* PTT Button */}
-            <section className="pb-2 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              <PTTButton />
-            </section>
-          </>
+                {/* Keypad */}
+                <NumPad
+                  onDigit={handleDigit}
+                  onBackspace={handleBackspace}
+                  onEnter={handleEnter}
+                />
+
+                {/* PTT section */}
+                <div
+                  className="flex flex-col items-center pt-1 pb-3 gap-2"
+                  style={{
+                    borderTop: "1px solid hsl(220 12% 20%)",
+                    marginTop: "2px",
+                  }}
+                >
+                  {/* Panel accent line */}
+                  <div
+                    className="w-16 h-[2px] rounded-full mb-1"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, transparent, hsl(185 60% 40% / 0.4), transparent)",
+                    }}
+                  />
+                  <PTTButton />
+                </div>
+              </div>
+
+              {/* Right side buttons */}
+              <div
+                className="flex flex-col items-start justify-start gap-3 pt-4 pr-1 pl-0"
+                style={{ transform: "scaleX(-1)" }}
+              >
+                <SideButton label="SQL" top />
+                <SideButton label="SCAN" accent />
+                <SideButton label="PWR" />
+              </div>
+            </div>
+
+            {/* ── Speaker grille ── */}
+            <div
+              className="mx-4 mb-3 rounded-xl overflow-hidden"
+              style={{
+                background: "hsl(220 12% 8%)",
+                border: "1px solid hsl(220 10% 14%)",
+                boxShadow: "inset 0 2px 6px hsl(220 30% 2% / 0.7)",
+              }}
+            >
+              <SpeakerGrille />
+            </div>
+
+            {/* ── Bottom chassis ridge ── */}
+            <div
+              className="mx-6 mb-2 h-[3px] rounded-full"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, hsl(220 10% 22% / 0.6), hsl(220 10% 26% / 0.8), hsl(220 10% 22% / 0.6), transparent)",
+                boxShadow: "0 1px 0 hsl(0 0% 0% / 0.4)",
+              }}
+            />
+          </div>
         ) : activeTab === "aprs" ? (
           <APRSMessaging />
         ) : (
@@ -104,7 +270,6 @@ const Index = () => {
         )}
       </main>
 
-      {/* Bottom Tab Bar */}
       <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
