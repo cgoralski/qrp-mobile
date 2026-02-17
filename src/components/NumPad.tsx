@@ -39,7 +39,7 @@ const NumPad = ({ onDigit, onBackspace, onEnter }: NumPadProps) => {
               <button
                 key={key.label}
                 onClick={() => onDigit(key.label)}
-                className="group relative flex items-baseline justify-start rounded-md px-3 py-2.5 transition-all duration-75 active:scale-[0.96] active:brightness-125 select-none"
+                className="group relative flex items-baseline justify-start rounded-md px-3 py-3.5 transition-all duration-75 active:scale-[0.96] active:brightness-125 select-none"
                 style={{
                   background: "linear-gradient(180deg, hsl(215 12% 28%), hsl(215 14% 18%) 40%, hsl(215 14% 14%))",
                   border: "1px solid hsl(215 10% 32%)",
