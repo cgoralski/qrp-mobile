@@ -57,6 +57,7 @@ const ChannelBlock = ({
   modeRight,
   tags,
   rssi,
+  tint,
   onClick,
 }: {
   label: string;
@@ -67,13 +68,33 @@ const ChannelBlock = ({
   modeRight: string;
   tags?: string[];
   rssi: number;
+  tint: "amber" | "green";
   onClick: () => void;
 }) => {
   const freq = formatFreq(frequency);
+
+  const tintColor = tint === "amber"
+    ? "hsl(42 90% 58%)"
+    : "hsl(140 70% 52%)";
+
+  const activeFreqStyle = isActive
+    ? {
+        color: tintColor,
+        textShadow: `0 0 8px ${tintColor}99, 0 0 20px ${tintColor}44`,
+      }
+    : {
+        color: "hsl(0 0% 55%)",
+        textShadow: "none",
+      };
+
+  const activeSubStyle = isActive
+    ? { color: `${tintColor}bb`, textShadow: `0 0 6px ${tintColor}55` }
+    : { color: "hsl(0 0% 35%)" };
+
   return (
     <div
       className={`flex flex-col px-3 py-2 cursor-pointer transition-all ${
-        isActive ? "" : "opacity-50"
+        isActive ? "" : "opacity-60"
       }`}
       onClick={onClick}
     >
@@ -97,12 +118,15 @@ const ChannelBlock = ({
           {label}
         </span>
         <span
-          className="font-freq-display text-[40px] leading-none text-white sm:text-[46px]"
-          style={isActive ? { textShadow: "0 0 6px hsl(0 0% 100% / 0.15)" } : {}}
+          className="font-freq-display text-[40px] leading-none transition-all duration-300 sm:text-[46px]"
+          style={activeFreqStyle}
         >
           {freq.main}
         </span>
-        <span className="font-freq-display text-[20px] text-white/50 ml-0.5 sm:text-[24px]">
+        <span
+          className="font-freq-display text-[20px] ml-0.5 transition-all duration-300 sm:text-[24px]"
+          style={activeSubStyle}
+        >
           {freq.sub}
         </span>
       </div>
@@ -181,6 +205,7 @@ const RadioScreen = ({
           modeRight="VFO"
           tags={["H", "R 🔴"]}
           rssi={activeChannel === "A" ? rssi : 2}
+          tint="amber"
           onClick={() => onActiveChannelChange("A")}
         />
 
@@ -200,6 +225,7 @@ const RadioScreen = ({
           modeRight="Zone1 DD1"
           tags={["DCS", "W —", "AM"]}
           rssi={activeChannel === "B" ? rssi : 3}
+          tint="green"
           onClick={() => onActiveChannelChange("B")}
         />
 
