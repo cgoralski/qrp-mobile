@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Radio, Volume2, Settings } from "lucide-react";
+import { Radio } from "lucide-react";
 import FrequencyInput from "@/components/FrequencyInput";
 import SliderControl from "@/components/SliderControl";
-import FilterControl from "@/components/FilterControl";
+
 import PTTButton from "@/components/PTTButton";
 import ConnectionStatus from "@/components/ConnectionStatus";
 
@@ -10,9 +10,6 @@ const Index = () => {
   const [frequency, setFrequency] = useState("429.3500");
   const [squelch, setSquelch] = useState(3);
   const [volume, setVolume] = useState(70);
-  const [filterLow, setFilterLow] = useState(0);
-  const [filterMid, setFilterMid] = useState(0);
-  const [filterHigh, setFilterHigh] = useState(0);
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-mesh">
@@ -58,23 +55,6 @@ const Index = () => {
               step={1}
               onChange={setSquelch}
             />
-          </div>
-        </section>
-
-        {/* Audio Filters */}
-        <section className="w-full animate-fade-in" style={{ animationDelay: "0.15s" }}>
-          <div className="glass-panel rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
-              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">
-                Audio EQ
-              </p>
-            </div>
-            <div className="flex items-end justify-center gap-10">
-              <FilterControl label="Low" value={filterLow} onChange={setFilterLow} />
-              <FilterControl label="Mid" value={filterMid} onChange={setFilterMid} />
-              <FilterControl label="High" value={filterHigh} onChange={setFilterHigh} />
-            </div>
           </div>
         </section>
 

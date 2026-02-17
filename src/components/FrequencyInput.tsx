@@ -41,43 +41,25 @@ const FrequencyInput = ({ value, onChange }: FrequencyInputProps) => {
       <label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">
         Frequency
       </label>
-      <div className="relative flex items-center gap-3">
-        <button
-          onClick={() => stepFrequency(-1)}
-          className="glass-panel flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:text-foreground hover:border-primary/30 active:scale-95"
-          aria-label="Decrease frequency"
-        >
-          <span className="text-xl font-light">−</span>
-        </button>
-
-        <div
-          className="glass-panel-elevated relative glow-primary flex cursor-text items-baseline rounded-2xl px-6 py-4"
-          onClick={() => inputRef.current?.focus()}
-        >
-          <span className="font-mono-display text-4xl font-bold tracking-[0.08em] text-primary text-glow sm:text-5xl">
-            {digits}
-          </span>
-          <span className="ml-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            MHz
-          </span>
-          <input
-            ref={inputRef}
-            type="text"
-            inputMode="decimal"
-            value={value}
-            onChange={handleChange}
-            className="absolute inset-0 h-full w-full cursor-text opacity-0"
-            aria-label="Frequency input"
-          />
-        </div>
-
-        <button
-          onClick={() => stepFrequency(1)}
-          className="glass-panel flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:text-foreground hover:border-primary/30 active:scale-95"
-          aria-label="Increase frequency"
-        >
-          <span className="text-xl font-light">+</span>
-        </button>
+      <div
+        className="glass-panel-elevated relative glow-primary flex cursor-text items-baseline rounded-2xl px-6 py-4"
+        onClick={() => inputRef.current?.focus()}
+      >
+        <span className="font-mono-display text-4xl font-bold tracking-[0.08em] text-primary text-glow sm:text-5xl">
+          {digits}
+        </span>
+        <span className="ml-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          MHz
+        </span>
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="decimal"
+          value={value}
+          onChange={handleChange}
+          className="absolute inset-0 h-full w-full cursor-text opacity-0"
+          aria-label="Frequency input"
+        />
       </div>
     </div>
   );
