@@ -40,7 +40,6 @@ const RSSIBar = ({ level, label }: { level: number; label: string }) => (
         }}
       />
     ))}
-    {/* Scale markers */}
     <div className="flex items-end ml-1 gap-[6px]">
       {["1", "3", "5", "7", "9"].map((n) => (
         <span key={n} className="font-mono-display text-[5px] text-white/20 leading-none">{n}</span>
@@ -78,7 +77,6 @@ const ChannelBlock = ({
       }`}
       onClick={onClick}
     >
-      {/* Tags row */}
       {tags && tags.length > 0 && (
         <div className="flex items-center gap-3 mb-0.5">
           {tags.map((tag) => (
@@ -92,7 +90,6 @@ const ChannelBlock = ({
         </div>
       )}
 
-      {/* Frequency row */}
       <div className="flex items-baseline gap-0">
         <span
           className={`inline-flex h-[20px] w-[20px] items-center justify-center rounded-sm text-[11px] font-black mr-2 ${badgeColor}`}
@@ -110,7 +107,6 @@ const ChannelBlock = ({
         </span>
       </div>
 
-      {/* Mode row */}
       <div className="flex items-center justify-between mt-0.5">
         <span className="font-mono-display text-[9px] font-semibold tracking-wider text-white/40">
           {modeLeft}
@@ -120,7 +116,6 @@ const ChannelBlock = ({
         </span>
       </div>
 
-      {/* RSSI */}
       <RSSIBar level={rssi} label="RSSI" />
     </div>
   );
@@ -136,68 +131,93 @@ const RadioScreen = ({
   rssi,
 }: RadioScreenProps) => {
   return (
+    /* Outer bezel — textured dark hardware casing */
     <div
-      className="w-full rounded-2xl overflow-hidden"
+      className="w-full rounded-[18px] p-[10px] relative"
       style={{
-        background: "linear-gradient(180deg, hsl(220 15% 7%), hsl(220 12% 5%))",
-        border: "2px solid hsl(210 10% 20%)",
+        background:
+          "linear-gradient(160deg, hsl(220 10% 17%) 0%, hsl(220 8% 12%) 50%, hsl(220 8% 9%) 100%)",
+        border: "1px solid hsl(220 8% 24%)",
         boxShadow:
-          "inset 0 0 30px hsl(220 20% 3% / 0.8), 0 8px 32px hsl(220 30% 3% / 0.6)",
+          "inset 0 1px 0 hsl(0 0% 40% / 0.2), inset 0 -1px 0 hsl(0 0% 5% / 0.7), inset 1px 0 0 hsl(0 0% 30% / 0.15), inset -1px 0 0 hsl(0 0% 5% / 0.5), 0 16px 48px hsl(220 30% 2% / 0.95), 0 6px 20px hsl(220 20% 2% / 0.7)",
+        backgroundImage:
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E\"), linear-gradient(160deg, hsl(220 10% 17%) 0%, hsl(220 8% 12%) 50%, hsl(220 8% 9%) 100%)",
+        backgroundBlendMode: "overlay, normal",
       }}
     >
-      {/* Top status icons */}
-      <div className="flex items-center gap-3 px-3 py-1.5 border-b border-white/[0.06]">
-        <Zap className="h-3 w-3 text-red-400/70" />
-        <span className="font-mono-display text-[10px] font-bold text-white/40">Z</span>
-        <Music className="h-3 w-3 text-white/30" />
-        <Bluetooth className="h-3 w-3 text-white/30" />
-        <div className="flex-1" />
-        <Battery className="h-3 w-3 text-signal" />
-      </div>
-
-      {/* Channel A */}
-      <ChannelBlock
-        label="A"
-        badgeColor="bg-amber-600 text-white"
-        frequency={channelA}
-        isActive={activeChannel === "A"}
-        modeLeft="VFO Mode"
-        modeRight="VFO"
-        tags={["H", "R 🔴"]}
-        rssi={activeChannel === "A" ? rssi : 2}
-        onClick={() => onActiveChannelChange("A")}
+      {/* Top sheen highlight */}
+      <div
+        className="absolute inset-x-6 top-[5px] h-[1px] rounded-full pointer-events-none"
+        style={{ background: "linear-gradient(90deg, transparent, hsl(0 0% 70% / 0.12), transparent)" }}
       />
 
-      {/* Divider */}
-      <div className="h-px mx-2" style={{ background: "linear-gradient(90deg, transparent, hsl(0 0% 30% / 0.4), transparent)" }} />
+      {/* Inner LCD screen recess */}
+      <div
+        className="w-full rounded-xl overflow-hidden"
+        style={{
+          background: "linear-gradient(180deg, hsl(220 15% 7%), hsl(220 12% 5%))",
+          border: "1px solid hsl(220 12% 8%)",
+          boxShadow:
+            "inset 0 3px 10px hsl(220 30% 2% / 0.9), inset 0 1px 4px hsl(220 20% 2% / 0.6)",
+        }}
+      >
+        {/* Top status icons */}
+        <div className="flex items-center gap-3 px-3 py-1.5 border-b border-white/[0.06]">
+          <Zap className="h-3 w-3 text-red-400/70" />
+          <span className="font-mono-display text-[10px] font-bold text-white/40">Z</span>
+          <Music className="h-3 w-3 text-white/30" />
+          <Bluetooth className="h-3 w-3 text-white/30" />
+          <div className="flex-1" />
+          <Battery className="h-3 w-3 text-signal" />
+        </div>
 
-      {/* Channel B */}
-      <ChannelBlock
-        label="B"
-        badgeColor="bg-emerald-600 text-white"
-        frequency={channelB}
-        isActive={activeChannel === "B"}
-        modeLeft="CH Mode"
-        modeRight="Zone1 DD1"
-        tags={["DCS", "W —", "AM"]}
-        rssi={activeChannel === "B" ? rssi : 3}
-        onClick={() => onActiveChannelChange("B")}
-      />
+        {/* Channel A */}
+        <ChannelBlock
+          label="A"
+          badgeColor="bg-amber-600 text-white"
+          frequency={channelA}
+          isActive={activeChannel === "A"}
+          modeLeft="VFO Mode"
+          modeRight="VFO"
+          tags={["H", "R 🔴"]}
+          rssi={activeChannel === "A" ? rssi : 2}
+          onClick={() => onActiveChannelChange("A")}
+        />
 
-      {/* Bottom bar */}
-      <div className="flex items-center px-3 py-1.5 border-t border-white/[0.06]">
-        {["VOX", "APRS", "MO", "TW"].map((tag, i) => (
-          <span
-            key={tag}
-            className={`font-mono-display text-[9px] font-bold tracking-[0.12em] mr-4 ${
-              i === 0 ? "text-white/60" : "text-white/25"
-            }`}
-          >
-            {tag}
-          </span>
-        ))}
-        <div className="flex-1" />
-        <span className="font-mono-display text-[9px] text-white/25">🔒</span>
+        {/* Divider */}
+        <div
+          className="h-px mx-2"
+          style={{ background: "linear-gradient(90deg, transparent, hsl(0 0% 30% / 0.4), transparent)" }}
+        />
+
+        {/* Channel B */}
+        <ChannelBlock
+          label="B"
+          badgeColor="bg-emerald-600 text-white"
+          frequency={channelB}
+          isActive={activeChannel === "B"}
+          modeLeft="CH Mode"
+          modeRight="Zone1 DD1"
+          tags={["DCS", "W —", "AM"]}
+          rssi={activeChannel === "B" ? rssi : 3}
+          onClick={() => onActiveChannelChange("B")}
+        />
+
+        {/* Bottom bar */}
+        <div className="flex items-center px-3 py-1.5 border-t border-white/[0.06]">
+          {["VOX", "APRS", "MO", "TW"].map((tag, i) => (
+            <span
+              key={tag}
+              className={`font-mono-display text-[9px] font-bold tracking-[0.12em] mr-4 ${
+                i === 0 ? "text-white/60" : "text-white/25"
+              }`}
+            >
+              {tag}
+            </span>
+          ))}
+          <div className="flex-1" />
+          <span className="font-mono-display text-[9px] text-white/25">🔒</span>
+        </div>
       </div>
     </div>
   );
