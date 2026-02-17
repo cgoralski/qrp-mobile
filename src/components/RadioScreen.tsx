@@ -97,12 +97,12 @@ const ChannelBlock = ({
           {label}
         </span>
         <span
-          className="font-mono-display text-[36px] font-bold tracking-[0.04em] leading-none text-white sm:text-[42px]"
+          className="font-freq-display text-[32px] font-bold leading-none text-white sm:text-[38px]"
           style={isActive ? { textShadow: "0 0 6px hsl(0 0% 100% / 0.15)" } : {}}
         >
           {freq.main}
         </span>
-        <span className="font-mono-display text-[18px] font-bold text-white/50 ml-0.5 sm:text-[22px]">
+        <span className="font-freq-display text-[16px] font-bold text-white/50 ml-0.5 sm:text-[20px]">
           {freq.sub}
         </span>
       </div>
