@@ -4,21 +4,22 @@ import RadioScreen from "@/components/RadioScreen";
 import NumPad from "@/components/NumPad";
 import PTTButton from "@/components/PTTButton";
 import ConnectionStatus from "@/components/ConnectionStatus";
+import BottomTabBar from "@/components/BottomTabBar";
+import APRSMessaging from "@/components/APRSMessaging";
 
 const Index = () => {
   const [channelA, setChannelA] = useState("027.00000");
   const [channelB, setChannelB] = useState("435.00000");
   const [activeChannel, setActiveChannel] = useState<"A" | "B">("A");
   const [inputBuffer, setInputBuffer] = useState("");
+  const [activeTab, setActiveTab] = useState<"voice" | "aprs">("voice");
 
-  const activeFreq = activeChannel === "A" ? channelA : channelB;
   const setActiveFreq = activeChannel === "A" ? setChannelA : setChannelB;
 
   const handleDigit = useCallback(
     (digit: string) => {
       if (digit === "*" || digit === "#") return;
       const next = inputBuffer + digit;
-      // Format as freq: auto-insert dot after 3 digits
       if (next.length <= 8) {
         setInputBuffer(next);
         const raw = next.length > 3 ? next.slice(0, 3) + "." + next.slice(3) : next;
@@ -60,36 +61,45 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="flex flex-1 flex-col items-center px-4 py-4 max-w-sm mx-auto w-full gap-4">
-        {/* Radio Screen */}
-        <section className="w-full animate-fade-in" style={{ animationDelay: "0.05s" }}>
-          <RadioScreen
-            channelA={channelA}
-            channelB={channelB}
-            onChannelAChange={setChannelA}
-            onChannelBChange={setChannelB}
-            activeChannel={activeChannel}
-            onActiveChannelChange={setActiveChannel}
-            rssi={5}
-          />
-        </section>
+        {activeTab === "voice" ? (
+          <>
+            {/* Radio Screen */}
+            <section className="w-full animate-fade-in" style={{ animationDelay: "0.05s" }}>
+              <RadioScreen
+                channelA={channelA}
+                channelB={channelB}
+                onChannelAChange={setChannelA}
+                onChannelBChange={setChannelB}
+                activeChannel={activeChannel}
+                onActiveChannelChange={setActiveChannel}
+                rssi={5}
+              />
+            </section>
 
-        {/* Numeric Keypad */}
-        <section className="w-full animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          <NumPad
-            onDigit={handleDigit}
-            onBackspace={handleBackspace}
-            onEnter={handleEnter}
-          />
-        </section>
+            {/* Numeric Keypad */}
+            <section className="w-full animate-fade-in" style={{ animationDelay: "0.1s" }}>
+              <NumPad
+                onDigit={handleDigit}
+                onBackspace={handleBackspace}
+                onEnter={handleEnter}
+              />
+            </section>
 
-        {/* Spacer */}
-        <div className="flex-1" />
+            {/* Spacer */}
+            <div className="flex-1" />
 
-        {/* PTT Button */}
-        <section className="pb-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-          <PTTButton />
-        </section>
+            {/* PTT Button */}
+            <section className="pb-2 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              <PTTButton />
+            </section>
+          </>
+        ) : (
+          <APRSMessaging />
+        )}
       </main>
+
+      {/* Bottom Tab Bar */}
+      <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 };
