@@ -198,7 +198,7 @@ const RadioScreen = ({
         {/* Channel A */}
         <ChannelBlock
           label="A"
-          badgeColor="bg-amber-600 text-white"
+          badgeColor="bg-emerald-600 text-white"
           frequency={channelA}
           isActive={activeChannel === "A"}
           modeLeft="VFO Mode"
@@ -218,7 +218,7 @@ const RadioScreen = ({
         {/* Channel B */}
         <ChannelBlock
           label="B"
-          badgeColor="bg-emerald-600 text-white"
+          badgeColor="bg-amber-600 text-white"
           frequency={channelB}
           isActive={activeChannel === "B"}
           modeLeft="CH Mode"
