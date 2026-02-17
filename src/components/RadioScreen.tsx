@@ -205,7 +205,7 @@ const RadioScreen = ({
           modeRight="VFO"
           tags={["H", "R 🔴"]}
           rssi={activeChannel === "A" ? rssi : 2}
-          tint="amber"
+          tint="green"
           onClick={() => onActiveChannelChange("A")}
         />
 
@@ -225,7 +225,7 @@ const RadioScreen = ({
           modeRight="Zone1 DD1"
           tags={["DCS", "W —", "AM"]}
           rssi={activeChannel === "B" ? rssi : 3}
-          tint="green"
+          tint="amber"
           onClick={() => onActiveChannelChange("B")}
         />
 
