@@ -1,14 +1,15 @@
-import { Mic, MessageSquare } from "lucide-react";
+import { Mic, MessageSquare, Settings } from "lucide-react";
 
 interface BottomTabBarProps {
-  activeTab: "voice" | "aprs";
-  onTabChange: (tab: "voice" | "aprs") => void;
+  activeTab: "voice" | "aprs" | "settings";
+  onTabChange: (tab: "voice" | "aprs" | "settings") => void;
 }
 
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
   const tabs = [
     { id: "voice" as const, label: "Voice", icon: Mic },
     { id: "aprs" as const, label: "APRS", icon: MessageSquare },
+    { id: "settings" as const, label: "Settings", icon: Settings },
   ];
 
   return (
