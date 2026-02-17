@@ -1,11 +1,47 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Radio } from "lucide-react";
-import FrequencyInput from "@/components/FrequencyInput";
+import RadioScreen from "@/components/RadioScreen";
+import NumPad from "@/components/NumPad";
 import PTTButton from "@/components/PTTButton";
 import ConnectionStatus from "@/components/ConnectionStatus";
 
 const Index = () => {
-  const [frequency, setFrequency] = useState("429.3500");
+  const [channelA, setChannelA] = useState("027.00000");
+  const [channelB, setChannelB] = useState("435.00000");
+  const [activeChannel, setActiveChannel] = useState<"A" | "B">("A");
+  const [inputBuffer, setInputBuffer] = useState("");
+
+  const activeFreq = activeChannel === "A" ? channelA : channelB;
+  const setActiveFreq = activeChannel === "A" ? setChannelA : setChannelB;
+
+  const handleDigit = useCallback(
+    (digit: string) => {
+      if (digit === "*" || digit === "#") return;
+      const next = inputBuffer + digit;
+      // Format as freq: auto-insert dot after 3 digits
+      if (next.length <= 8) {
+        setInputBuffer(next);
+        const raw = next.length > 3 ? next.slice(0, 3) + "." + next.slice(3) : next;
+        setActiveFreq(raw);
+      }
+    },
+    [inputBuffer, setActiveFreq]
+  );
+
+  const handleBackspace = useCallback(() => {
+    const next = inputBuffer.slice(0, -1);
+    setInputBuffer(next);
+    if (next.length === 0) {
+      setActiveFreq("000.00000");
+    } else {
+      const raw = next.length > 3 ? next.slice(0, 3) + "." + next.slice(3) : next;
+      setActiveFreq(raw);
+    }
+  }, [inputBuffer, setActiveFreq]);
+
+  const handleEnter = useCallback(() => {
+    setInputBuffer("");
+  }, []);
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-mesh">
@@ -23,17 +59,34 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col items-center px-4 py-6 max-w-lg mx-auto w-full">
-        {/* Frequency Display */}
+      <main className="flex flex-1 flex-col items-center px-4 py-4 max-w-sm mx-auto w-full gap-4">
+        {/* Radio Screen */}
         <section className="w-full animate-fade-in" style={{ animationDelay: "0.05s" }}>
-          <FrequencyInput value={frequency} onChange={setFrequency} />
+          <RadioScreen
+            channelA={channelA}
+            channelB={channelB}
+            onChannelAChange={setChannelA}
+            onChannelBChange={setChannelB}
+            activeChannel={activeChannel}
+            onActiveChannelChange={setActiveChannel}
+            rssi={5}
+          />
         </section>
 
-        {/* Spacer to push PTT to bottom */}
+        {/* Numeric Keypad */}
+        <section className="w-full animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          <NumPad
+            onDigit={handleDigit}
+            onBackspace={handleBackspace}
+            onEnter={handleEnter}
+          />
+        </section>
+
+        {/* Spacer */}
         <div className="flex-1" />
 
         {/* PTT Button */}
-        <section className="pb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+        <section className="pb-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
           <PTTButton />
         </section>
       </main>
