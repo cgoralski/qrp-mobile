@@ -1,4 +1,4 @@
-import { Signal, Battery, Bluetooth, Wifi, Volume2 } from "lucide-react";
+import { Battery, Bluetooth, Zap, Music } from "lucide-react";
 
 interface RadioScreenProps {
   channelA: string;
@@ -7,96 +7,121 @@ interface RadioScreenProps {
   onChannelBChange: (value: string) => void;
   activeChannel: "A" | "B";
   onActiveChannelChange: (channel: "A" | "B") => void;
-  rssi: number; // 0-8
+  rssi: number;
 }
 
-const formatFreq = (value: string): { integer: string; decimal: string; sub: string } => {
-  if (!value) return { integer: "000", decimal: "000", sub: "00" };
+const formatFreq = (value: string): { main: string; sub: string } => {
+  if (!value) return { main: "000.000", sub: "00" };
   const parts = value.split(".");
   const integer = parts[0].padStart(3, "0");
   const decimal = (parts[1] || "").padEnd(3, "0").slice(0, 3);
   const sub = (parts[1] || "").slice(3, 5).padEnd(2, "0");
-  return { integer, decimal, sub };
+  return { main: `${integer}.${decimal}`, sub };
 };
 
-const RSSIBar = ({ level }: { level: number }) => (
-  <div className="flex items-end gap-[2px]">
-    <span className="font-mono-display text-[9px] text-muted-foreground mr-1">RSSI</span>
-    {Array.from({ length: 8 }).map((_, i) => (
+const RSSIBar = ({ level, label }: { level: number; label: string }) => (
+  <div className="flex items-end gap-[1.5px] mt-1">
+    <span className="font-mono-display text-[7px] text-white/30 mr-1 mb-[1px]">{label}</span>
+    {Array.from({ length: 10 }).map((_, i) => (
       <div
         key={i}
-        className={`w-[4px] rounded-[1px] transition-all duration-100 ${
-          i < level
-            ? i < 3
-              ? "bg-signal"
-              : i < 6
-              ? "bg-amber-400"
-              : "bg-red-400"
-            : "bg-muted-foreground/20"
-        }`}
-        style={{ height: `${4 + i * 1.5}px` }}
+        className="transition-all duration-100"
+        style={{
+          width: "3px",
+          height: `${3 + i * 1.2}px`,
+          borderRadius: "0.5px",
+          background: i < level
+            ? i < 4
+              ? "hsl(0 0% 75%)"
+              : i < 7
+              ? "hsl(45 80% 60%)"
+              : "hsl(0 70% 55%)"
+            : "hsl(0 0% 20%)",
+        }}
       />
     ))}
+    {/* Scale markers */}
+    <div className="flex items-end ml-1 gap-[6px]">
+      {["1", "3", "5", "7", "9"].map((n) => (
+        <span key={n} className="font-mono-display text-[5px] text-white/20 leading-none">{n}</span>
+      ))}
+    </div>
   </div>
 );
 
-const ChannelRow = ({
+const ChannelBlock = ({
   label,
-  color,
+  badgeColor,
   frequency,
   isActive,
-  mode,
-  modeLabel,
+  modeLeft,
+  modeRight,
+  tags,
+  rssi,
   onClick,
 }: {
   label: string;
-  color: string;
+  badgeColor: string;
   frequency: string;
   isActive: boolean;
-  mode: string;
-  modeLabel: string;
+  modeLeft: string;
+  modeRight: string;
+  tags?: string[];
+  rssi: number;
   onClick: () => void;
 }) => {
   const freq = formatFreq(frequency);
   return (
     <div
-      className={`flex flex-col gap-0.5 px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
-        isActive ? "bg-white/[0.04]" : "opacity-60"
+      className={`flex flex-col px-3 py-2 cursor-pointer transition-all ${
+        isActive ? "" : "opacity-50"
       }`}
       onClick={onClick}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <span
-            className={`inline-flex h-[18px] w-[18px] items-center justify-center rounded text-[10px] font-bold ${color}`}
-          >
-            {label}
-          </span>
-          <span className="font-mono-display text-[10px] text-muted-foreground tracking-wide">
-            {modeLabel}
-          </span>
+      {/* Tags row */}
+      {tags && tags.length > 0 && (
+        <div className="flex items-center gap-3 mb-0.5">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="font-mono-display text-[8px] font-semibold tracking-wider text-white/40"
+            >
+              {tag}
+            </span>
+          ))}
         </div>
-        <span className="font-mono-display text-[9px] text-muted-foreground tracking-wider">
-          {mode}
-        </span>
-      </div>
-      <div className="flex items-baseline">
+      )}
+
+      {/* Frequency row */}
+      <div className="flex items-baseline gap-0">
         <span
-          className={`font-mono-display text-[28px] font-bold tracking-[0.06em] leading-none sm:text-[34px] ${
-            isActive ? "text-foreground" : "text-muted-foreground"
-          }`}
-          style={isActive ? { textShadow: "0 0 8px hsl(var(--glow-primary) / 0.3)" } : {}}
+          className={`inline-flex h-[20px] w-[20px] items-center justify-center rounded-sm text-[11px] font-black mr-2 ${badgeColor}`}
         >
-          {freq.integer}.{freq.decimal}
+          {label}
         </span>
         <span
-          className={`font-mono-display text-[16px] font-bold tracking-[0.04em] sm:text-[20px] ${
-            isActive ? "text-foreground/70" : "text-muted-foreground/50"
-          }`}
+          className="font-mono-display text-[36px] font-bold tracking-[0.04em] leading-none text-white sm:text-[42px]"
+          style={isActive ? { textShadow: "0 0 6px hsl(0 0% 100% / 0.15)" } : {}}
         >
+          {freq.main}
+        </span>
+        <span className="font-mono-display text-[18px] font-bold text-white/50 ml-0.5 sm:text-[22px]">
           {freq.sub}
         </span>
       </div>
+
+      {/* Mode row */}
+      <div className="flex items-center justify-between mt-0.5">
+        <span className="font-mono-display text-[9px] font-semibold tracking-wider text-white/40">
+          {modeLeft}
+        </span>
+        <span className="font-mono-display text-[9px] font-semibold tracking-wider text-white/40">
+          {modeRight}
+        </span>
+      </div>
+
+      {/* RSSI */}
+      <RSSIBar level={rssi} label="RSSI" />
     </div>
   );
 };
@@ -111,65 +136,68 @@ const RadioScreen = ({
   rssi,
 }: RadioScreenProps) => {
   return (
-    <div className="w-full rounded-2xl overflow-hidden" style={{
-      background: "linear-gradient(180deg, hsl(210 25% 5%), hsl(210 20% 8%))",
-      border: "1px solid hsl(210 15% 18% / 0.6)",
-      boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.04), 0 8px 32px hsl(220 30% 3% / 0.6)",
-    }}>
-      {/* Status bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/30">
-        <div className="flex items-center gap-2">
-          <Signal className="h-3 w-3 text-muted-foreground" />
-          <Bluetooth className="h-3 w-3 text-muted-foreground/40" />
-          <Wifi className="h-3 w-3 text-muted-foreground/40" />
-        </div>
-        <RSSIBar level={rssi} />
-        <div className="flex items-center gap-2">
-          <Volume2 className="h-3 w-3 text-muted-foreground" />
-          <Battery className="h-3 w-3 text-signal" />
-        </div>
+    <div
+      className="w-full rounded-2xl overflow-hidden"
+      style={{
+        background: "linear-gradient(180deg, hsl(220 15% 7%), hsl(220 12% 5%))",
+        border: "2px solid hsl(210 10% 20%)",
+        boxShadow:
+          "inset 0 0 30px hsl(220 20% 3% / 0.8), 0 8px 32px hsl(220 30% 3% / 0.6)",
+      }}
+    >
+      {/* Top status icons */}
+      <div className="flex items-center gap-3 px-3 py-1.5 border-b border-white/[0.06]">
+        <Zap className="h-3 w-3 text-red-400/70" />
+        <span className="font-mono-display text-[10px] font-bold text-white/40">Z</span>
+        <Music className="h-3 w-3 text-white/30" />
+        <Bluetooth className="h-3 w-3 text-white/30" />
+        <div className="flex-1" />
+        <Battery className="h-3 w-3 text-signal" />
       </div>
 
       {/* Channel A */}
-      <ChannelRow
+      <ChannelBlock
         label="A"
-        color="bg-amber-500 text-black"
+        badgeColor="bg-amber-600 text-white"
         frequency={channelA}
         isActive={activeChannel === "A"}
-        mode="FM"
-        modeLabel="VFO Mode"
+        modeLeft="VFO Mode"
+        modeRight="VFO"
+        tags={["H", "R 🔴"]}
+        rssi={activeChannel === "A" ? rssi : 2}
         onClick={() => onActiveChannelChange("A")}
       />
 
       {/* Divider */}
-      <div className="h-px bg-border/20 mx-3" />
+      <div className="h-px mx-2" style={{ background: "linear-gradient(90deg, transparent, hsl(0 0% 30% / 0.4), transparent)" }} />
 
       {/* Channel B */}
-      <ChannelRow
+      <ChannelBlock
         label="B"
-        color="bg-signal text-black"
+        badgeColor="bg-emerald-600 text-white"
         frequency={channelB}
         isActive={activeChannel === "B"}
-        mode="AM"
-        modeLabel="CH Mode"
+        modeLeft="CH Mode"
+        modeRight="Zone1 DD1"
+        tags={["DCS", "W —", "AM"]}
+        rssi={activeChannel === "B" ? rssi : 3}
         onClick={() => onActiveChannelChange("B")}
       />
 
-      {/* Bottom info bar */}
-      <div className="flex items-center justify-between px-3 py-1 border-t border-border/20">
-        <div className="flex gap-2">
-          {["VOX", "APRS", "MO", "TW"].map((tag) => (
-            <span
-              key={tag}
-              className="font-mono-display text-[8px] font-semibold tracking-wider text-muted-foreground/50"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-        <span className="font-mono-display text-[8px] text-muted-foreground/40 tracking-wider">
-          Zone1 DD1
-        </span>
+      {/* Bottom bar */}
+      <div className="flex items-center px-3 py-1.5 border-t border-white/[0.06]">
+        {["VOX", "APRS", "MO", "TW"].map((tag, i) => (
+          <span
+            key={tag}
+            className={`font-mono-display text-[9px] font-bold tracking-[0.12em] mr-4 ${
+              i === 0 ? "text-white/60" : "text-white/25"
+            }`}
+          >
+            {tag}
+          </span>
+        ))}
+        <div className="flex-1" />
+        <span className="font-mono-display text-[9px] text-white/25">🔒</span>
       </div>
     </div>
   );
