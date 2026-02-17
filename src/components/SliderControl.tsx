@@ -29,33 +29,46 @@ const SliderControl = ({
   );
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs uppercase tracking-widest text-muted-foreground">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">
           {label}
         </span>
-        <span className="font-mono-display text-sm font-medium text-primary">
-          {value}
-          {unit}
+        <span className="font-mono-display text-sm font-semibold text-primary text-glow">
+          {value}{unit}
         </span>
       </div>
-      <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-75"
-          style={{ width: `${percentage}%` }}
+      <div className="relative">
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary/80">
+          <div
+            className="h-full rounded-full transition-all duration-100"
+            style={{
+              width: `${percentage}%`,
+              background: `linear-gradient(90deg, hsl(185 80% 55% / 0.6), hsl(185 80% 55%))`,
+              boxShadow: `0 0 12px hsl(185 80% 55% / 0.4)`,
+            }}
+          />
+        </div>
+        {/* Tick marks */}
+        <div className="mt-1.5 flex justify-between px-0.5">
+          {Array.from({ length: max - min + 1 }, (_, i) => (
+            <div
+              key={i}
+              className={`h-1 w-px ${i + min === value ? 'bg-primary' : 'bg-muted-foreground/20'}`}
+            />
+          ))}
+        </div>
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={handleChange}
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          aria-label={label}
         />
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={handleChange}
-        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-        style={{ position: "relative" }}
-        aria-label={label}
-      />
     </div>
   );
 };
