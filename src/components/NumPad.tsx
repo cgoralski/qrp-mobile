@@ -1,4 +1,4 @@
-import { Delete, Star, Hash } from "lucide-react";
+import { Delete } from "lucide-react";
 
 interface NumPadProps {
   onDigit: (digit: string) => void;
@@ -8,7 +8,7 @@ interface NumPadProps {
 
 const keys = [
   [
-    { label: "1", sub: "" },
+    { label: "1", sub: ".,?" },
     { label: "2", sub: "ABC" },
     { label: "3", sub: "DEF" },
   ],
@@ -23,68 +23,84 @@ const keys = [
     { label: "9", sub: "WXYZ" },
   ],
   [
-    { label: "*", sub: "", icon: "star" },
+    { label: "*", sub: "⌴" },
     { label: "0", sub: "+" },
-    { label: "#", sub: "", icon: "hash" },
+    { label: "#", sub: "⇧" },
   ],
 ];
 
 const NumPad = ({ onDigit, onBackspace, onEnter }: NumPadProps) => {
   return (
-    <div className="w-full flex flex-col gap-2">
-      {/* Key grid */}
-      <div className="grid grid-cols-3 gap-2">
-        {keys.flat().map((key) => (
-          <button
-            key={key.label}
-            onClick={() => onDigit(key.label)}
-            className="group relative flex flex-col items-center justify-center rounded-xl py-3 transition-all duration-100 active:scale-[0.95]"
-            style={{
-              background: "linear-gradient(180deg, hsl(210 18% 16%), hsl(210 18% 11%))",
-              border: "1px solid hsl(210 15% 22% / 0.5)",
-              boxShadow: "0 2px 8px hsl(220 30% 3% / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.05)",
-            }}
-          >
-            <span className="font-mono-display text-lg font-bold text-foreground leading-none">
-              {key.label}
-            </span>
-            {key.sub && (
-              <span className="font-mono-display text-[8px] tracking-[0.15em] text-muted-foreground mt-0.5">
-                {key.sub}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+    <div className="w-full flex flex-col gap-1">
+      {keys.map((row, rowIdx) => (
+        <div key={rowIdx} className="flex flex-col gap-1">
+          <div className="grid grid-cols-3 gap-1.5">
+            {row.map((key) => (
+              <button
+                key={key.label}
+                onClick={() => onDigit(key.label)}
+                className="group relative flex items-baseline justify-start rounded-md px-3 py-2.5 transition-all duration-75 active:scale-[0.96] active:brightness-125 select-none"
+                style={{
+                  background: "linear-gradient(180deg, hsl(215 12% 28%), hsl(215 14% 18%) 40%, hsl(215 14% 14%))",
+                  border: "1px solid hsl(215 10% 32%)",
+                  borderBottom: "2px solid hsl(215 10% 10%)",
+                  borderTop: "1px solid hsl(215 10% 38%)",
+                  boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.08), 0 2px 4px hsl(220 20% 4% / 0.5)",
+                }}
+              >
+                <span className="font-mono-display text-base font-bold text-white/90 leading-none">
+                  {key.label}
+                </span>
+                <span className="font-mono-display text-[9px] font-semibold tracking-wide text-blue-400/70 ml-1 leading-none">
+                  {key.sub}
+                </span>
+              </button>
+            ))}
+          </div>
+          {/* Row separator — subtle ridge like the radio */}
+          {rowIdx < keys.length - 1 && (
+            <div
+              className="h-[2px] mx-1 rounded-full"
+              style={{
+                background: "linear-gradient(90deg, transparent 5%, hsl(215 10% 12%) 20%, hsl(215 10% 22%) 50%, hsl(215 10% 12%) 80%, transparent 95%)",
+              }}
+            />
+          )}
+        </div>
+      ))}
 
-      {/* Bottom row: Backspace / Enter */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Bottom row: DEL / ENT */}
+      <div className="grid grid-cols-2 gap-1.5 mt-1">
         <button
           onClick={onBackspace}
-          className="flex items-center justify-center gap-2 rounded-xl py-3 transition-all duration-100 active:scale-[0.95]"
+          className="flex items-center justify-center gap-2 rounded-md px-3 py-2.5 transition-all duration-75 active:scale-[0.96] select-none"
           style={{
-            background: "linear-gradient(180deg, hsl(210 18% 14%), hsl(210 18% 10%))",
-            border: "1px solid hsl(210 15% 20% / 0.5)",
-            boxShadow: "0 2px 8px hsl(220 30% 3% / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.05)",
+            background: "linear-gradient(180deg, hsl(215 12% 26%), hsl(215 14% 16%) 40%, hsl(215 14% 12%))",
+            border: "1px solid hsl(215 10% 30%)",
+            borderBottom: "2px solid hsl(215 10% 9%)",
+            borderTop: "1px solid hsl(215 10% 36%)",
+            boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.06), 0 2px 4px hsl(220 20% 4% / 0.5)",
           }}
           aria-label="Backspace"
         >
-          <Delete className="h-4 w-4 text-muted-foreground" />
-          <span className="font-mono-display text-[10px] font-semibold tracking-wider text-muted-foreground">
+          <Delete className="h-4 w-4 text-white/50" />
+          <span className="font-mono-display text-[10px] font-bold tracking-wider text-white/50">
             DEL
           </span>
         </button>
         <button
           onClick={onEnter}
-          className="flex items-center justify-center gap-2 rounded-xl py-3 transition-all duration-100 active:scale-[0.95]"
+          className="flex items-center justify-center gap-2 rounded-md px-3 py-2.5 transition-all duration-75 active:scale-[0.96] select-none"
           style={{
-            background: "linear-gradient(180deg, hsl(185 80% 55% / 0.15), hsl(185 80% 55% / 0.05))",
-            border: "1px solid hsl(185 80% 55% / 0.2)",
-            boxShadow: "0 2px 8px hsl(220 30% 3% / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.05)",
+            background: "linear-gradient(180deg, hsl(215 12% 26%), hsl(215 14% 16%) 40%, hsl(215 14% 12%))",
+            border: "1px solid hsl(215 10% 30%)",
+            borderBottom: "2px solid hsl(215 10% 9%)",
+            borderTop: "1px solid hsl(215 10% 36%)",
+            boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.06), 0 2px 4px hsl(220 20% 4% / 0.5)",
           }}
           aria-label="Enter frequency"
         >
-          <span className="font-mono-display text-[10px] font-bold tracking-wider text-primary">
+          <span className="font-mono-display text-[10px] font-bold tracking-wider text-blue-400/80">
             ENT
           </span>
         </button>
