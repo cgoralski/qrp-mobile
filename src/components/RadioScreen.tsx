@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Battery, Bluetooth, Zap, Music } from "lucide-react";
 
 interface RadioScreenProps {
@@ -154,6 +155,25 @@ const RadioScreen = ({
   onActiveChannelChange,
   rssi,
 }: RadioScreenProps) => {
+  const [animatedRssi, setAnimatedRssi] = useState(rssi);
+
+  useEffect(() => {
+    // Smoothly drift the animated value toward the real rssi
+    setAnimatedRssi(rssi);
+  }, [rssi]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAnimatedRssi((prev) => {
+        // Small random walk ±1 around the base rssi, clamped 1–10
+        const delta = Math.random() < 0.5 ? -1 : 1;
+        const next = prev + delta;
+        return Math.max(1, Math.min(10, next));
+      });
+    }, 600);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     /* Outer bezel — textured dark hardware casing */
     <div
@@ -204,7 +224,7 @@ const RadioScreen = ({
           modeLeft="VFO Mode"
           modeRight="VFO"
           tags={["H", "R 🔴"]}
-          rssi={activeChannel === "A" ? rssi : 2}
+          rssi={activeChannel === "A" ? animatedRssi : 2}
           tint="green"
           onClick={() => onActiveChannelChange("A")}
         />
@@ -224,7 +244,7 @@ const RadioScreen = ({
           modeLeft="CH Mode"
           modeRight="Zone1 DD1"
           tags={["DCS", "W —", "AM"]}
-          rssi={activeChannel === "B" ? rssi : 3}
+          rssi={activeChannel === "B" ? animatedRssi : 3}
           tint="amber"
           onClick={() => onActiveChannelChange("B")}
         />
