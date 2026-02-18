@@ -216,20 +216,31 @@ const Index = () => {
         onTouchEnd={handleSwipeTouchEnd}
       >
         {activeTab === "voice" ? (
-          /* Outer radio chassis */
+          <>
+          {/* SVG clipPath definition — tapered sides + rounded bottom corners */}
+          <svg width="0" height="0" style={{ position: "absolute" }}>
+            <defs>
+              <clipPath id="chassisClip" clipPathUnits="objectBoundingBox">
+                {/*
+                  Tapered shape: full-width at top, curves inward ~35–50% down,
+                  then rounded bottom corners (Q bezier, radius ≈ 0.05).
+                */}
+                <path d="M 0,0 L 1,0 L 1,0.32 L 0.97,0.40 L 0.94,0.50 L 0.93,0.95 Q 0.93,1 0.88,1 L 0.12,1 Q 0.07,1 0.07,0.95 L 0.06,0.50 L 0.03,0.40 L 0,0.32 Z" />
+              </clipPath>
+            </defs>
+          </svg>
           <div
             className="w-full flex animate-fade-in relative"
             style={{
               background:
                 "linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
               border: "1px solid hsl(220 10% 22%)",
-              borderRadius: "20px 20px 12px 12px",
               boxShadow:
                 "inset 0 1px 0 hsl(0 0% 45% / 0.18), inset 0 -2px 0 hsl(0 0% 0% / 0.6), 0 20px 60px hsl(220 30% 2% / 0.95), 0 8px 24px hsl(220 20% 2% / 0.7)",
               backgroundImage:
                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E\"), linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
               backgroundBlendMode: "overlay, normal",
-              clipPath: "polygon(0% 0%, 100% 0%, 100% 32%, 97% 40%, 94% 50%, 93% 100%, 7% 100%, 6% 50%, 3% 40%, 0% 32%)",
+              clipPath: "url(#chassisClip)",
             }}
           >
             {/* ── Left rolled-edge sheen (follows clip-path taper) ── */}
@@ -354,6 +365,7 @@ const Index = () => {
               <SideButton label="PWR" />
             </div>
           </div>
+          </>
         ) : activeTab === "aprs" ? (
           <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
         ) : activeTab === "contacts" ? (
