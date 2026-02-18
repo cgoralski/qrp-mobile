@@ -1,12 +1,16 @@
 import { useState, useRef } from "react";
 import {
   Upload, Trash2, CheckCircle2, XCircle,
-  Loader2, ChevronDown, ChevronRight, Globe, AlertTriangle,
+  Loader2, ChevronDown, ChevronRight, Globe, AlertTriangle, Radio,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ImportResult { inserted: number; total?: number; error?: string; }
 
+interface SettingsScreenProps {
+  myCallsign: string;
+  onCallsignChange: (value: string) => void;
+}
 
 const EDGE_FN_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/import-chirp-csv`;
 
@@ -143,7 +147,7 @@ const SelectField = ({ label, value, onChange, options }: {
 );
 
 /* ── Main component ── */
-const SettingsScreen = () => {
+const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [csvCountry, setCsvCountry] = useState("Australia");
@@ -199,6 +203,8 @@ const SettingsScreen = () => {
     finally { setResetting(false); }
   };
 
+  const callsignValid = myCallsign.trim().length >= 3;
+
   return (
     <div className="tab-panel flex flex-col w-full h-full animate-fade-in gap-3 overflow-y-auto overscroll-contain px-2 py-2">
 
@@ -207,6 +213,52 @@ const SettingsScreen = () => {
         <span className="tab-section-title">SETTINGS</span>
         <span className="tab-meta">REPEATER DATABASE</span>
       </div>
+
+      {/* ── Callsign ── */}
+      <Section title="MY CALLSIGN">
+        <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-1">
+            <label className="tab-meta">CALLSIGN</label>
+            <div className="flex items-center gap-2">
+              <div
+                className="flex items-center gap-2 flex-1 rounded-xl px-3 py-2"
+                style={{
+                  background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))",
+                  border: `1px solid ${callsignValid ? "hsl(var(--primary) / 0.4)" : "hsl(0 80% 55% / 0.35)"}`,
+                }}
+              >
+                <Radio className="h-3 w-3 shrink-0" style={{ color: callsignValid ? "hsl(var(--primary))" : "hsl(0 80% 60%)" }} />
+                <input
+                  type="text"
+                  value={myCallsign}
+                  onChange={e => onCallsignChange(e.target.value)}
+                  placeholder="e.g. VK2ABC"
+                  maxLength={10}
+                  className="flex-1 bg-transparent outline-none tab-callsign tab-callsign-primary uppercase tracking-widest placeholder:normal-case placeholder:tracking-normal placeholder:text-muted-foreground"
+                  style={{ fontSize: "13px", border: "none", padding: 0 }}
+                />
+              </div>
+            </div>
+          </div>
+          {!callsignValid ? (
+            <div className="flex items-start gap-2 rounded-xl px-2.5 py-2"
+              style={{ background: "hsl(0 80% 55% / 0.08)", border: "1px solid hsl(0 80% 55% / 0.25)" }}>
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "hsl(0 80% 65%)" }} />
+              <span className="tab-meta leading-relaxed" style={{ color: "hsl(0 80% 65%)" }}>
+                A valid callsign is required before the radio can transmit or send APRS messages.
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 rounded-xl px-2.5 py-2"
+              style={{ background: "hsl(142 70% 50% / 0.08)", border: "1px solid hsl(142 70% 50% / 0.25)" }}>
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(142 70% 50%)" }} />
+              <span className="tab-meta" style={{ color: "hsl(142 70% 60%)" }}>
+                Callsign set — radio functions are enabled.
+              </span>
+            </div>
+          )}
+        </div>
+      </Section>
 
       {/* ── CSV Upload ── */}
       <Section title="IMPORT CSV (CHIRP FORMAT)">
