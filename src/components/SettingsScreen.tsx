@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import {
   Upload, Database, Trash2, CheckCircle2, XCircle,
-  Loader2, ChevronDown, ChevronRight, RefreshCw, Globe, PackageOpen,
+  Loader2, ChevronDown, ChevronRight, RefreshCw, Globe,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,12 +18,6 @@ async function importCsvToDb(csvText: string, country: string, clearFirst = fals
   });
   return res.json();
 }
-
-const BUNDLED_DATASETS = [
-  { file: "/data/RepeaterBook-US-Florida.csv", country: "United States", label: "🇺🇸 US Florida" },
-  { file: "/data/RepeaterBook-UK.csv",         country: "United Kingdom", label: "🇬🇧 United Kingdom" },
-  { file: "/data/RepeaterBook-Australia.csv",  country: "Australia",      label: "🇦🇺 Australia" },
-];
 
 const COUNTRY_OPTIONS = [
   { value: "United States",  label: "🇺🇸 United States" },
@@ -110,9 +104,6 @@ const SelectField = ({ label, value, onChange, options }: {
 const SettingsScreen = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [bundledResults, setBundledResults] = useState<Record<string, ImportResult | null>>({});
-  const [bundledLoading, setBundledLoading] = useState<Record<string, boolean>>({});
-
   const [csvCountry, setCsvCountry] = useState("United States");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [clearFirst, setClearFirst] = useState(false);
@@ -141,21 +132,6 @@ const SettingsScreen = () => {
       setStats({ total: count ?? 0, byCountry });
     } catch (e) { console.error(e); }
     finally { setStatsLoading(false); }
-  };
-
-  const handleBundledImport = async (file: string, country: string) => {
-    setBundledLoading(p => ({ ...p, [file]: true }));
-    setBundledResults(p => ({ ...p, [file]: null }));
-    try {
-      const csvText = await (await fetch(file)).text();
-      const data = await importCsvToDb(csvText, country, true);
-      setBundledResults(p => ({ ...p, [file]: data }));
-      if (!data.error) loadStats();
-    } catch (err) {
-      setBundledResults(p => ({ ...p, [file]: { inserted: 0, error: String(err) } }));
-    } finally {
-      setBundledLoading(p => ({ ...p, [file]: false }));
-    }
   };
 
   const handleCsvImport = async () => {
@@ -204,40 +180,8 @@ const SettingsScreen = () => {
         <span className="tab-meta">REPEATER DATABASE</span>
       </div>
 
-      {/* ── Bundled Datasets ── */}
-      <Section title="BUNDLED DATASETS">
-        <div className="flex flex-col gap-2">
-          <p className="tab-body leading-relaxed">
-            One-click import from the CSV files you uploaded. Replaces existing data for each country.
-          </p>
-          {BUNDLED_DATASETS.map(({ file, country, label }) => (
-            <div key={file} className="flex flex-col gap-1">
-              <button
-                onClick={() => handleBundledImport(file, country)}
-                disabled={!!bundledLoading[file]}
-                className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 transition-all disabled:opacity-50"
-                style={{
-                  background: "hsl(var(--primary) / 0.07)",
-                  border: "1px solid hsl(var(--primary) / 0.2)",
-                  color: "hsl(var(--primary))",
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  {bundledLoading[file]
-                    ? <Loader2 className="h-3 w-3 animate-spin" />
-                    : <PackageOpen className="h-3 w-3" />}
-                  <span className="tab-callsign tab-callsign-primary">{label}</span>
-                </div>
-                <span className="tab-meta opacity-60">IMPORT →</span>
-              </button>
-              <StatusBadge result={bundledResults[file] ?? null} />
-            </div>
-          ))}
-        </div>
-      </Section>
-
       {/* ── CSV Upload ── */}
-      <Section title="IMPORT CSV (CHIRP FORMAT)" defaultOpen={false}>
+      <Section title="IMPORT CSV (CHIRP FORMAT)">
         <div className="flex flex-col gap-2.5">
           <SelectField label="COUNTRY / REGION" value={csvCountry} onChange={setCsvCountry} options={COUNTRY_OPTIONS} />
           <div className="flex flex-col gap-1">
