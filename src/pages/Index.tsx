@@ -290,6 +290,17 @@ const Index = () => {
     setInputBuffer("");
   }, []);
 
+  const stepFrequency = useCallback((direction: 1 | -1) => {
+    const current = activeChannel === "A" ? channelA : channelB;
+    const parsed = parseFloat(current);
+    if (isNaN(parsed)) return;
+    const stepped = Math.max(0, parsed + direction * 0.5);
+    const formatted = stepped.toFixed(4).replace(/^(\d{1,3})/, (m) => m.padStart(3, "0"));
+    setInputBuffer("");
+    if (activeChannel === "A") setChannelA(formatted);
+    else setChannelB(formatted);
+  }, [activeChannel, channelA, channelB]);
+
   return (
     <div className="flex h-[100dvh] flex-col bg-mesh overflow-hidden">
       {/* App header */}
@@ -454,6 +465,8 @@ const Index = () => {
                   </div>
                 )}
                 <DPad
+                  onUp={() => stepFrequency(1)}
+                  onDown={() => stepFrequency(-1)}
                   onVm={captions.toggle}
                   onAb={() => setActiveChannel((ch) => ch === "A" ? "B" : "A")}
                   onBack={handleEnter}
