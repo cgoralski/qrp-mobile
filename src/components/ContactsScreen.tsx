@@ -95,7 +95,7 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
   const groupColor = GROUP_COLORS[contact.group_tag ?? ""] ?? "hsl(215 15% 42%)";
 
   return (
-    <SwipeToDelete onTap={onTune} onDelete={onDelete}>
+    <SwipeToDelete onTap={onTune} onDelete={onDelete} className="mb-0.5">
       <div
         className="flex items-center gap-3 px-3 py-2.5"
         style={{
@@ -103,7 +103,6 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
             ? "linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.04))"
             : "linear-gradient(135deg, hsl(210 18% 14%), hsl(210 18% 10%))",
           border: `1px solid ${isTuned ? "hsl(var(--primary) / 0.2)" : "hsl(210 15% 22% / 0.5)"}`,
-          marginBottom: "2px",
         }}
       >
         {/* Group colour dot */}
