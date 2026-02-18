@@ -39,7 +39,7 @@ const NumPad = ({ onDigit, onBackspace, onEnter }: NumPadProps) => {
               <button
                 key={key.label}
                 onClick={() => onDigit(key.label)}
-                className="group relative flex items-baseline justify-start rounded-md px-2.5 py-2 transition-all duration-75 active:scale-[0.96] active:brightness-125 select-none"
+                className="group relative flex items-baseline justify-start rounded-md px-2.5 py-3.5 transition-all duration-75 active:scale-[0.96] active:brightness-125 select-none"
                 style={{
                   background: "linear-gradient(180deg, hsl(215 12% 28%), hsl(215 14% 18%) 40%, hsl(215 14% 14%))",
                   border: "1px solid hsl(215 10% 32%)",
@@ -73,7 +73,7 @@ const NumPad = ({ onDigit, onBackspace, onEnter }: NumPadProps) => {
       <div className="grid grid-cols-2 gap-1 mt-0.5">
         <button
           onClick={onBackspace}
-          className="flex items-center justify-center gap-2 rounded-md px-3 py-2 transition-all duration-75 active:scale-[0.96] select-none"
+          className="flex items-center justify-center gap-2 rounded-md px-3 py-3.5 transition-all duration-75 active:scale-[0.96] select-none"
           style={{
             background: "linear-gradient(180deg, hsl(215 12% 26%), hsl(215 14% 16%) 40%, hsl(215 14% 12%))",
             border: "1px solid hsl(215 10% 30%)",
@@ -90,7 +90,7 @@ const NumPad = ({ onDigit, onBackspace, onEnter }: NumPadProps) => {
         </button>
         <button
           onClick={onEnter}
-          className="flex items-center justify-center gap-2 rounded-md px-3 py-2 transition-all duration-75 active:scale-[0.96] select-none"
+          className="flex items-center justify-center gap-2 rounded-md px-3 py-3.5 transition-all duration-75 active:scale-[0.96] select-none"
           style={{
             background: "linear-gradient(180deg, hsl(215 12% 26%), hsl(215 14% 16%) 40%, hsl(215 14% 12%))",
             border: "1px solid hsl(215 10% 30%)",
