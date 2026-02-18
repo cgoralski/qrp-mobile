@@ -99,7 +99,7 @@ const ChannelNameEditor = ({
 
 
 // Labels shown under specific bars only: S1, S3, S5, S7, S9, +60
-const S_LABELS: Record<number, string> = { 0: "1", 2: "3", 4: "5", 6: "7", 8: "9", 9: "+60" };
+const S_LABELS: Record<number, string> = { 0: "1", 2: "3", 4: "5", 6: "7", 8: "9", 9: "+40" };
 
 const RSSIBar = ({ level }: { level: number }) => (
   <div className="flex items-end gap-[3px]">
