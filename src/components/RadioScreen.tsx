@@ -99,27 +99,31 @@ const ChannelNameEditor = ({
 
 
 const RSSIBar = ({ level, label }: { level: number; label: string }) => (
-  <div className="flex items-end gap-[2px] mt-1">
-    <span className="font-mono-display text-[9px] text-white/30 mr-1 mb-[1px]">{label}</span>
-    {Array.from({ length: 10 }).map((_, i) => (
-      <div
-        key={i}
-        className="transition-all duration-100"
-        style={{
-          width: "4px",
-          height: `${4 + i * 1.5}px`,
-          borderRadius: "0.5px",
-          background: i < level
-            ? i < 4
-              ? "hsl(0 0% 75%)"
-              : i < 7
-              ? "hsl(45 80% 60%)"
-              : "hsl(0 70% 55%)"
-            : "hsl(0 0% 20%)",
-        }}
-      />
-    ))}
-    <div className="flex items-end ml-1 gap-[8px]">
+  <div className="flex flex-col gap-[2px]">
+    {/* Row 1: label + bars */}
+    <div className="flex items-end gap-[2px]">
+      <span className="font-mono-display text-[9px] text-white/30 mr-1 mb-[1px]">{label}</span>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div
+          key={i}
+          className="transition-all duration-100"
+          style={{
+            width: "4px",
+            height: `${4 + i * 1.5}px`,
+            borderRadius: "0.5px",
+            background: i < level
+              ? i < 4
+                ? "hsl(0 0% 75%)"
+                : i < 7
+                ? "hsl(45 80% 60%)"
+                : "hsl(0 70% 55%)"
+              : "hsl(0 0% 20%)",
+          }}
+        />
+      ))}
+    </div>
+    {/* Row 2: S-meter scale */}
+    <div className="flex items-center ml-[calc(1.5rem+3px)] gap-[8px]">
       {["1", "3", "5", "7", "9"].map((n) => (
         <span key={n} className="font-mono-display text-[7px] text-white/20 leading-none">{n}</span>
       ))}
