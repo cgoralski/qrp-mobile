@@ -353,6 +353,7 @@ const Index = () => {
                   onVm={captions.toggle}
                   onAb={() => setActiveChannel((ch) => ch === "A" ? "B" : "A")}
                   onBack={handleEnter}
+                  onMenu={() => setActiveTab("settings")}
                 />
                 <div className="px-10">
                   <NumPad
