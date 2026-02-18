@@ -1,1 +1,4 @@
 project_id = "oonaetktfrwnfppgpccj"
+
+[functions.import-chirp-csv]
+verify_jwt = false

@@ -14,7 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      repeaters: {
+        Row: {
+          c_tone_freq: number | null
+          callsign: string | null
+          comment: string | null
+          country: string
+          created_at: string
+          cross_mode: string | null
+          dtcs_code: string | null
+          dtcs_polarity: string | null
+          duplex: string | null
+          freq_offset: number | null
+          frequency: number
+          id: string
+          location_desc: string | null
+          location_index: number | null
+          mode: string | null
+          name: string
+          power: string | null
+          r_tone_freq: number | null
+          region: string | null
+          rx_dtcs_code: string | null
+          skip: string | null
+          source: string | null
+          t_step: number | null
+          tone_mode: string | null
+          updated_at: string
+        }
+        Insert: {
+          c_tone_freq?: number | null
+          callsign?: string | null
+          comment?: string | null
+          country?: string
+          created_at?: string
+          cross_mode?: string | null
+          dtcs_code?: string | null
+          dtcs_polarity?: string | null
+          duplex?: string | null
+          freq_offset?: number | null
+          frequency: number
+          id?: string
+          location_desc?: string | null
+          location_index?: number | null
+          mode?: string | null
+          name: string
+          power?: string | null
+          r_tone_freq?: number | null
+          region?: string | null
+          rx_dtcs_code?: string | null
+          skip?: string | null
+          source?: string | null
+          t_step?: number | null
+          tone_mode?: string | null
+          updated_at?: string
+        }
+        Update: {
+          c_tone_freq?: number | null
+          callsign?: string | null
+          comment?: string | null
+          country?: string
+          created_at?: string
+          cross_mode?: string | null
+          dtcs_code?: string | null
+          dtcs_polarity?: string | null
+          duplex?: string | null
+          freq_offset?: number | null
+          frequency?: number
+          id?: string
+          location_desc?: string | null
+          location_index?: number | null
+          mode?: string | null
+          name?: string
+          power?: string | null
+          r_tone_freq?: number | null
+          region?: string | null
+          rx_dtcs_code?: string | null
+          skip?: string | null
+          source?: string | null
+          t_step?: number | null
+          tone_mode?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
