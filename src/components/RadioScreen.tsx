@@ -250,7 +250,43 @@ const ChannelBlock = ({
 };
 
 
-/* ── Caption Panel — single-line scrolling ticker ── */
+/* ── Caption Panel — two-row scrolling ticker ── */
+const CaptionTicker = ({
+  text,
+  animKey,
+  isLive,
+  isEmpty,
+}: {
+  text: string;
+  animKey: number;
+  isLive: boolean;
+  isEmpty: boolean;
+}) => (
+  <div className="relative h-[34px] flex items-center overflow-hidden">
+    {isEmpty ? (
+      <span
+        className="font-mono-display text-[13px] italic whitespace-nowrap px-3"
+        style={{ color: "hsl(140 35% 25%)" }}
+      >
+        Listening…
+      </span>
+    ) : (
+      <span
+        key={animKey}
+        className="font-mono-display text-[17px] font-semibold whitespace-nowrap"
+        style={{
+          color: isLive ? "hsl(0 0% 95%)" : "hsl(0 0% 50%)",
+          animation: "caption-ticker 14s linear 1",
+          display: "inline-block",
+          willChange: "transform",
+        }}
+      >
+        &nbsp;&nbsp;&nbsp;&nbsp;{text}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </span>
+    )}
+  </div>
+);
+
 const CaptionPanel = ({
   history,
   partial,
@@ -258,13 +294,10 @@ const CaptionPanel = ({
   history: string[];
   partial: string;
 }) => {
-  // Show the partial (live) text if available, otherwise the last completed line
-  const displayText = partial || history[history.length - 1] || "";
-  const isEmpty = !displayText;
-
-  // Only restart the animation when a sentence COMPLETES (history grows),
-  // NOT on every partial word — so the scroll is smooth as words accumulate.
-  const animKey = history.length;
+  const prevLine = history[history.length - 1] || "";
+  const liveLine = partial || history[history.length - 1] || "";
+  const showPrev = history.length > 0;
+  const isEmpty = !liveLine;
 
   return (
     <div
@@ -274,7 +307,6 @@ const CaptionPanel = ({
         border: "1px solid hsl(140 30% 14% / 0.7)",
         boxShadow: "inset 0 3px 12px hsl(220 60% 2% / 0.9)",
         position: "relative",
-        height: "38px",
       }}
     >
       {/* Scanlines */}
@@ -296,28 +328,26 @@ const CaptionPanel = ({
         style={{ background: "linear-gradient(to left, hsl(220 40% 4%), transparent)" }}
       />
 
-      <div className="relative z-10 h-full flex items-center overflow-hidden">
-        {isEmpty ? (
-          <span
-            className="font-mono-display text-[15px] italic whitespace-nowrap px-3"
-            style={{ color: "hsl(140 35% 30%)" }}
-          >
-            Listening…
-          </span>
-        ) : (
-          <span
-            key={animKey}
-            className="font-mono-display text-[17px] font-semibold whitespace-nowrap"
-            style={{
-              color: partial ? "hsl(0 0% 92%)" : "hsl(0 0% 60%)",
-              animation: "caption-ticker 14s linear 1",
-              display: "inline-block",
-              willChange: "transform",
-            }}
-          >
-            &nbsp;&nbsp;&nbsp;&nbsp;{displayText}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          </span>
-        )}
+      <div className="relative z-10 flex flex-col">
+        {/* Row 1 — previous completed sentence (dimmed) */}
+        <div
+          className="border-b"
+          style={{ borderColor: "hsl(140 20% 12% / 0.6)" }}
+        >
+          <CaptionTicker
+            text={showPrev && history.length >= 2 ? history[history.length - 2] : prevLine}
+            animKey={history.length - 1}
+            isLive={false}
+            isEmpty={!showPrev || history.length < 2}
+          />
+        </div>
+        {/* Row 2 — live / current line (bright white) */}
+        <CaptionTicker
+          text={liveLine}
+          animKey={history.length}
+          isLive={true}
+          isEmpty={isEmpty}
+        />
       </div>
     </div>
   );
