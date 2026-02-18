@@ -7,6 +7,7 @@ import DPad from "@/components/DPad";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import BottomTabBar from "@/components/BottomTabBar";
 import APRSMessaging from "@/components/APRSMessaging";
+import ContactsScreen from "@/components/ContactsScreen";
 
 /* ── Decorative side button used on the radio body ── */
 const SideButton = ({
@@ -365,10 +366,14 @@ const Index = () => {
         ) : activeTab === "aprs" ? (
           <APRSMessaging />
         ) : activeTab === "contacts" ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground gap-3">
-            <BookUser className="h-8 w-8 opacity-30" />
-            <span className="font-mono-display text-xs tracking-wider">CONTACTS</span>
-            <span className="text-[11px] text-muted-foreground/60">Coming soon</span>
+          <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">
+            <ContactsScreen
+              onTuneChannel={(freq) => {
+                if (activeChannel === "A") setChannelA(freq);
+                else setChannelB(freq);
+              }}
+              activeChannel={activeChannel}
+            />
           </div>
         ) : activeTab === "scanner" ? (
           <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground gap-3">
