@@ -105,6 +105,9 @@ const Index = () => {
   const [myCallsign, setMyCallsign] = useState<string>(
     () => localStorage.getItem("myCallsign") ?? ""
   );
+  // Track live swipe offset for real-time drag feedback
+  const [swipeDelta, setSwipeDelta] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
 
   const captions = useCaptions();
 
@@ -116,27 +119,56 @@ const Index = () => {
 
   const swipeTouchStartX = useRef<number | null>(null);
   const swipeTouchStartY = useRef<number | null>(null);
+  const swipeLockedAxis = useRef<"h" | "v" | null>(null);
 
   const handleSwipeTouchStart = (e: React.TouchEvent) => {
     swipeTouchStartX.current = e.touches[0].clientX;
     swipeTouchStartY.current = e.touches[0].clientY;
+    swipeLockedAxis.current = null;
+    setSwipeDelta(0);
+  };
+
+  const handleSwipeTouchMove = (e: React.TouchEvent) => {
+    if (swipeTouchStartX.current === null || swipeTouchStartY.current === null) return;
+    const dx = e.touches[0].clientX - swipeTouchStartX.current;
+    const dy = Math.abs(e.touches[0].clientY - swipeTouchStartY.current);
+
+    // Lock axis on first significant movement
+    if (swipeLockedAxis.current === null && (Math.abs(dx) > 8 || dy > 8)) {
+      swipeLockedAxis.current = Math.abs(dx) > dy ? "h" : "v";
+    }
+
+    if (swipeLockedAxis.current === "h") {
+      e.preventDefault();
+      const currentIndex = TAB_ORDER.indexOf(activeTab);
+      // Resist at edges
+      const atStart = currentIndex === 0 && dx > 0;
+      const atEnd = currentIndex === TAB_ORDER.length - 1 && dx < 0;
+      const resistance = atStart || atEnd ? 0.2 : 1;
+      setSwipeDelta(dx * resistance);
+      setIsSwiping(true);
+    }
   };
 
   const handleSwipeTouchEnd = (e: React.TouchEvent) => {
     if (swipeTouchStartX.current === null || swipeTouchStartY.current === null) return;
     const dx = swipeTouchStartX.current - e.changedTouches[0].clientX;
     const dy = Math.abs(swipeTouchStartY.current - e.changedTouches[0].clientY);
-    // Only trigger if horizontal movement dominates and is > 50px
-    if (Math.abs(dx) > 50 && Math.abs(dx) > dy * 1.5) {
+
+    setSwipeDelta(0);
+    setIsSwiping(false);
+
+    if (swipeLockedAxis.current === "h" && Math.abs(dx) > 50 && Math.abs(dx) > dy * 1.5) {
       const currentIndex = TAB_ORDER.indexOf(activeTab);
       if (dx > 0 && currentIndex < TAB_ORDER.length - 1) {
-        setActiveTab(TAB_ORDER[currentIndex + 1]); // swipe left → next
+        setActiveTab(TAB_ORDER[currentIndex + 1]);
       } else if (dx < 0 && currentIndex > 0) {
-        setActiveTab(TAB_ORDER[currentIndex - 1]); // swipe right → prev
+        setActiveTab(TAB_ORDER[currentIndex - 1]);
       }
     }
     swipeTouchStartX.current = null;
     swipeTouchStartY.current = null;
+    swipeLockedAxis.current = null;
   };
 
   const setActiveFreq = activeChannel === "A" ? setChannelA : setChannelB;
@@ -213,135 +245,140 @@ const Index = () => {
       <main
         className="flex flex-1 flex-col items-center justify-start px-0 py-1 max-w-[480px] mx-auto w-full overflow-hidden"
         onTouchStart={handleSwipeTouchStart}
+        onTouchMove={handleSwipeTouchMove}
         onTouchEnd={handleSwipeTouchEnd}
+        style={{ touchAction: "pan-y" }}
       >
-        {activeTab === "voice" ? (
-          <div className="w-full relative animate-fade-in">
-          {/* SVG clipPath definition — tapered sides + rounded bottom corners */}
-          <svg width="0" height="0" style={{ position: "absolute" }}>
-            <defs>
-              <clipPath id="chassisClip" clipPathUnits="objectBoundingBox">
-                {/*
-                  Tapered shape: full-width at top, gentle inward bend just below LCD (~44–58%),
-                  only ~3% narrowing each side, then rounded bottom corners.
-                */}
-                <path d="M 0,0 L 1,0 L 1,0.44 L 0.985,0.52 L 0.97,0.58 L 0.965,0.95 Q 0.965,1 0.915,1 L 0.085,1 Q 0.035,1 0.035,0.95 L 0.03,0.58 L 0.015,0.52 L 0,0.44 Z" />
-              </clipPath>
-            </defs>
-          </svg>
-          <div
-            className="w-full flex relative"
-            style={{
-              background:
-                "linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
-              border: "1px solid hsl(220 10% 22%)",
-              boxShadow:
-                "inset 0 1px 0 hsl(0 0% 45% / 0.18), inset 0 -2px 0 hsl(0 0% 0% / 0.6), 0 20px 60px hsl(220 30% 2% / 0.95), 0 8px 24px hsl(220 20% 2% / 0.7)",
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E\"), linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
-              backgroundBlendMode: "overlay, normal",
-              clipPath: "url(#chassisClip)",
-            }}
-          >
-            <div className="flex flex-col items-end" style={{ width: "20px" }}>
-              {/* Antenna stub at top-left */}
-              <div className="flex justify-center w-full pt-2 pb-1">
+        {/* Sliding strip — all tabs side by side, translated to show active */}
+        <div
+          className="flex w-full flex-1 min-h-0"
+          style={{
+            width: `${TAB_ORDER.length * 100}%`,
+            transform: `translateX(calc(${-TAB_ORDER.indexOf(activeTab) * (100 / TAB_ORDER.length)}% + ${swipeDelta / TAB_ORDER.length}px))`,
+            transition: isSwiping ? "none" : "transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            willChange: "transform",
+          }}
+        >
+          {/* ── Voice tab ── */}
+          <div className="flex flex-col items-center justify-start py-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+            <div className="w-full relative">
+            {/* SVG clipPath definition — tapered sides + rounded bottom corners */}
+            <svg width="0" height="0" style={{ position: "absolute" }}>
+              <defs>
+                <clipPath id="chassisClip" clipPathUnits="objectBoundingBox">
+                  {/*
+                    Tapered shape: full-width at top, gentle inward bend just below LCD (~44–58%),
+                    only ~3% narrowing each side, then rounded bottom corners.
+                  */}
+                  <path d="M 0,0 L 1,0 L 1,0.44 L 0.985,0.52 L 0.97,0.58 L 0.965,0.95 Q 0.965,1 0.915,1 L 0.085,1 Q 0.035,1 0.035,0.95 L 0.03,0.58 L 0.015,0.52 L 0,0.44 Z" />
+                </clipPath>
+              </defs>
+            </svg>
+            <div
+              className="w-full flex relative"
+              style={{
+                background:
+                  "linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
+                border: "1px solid hsl(220 10% 22%)",
+                boxShadow:
+                  "inset 0 1px 0 hsl(0 0% 45% / 0.18), inset 0 -2px 0 hsl(0 0% 0% / 0.6), 0 20px 60px hsl(220 30% 2% / 0.95), 0 8px 24px hsl(220 20% 2% / 0.7)",
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E\"), linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
+                backgroundBlendMode: "overlay, normal",
+                clipPath: "url(#chassisClip)",
+              }}
+            >
+              <div className="flex flex-col items-end" style={{ width: "20px" }}>
+                {/* Antenna stub at top-left */}
+                <div className="flex justify-center w-full pt-2 pb-1">
+                  <div
+                    style={{
+                      width: "7px",
+                      height: "28px",
+                      borderRadius: "3px 3px 2px 2px",
+                      background: "linear-gradient(180deg, hsl(220 10% 28%) 0%, hsl(220 8% 18%) 100%)",
+                      border: "1px solid hsl(220 8% 32%)",
+                      boxShadow: "inset 0 1px 0 hsl(0 0% 40% / 0.2)",
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 pt-2">
+                  <SideButton label="VOL" top accent />
+                  <SideButton label="MON" />
+                </div>
+              </div>
+
+              <div className="flex flex-1 flex-col px-0 pb-2 gap-1 min-w-0">
                 <div
+                  className="absolute inset-x-12 pointer-events-none h-[1px] rounded-full"
                   style={{
-                    width: "7px",
-                    height: "28px",
-                    borderRadius: "3px 3px 2px 2px",
-                    background: "linear-gradient(180deg, hsl(220 10% 28%) 0%, hsl(220 8% 18%) 100%)",
-                    border: "1px solid hsl(220 8% 32%)",
-                    boxShadow: "inset 0 1px 0 hsl(0 0% 40% / 0.2)",
+                    top: "1px",
+                    background: "linear-gradient(90deg, transparent, hsl(0 0% 65% / 0.14), transparent)",
                   }}
                 />
+                <div className="pt-1">
+                  <RadioScreen
+                    channelA={channelA}
+                    channelB={channelB}
+                    onChannelAChange={setChannelA}
+                    onChannelBChange={setChannelB}
+                    activeChannel={activeChannel}
+                    onActiveChannelChange={setActiveChannel}
+                    rssi={5}
+                    isTransmitting={isTransmitting}
+                    channelAName={channelAName}
+                    channelBName={channelBName}
+                    onChannelANameChange={setChannelAName}
+                    onChannelBNameChange={setChannelBName}
+                    myCallsign={myCallsign}
+                    captionsEnabled={captions.isActive}
+                    onToggleCaptions={captions.toggle}
+                    partialCaption={captions.partialText}
+                    captionHistory={captions.captionHistory}
+                    captionsSupported={captions.isSupported}
+                  />
+                </div>
+                <DPad />
+                <div className="px-10">
+                  <NumPad
+                    onDigit={handleDigit}
+                    onDecimal={handleDecimal}
+                    onBackspace={handleBackspace}
+                    onEnter={handleEnter}
+                  />
+                </div>
+                <div
+                  className="rounded-xl overflow-hidden mt-1"
+                  style={{
+                    background: "hsl(220 12% 8%)",
+                    border: "1px solid hsl(220 10% 14%)",
+                    boxShadow: "inset 0 2px 6px hsl(220 30% 2% / 0.7)",
+                  }}
+                >
+                  <SpeakerGrille />
+                </div>
               </div>
 
-              {/* Side buttons */}
-              <div className="flex flex-col gap-1.5 pt-2">
-                <SideButton label="VOL" top accent />
-                <SideButton label="MON" />
-              </div>
-            </div>
-
-            {/* ── Main body column ── */}
-            <div className="flex flex-1 flex-col px-0 pb-2 gap-1 min-w-0">
-              {/* Top sheen */}
               <div
-                className="absolute inset-x-12 pointer-events-none h-[1px] rounded-full"
-                style={{
-                  top: "1px",
-                  background: "linear-gradient(90deg, transparent, hsl(0 0% 65% / 0.14), transparent)",
-                }}
-              />
-
-              {/* Radio screen */}
-              <div className="pt-1">
-              <RadioScreen
-                  channelA={channelA}
-                  channelB={channelB}
-                  onChannelAChange={setChannelA}
-                  onChannelBChange={setChannelB}
-                  activeChannel={activeChannel}
-                  onActiveChannelChange={setActiveChannel}
-                  rssi={5}
-                  isTransmitting={isTransmitting}
-                  channelAName={channelAName}
-                  channelBName={channelBName}
-                  onChannelANameChange={setChannelAName}
-                  onChannelBNameChange={setChannelBName}
-                  myCallsign={myCallsign}
-                  captionsEnabled={captions.isActive}
-                  onToggleCaptions={captions.toggle}
-                  partialCaption={captions.partialText}
-                  captionHistory={captions.captionHistory}
-                  captionsSupported={captions.isSupported}
-                />
-              </div>
-
-              {/* D-pad navigation cluster */}
-              <DPad />
-
-              {/* Keypad */}
-              <div className="px-10">
-                <NumPad
-                  onDigit={handleDigit}
-                  onDecimal={handleDecimal}
-                  onBackspace={handleBackspace}
-                  onEnter={handleEnter}
-                />
-              </div>
-
-              {/* ── Speaker grille ── */}
-              <div
-                className="rounded-xl overflow-hidden mt-1"
-                style={{
-                  background: "hsl(220 12% 8%)",
-                  border: "1px solid hsl(220 10% 14%)",
-                  boxShadow: "inset 0 2px 6px hsl(220 30% 2% / 0.7)",
-                }}
+                className="flex flex-col items-start pt-10 gap-2 pr-0"
+                style={{ width: "20px", transform: "scaleX(-1)" }}
               >
-                <SpeakerGrille />
+                <SideButton label="SQL" top />
+                <SideButton label="SCAN" accent />
+                <SideButton label="CH" />
+                <SideButton label="PWR" />
               </div>
-            </div>
-
-            {/* ── Right side buttons ── */}
-            <div
-              className="flex flex-col items-start pt-10 gap-2 pr-0"
-              style={{ width: "20px", transform: "scaleX(-1)" }}
-            >
-              <SideButton label="SQL" top />
-              <SideButton label="SCAN" accent />
-              <SideButton label="CH" />
-              <SideButton label="PWR" />
             </div>
             </div>
           </div>
-        ) : activeTab === "aprs" ? (
-          <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
-        ) : activeTab === "contacts" ? (
-          <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">
+
+          {/* ── APRS tab ── */}
+          <div className="flex flex-col flex-1 min-h-0 py-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+            <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
+          </div>
+
+          {/* ── Contacts tab ── */}
+          <div className="flex flex-col flex-1 min-h-0 px-1 py-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
             <ContactsScreen
               onTuneChannel={(freq) => {
                 if (activeChannel === "A") setChannelA(freq);
@@ -350,9 +387,10 @@ const Index = () => {
               activeChannel={activeChannel}
             />
           </div>
-        ) : activeTab === "scanner" ? (
-          <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">
-            <div className="tab-panel flex flex-1 flex-col w-full animate-fade-in">
+
+          {/* ── Scanner tab ── */}
+          <div className="flex flex-col flex-1 min-h-0 px-1 py-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+            <div className="tab-panel flex flex-1 flex-col w-full">
               <div className="tab-header flex items-center justify-between px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <RadioIcon className="h-4 w-4 text-primary" />
@@ -369,9 +407,10 @@ const Index = () => {
               </div>
             </div>
           </div>
-        ) : activeTab === "map" ? (
-          <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">
-            <div className="tab-panel flex flex-1 flex-col w-full animate-fade-in">
+
+          {/* ── Map tab ── */}
+          <div className="flex flex-col flex-1 min-h-0 px-1 py-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+            <div className="tab-panel flex flex-1 flex-col w-full">
               <div className="tab-header flex items-center justify-between px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <Map className="h-4 w-4 text-primary" />
@@ -388,11 +427,12 @@ const Index = () => {
               </div>
             </div>
           </div>
-        ) : (
-          <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">
+
+          {/* ── Settings tab ── */}
+          <div className="flex flex-col flex-1 min-h-0 px-1 py-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
             <SettingsScreen myCallsign={myCallsign} onCallsignChange={handleCallsignChange} />
           </div>
-        )}
+        </div>
       </main>
 
       <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />
