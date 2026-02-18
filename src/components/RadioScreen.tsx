@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Battery, Bluetooth, Zap, Music, Pencil, Check } from "lucide-react";
+import { Battery, Bluetooth, Zap, Music, Pencil, Check, Captions } from "lucide-react";
 
 interface RadioScreenProps {
   channelA: string;
@@ -15,6 +15,11 @@ interface RadioScreenProps {
   onChannelANameChange: (name: string) => void;
   onChannelBNameChange: (name: string) => void;
   myCallsign?: string;
+  captionsEnabled?: boolean;
+  onToggleCaptions?: () => void;
+  partialCaption?: string;
+  captionHistory?: string[];
+  captionsSupported?: boolean;
 }
 
 const formatFreq = (value: string): { main: string; sub: string } => {
@@ -230,6 +235,76 @@ const ChannelBlock = ({
 };
 
 
+/* ── Caption Panel ── */
+const CaptionPanel = ({
+  history,
+  partial,
+}: {
+  history: string[];
+  partial: string;
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [history, partial]);
+
+  const visibleHistory = history.slice(-3);
+
+  return (
+    <div
+      className="mx-2 mb-1 rounded-lg overflow-hidden animate-fade-in"
+      style={{
+        background: "hsl(218 55% 8%)",
+        border: "1px solid hsl(140 50% 22% / 0.5)",
+        boxShadow: "inset 0 2px 8px hsl(220 60% 2% / 0.6)",
+        position: "relative",
+      }}
+    >
+      {/* Scanline overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none z-10 rounded-lg"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(0 0% 0% / 0.06) 2px, hsl(0 0% 0% / 0.06) 4px)",
+        }}
+      />
+      <div
+        ref={scrollRef}
+        className="relative z-20 px-2.5 py-1.5 max-h-[52px] overflow-hidden flex flex-col justify-end gap-0.5"
+      >
+        {visibleHistory.length === 0 && !partial && (
+          <span
+            className="font-mono-display text-[9px] italic"
+            style={{ color: "hsl(140 50% 25%)" }}
+          >
+            Listening…
+          </span>
+        )}
+        {visibleHistory.map((line, i) => (
+          <span
+            key={i}
+            className="font-mono-display text-[9px] leading-tight block truncate"
+            style={{ color: "hsl(140 70% 52%)", textShadow: "0 0 6px hsl(140 70% 52% / 0.4)" }}
+          >
+            {i === 0 && visibleHistory.length > 1 ? "" : "▌ "}{line}
+          </span>
+        ))}
+        {partial && (
+          <span
+            className="font-mono-display text-[9px] leading-tight italic block truncate"
+            style={{ color: "hsl(140 60% 32%)" }}
+          >
+            {partial}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const RadioScreen = ({
   channelA,
   channelB,
@@ -244,6 +319,11 @@ const RadioScreen = ({
   onChannelANameChange,
   onChannelBNameChange,
   myCallsign = "",
+  captionsEnabled = false,
+  onToggleCaptions,
+  partialCaption = "",
+  captionHistory = [],
+  captionsSupported = true,
 }: RadioScreenProps) => {
   const [animatedRssi, setAnimatedRssi] = useState(rssi);
 
@@ -424,6 +504,12 @@ const RadioScreen = ({
           onClick={() => onActiveChannelChange("B")}
         />
 
+
+        {/* Caption panel — shown when CC is active */}
+        {captionsEnabled && (
+          <CaptionPanel history={captionHistory} partial={partialCaption} />
+        )}
+
         {/* Bottom bar */}
         <div className="flex items-center px-3 py-1 border-t border-white/[0.06]">
           {["VOX", "APRS", "MO", "TW"].map((tag, i) => (
@@ -437,6 +523,38 @@ const RadioScreen = ({
             </span>
           ))}
           <div className="flex-1" />
+          {/* CC toggle button */}
+          {captionsSupported && (
+            <button
+              onClick={onToggleCaptions}
+              className="flex items-center gap-0.5 mr-2 transition-all duration-150"
+              title="Toggle Closed Captions"
+              aria-label="Toggle closed captions"
+            >
+              <Captions
+                className="h-3 w-3"
+                style={
+                  captionsEnabled
+                    ? {
+                        color: "hsl(140 70% 52%)",
+                        filter: "drop-shadow(0 0 4px hsl(140 70% 52% / 0.8))",
+                      }
+                    : { color: "hsl(0 0% 25%)" }
+                }
+              />
+              {captionsEnabled && (
+                <span
+                  className="font-mono-display text-[7px] font-black"
+                  style={{
+                    color: "hsl(140 70% 52%)",
+                    textShadow: "0 0 4px hsl(140 70% 52% / 0.8)",
+                  }}
+                >
+                  ●
+                </span>
+              )}
+            </button>
+          )}
           <span className="font-mono-display text-[9px] text-white/25">🔒</span>
         </div>
       </div>
