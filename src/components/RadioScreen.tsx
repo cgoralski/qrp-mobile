@@ -250,7 +250,7 @@ const ChannelBlock = ({
 };
 
 
-/* ── Caption Panel — single row, fills left→right, trims oldest chars ── */
+/* ── Caption Panel — single row, types letter-by-letter ── */
 const CaptionPanel = ({
   history,
   partial,
@@ -258,15 +258,38 @@ const CaptionPanel = ({
   history: string[];
   partial: string;
 }) => {
-  const allText = [...history, partial].filter(Boolean).join(" ").trim();
-
-  // Show the last ~34 characters so the row is always full on the right
   const CHARS_PER_ROW = 34;
-  const display = allText.length > CHARS_PER_ROW
-    ? allText.slice(allText.length - CHARS_PER_ROW)
-    : allText;
+  // The "target" is the full string we want to display
+  const targetText = [...history, partial].filter(Boolean).join(" ").trim();
 
-  const isEmpty = !allText;
+  // displayText animates toward targetText one character at a time
+  const [displayText, setDisplayText] = useState("");
+  const targetRef = useRef(targetText);
+  targetRef.current = targetText;
+
+  useEffect(() => {
+    // If target shrank (e.g. CC was reset), snap immediately
+    if (targetText.length < displayText.length) {
+      setDisplayText(targetText);
+      return;
+    }
+
+    if (displayText === targetText) return;
+
+    // Type the next character after a short delay
+    const timer = setTimeout(() => {
+      setDisplayText(targetRef.current.slice(0, displayText.length + 1));
+    }, 28); // ~36 chars/sec — fast but clearly animated
+
+    return () => clearTimeout(timer);
+  }, [displayText, targetText]);
+
+  // Show only the last CHARS_PER_ROW characters
+  const display = displayText.length > CHARS_PER_ROW
+    ? displayText.slice(displayText.length - CHARS_PER_ROW)
+    : displayText;
+
+  const isEmpty = !displayText;
 
   return (
     <div
