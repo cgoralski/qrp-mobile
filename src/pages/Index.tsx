@@ -225,23 +225,47 @@ const Index = () => {
   const handleDigit = useCallback(
     (digit: string) => {
       if (digit === "*" || digit === "#") return;
+      // Strip existing decimal for counting raw digits
+      const rawDigits = inputBuffer.replace(".", "");
+      const hasDot = inputBuffer.includes(".");
+      const intPart = hasDot ? inputBuffer.split(".")[0] : inputBuffer;
+      const decPart = hasDot ? inputBuffer.split(".")[1] ?? "" : null;
+
+      // Allow up to 3 integer digits, then up to 4 decimal digits
+      if (!hasDot && rawDigits.length >= 3) return; // integer full, need decimal first
+      if (hasDot && (decPart?.length ?? 0) >= 4) return; // decimal full
+
       const next = inputBuffer + digit;
-      if (next.length <= 8) {
-        setInputBuffer(next);
-        const raw = next.length > 3 ? next.slice(0, 3) + "." + next.slice(3) : next;
-        setActiveFreq(raw);
-      }
+      setInputBuffer(next);
+      // Format: insert dot after 3 integer digits
+      const stripped = next.replace(".", "");
+      const raw = stripped.length > 3
+        ? stripped.slice(0, 3) + "." + stripped.slice(3)
+        : stripped;
+      setActiveFreq(raw);
     },
     [inputBuffer, setActiveFreq]
   );
+
+  const handleDecimal = useCallback(() => {
+    if (inputBuffer.includes(".")) return; // already has a dot
+    // Pad integer part to 3 digits before inserting dot
+    const padded = inputBuffer.padStart(3, "0");
+    const next = padded + ".";
+    setInputBuffer(next);
+    setActiveFreq(next);
+  }, [inputBuffer, setActiveFreq]);
 
   const handleBackspace = useCallback(() => {
     const next = inputBuffer.slice(0, -1);
     setInputBuffer(next);
     if (next.length === 0) {
-      setActiveFreq("000.00000");
+      setActiveFreq("000.0000");
     } else {
-      const raw = next.length > 3 ? next.slice(0, 3) + "." + next.slice(3) : next;
+      const stripped = next.replace(".", "");
+      const raw = stripped.length > 3
+        ? stripped.slice(0, 3) + "." + stripped.slice(3)
+        : stripped;
       setActiveFreq(raw);
     }
   }, [inputBuffer, setActiveFreq]);
@@ -355,6 +379,7 @@ const Index = () => {
               {/* Keypad */}
               <NumPad
                 onDigit={handleDigit}
+                onDecimal={handleDecimal}
                 onBackspace={handleBackspace}
                 onEnter={handleEnter}
               />
