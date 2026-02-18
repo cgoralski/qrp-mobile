@@ -259,6 +259,24 @@ const Index = () => {
             RADIO<span className="text-primary text-glow">LINK</span>
           </span>
         </div>
+
+        {/* Callsign — centred between logo and status pill */}
+        <div className="absolute left-1/2 -translate-x-1/2">
+          {myCallsign.trim().length >= 3 ? (
+            <span
+              className="font-mono-display font-black tracking-[0.18em]"
+              style={{
+                fontSize: "13px",
+                color: "hsl(0 0% 98%)",
+                textShadow:
+                  "0 0 4px hsl(200 80% 90% / 0.5), 0 0 12px hsl(200 70% 80% / 0.25)",
+              }}
+            >
+              {myCallsign}
+            </span>
+          ) : null}
+        </div>
+
         <ConnectionStatus connected={false} />
       </header>
 
