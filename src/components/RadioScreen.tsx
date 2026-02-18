@@ -292,7 +292,7 @@ const CaptionPanel = ({
   const isEmpty = !displayText;
 
   return (
-    <div className="flex items-center overflow-hidden">
+    <div className="flex items-center justify-end overflow-hidden w-full">
       {isEmpty ? (
         <span
           className="font-mono-display text-[12px] italic"
