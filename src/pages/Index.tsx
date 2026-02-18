@@ -11,6 +11,62 @@ import ContactsScreen from "@/components/ContactsScreen";
 import SettingsScreen from "@/components/SettingsScreen";
 import { useCaptions } from "@/hooks/use-captions";
 
+/* ── Header Caption Panel — inline live CC text for the top bar ── */
+const HeaderCaptionPanel = ({
+  history,
+  partial,
+}: {
+  history: string[];
+  partial: string;
+}) => {
+  const targetText = [...history, partial].filter(Boolean).join(" ").trim();
+  const [displayText, setDisplayText] = useState("");
+  const targetRef = useRef(targetText);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  targetRef.current = targetText;
+
+  useEffect(() => {
+    if (targetText.length < displayText.length) { setDisplayText(targetText); return; }
+    if (displayText === targetText) return;
+    const timer = setTimeout(() => {
+      setDisplayText(targetRef.current.slice(0, displayText.length + 1));
+    }, 28);
+    return () => clearTimeout(timer);
+  }, [displayText, targetText]);
+
+  useEffect(() => {
+    if (!containerRef.current || !textRef.current) return;
+    const overflow = textRef.current.scrollWidth - containerRef.current.clientWidth;
+    textRef.current.style.transform = overflow > 0 ? `translateX(-${overflow}px)` : "translateX(0)";
+  }, [displayText]);
+
+  return (
+    <div ref={containerRef} className="w-full overflow-hidden">
+      {!displayText ? (
+        <span className="font-mono-display text-[11px] italic" style={{ color: "hsl(140 35% 40%)" }}>
+          Listening…
+        </span>
+      ) : (
+        <span
+          ref={textRef}
+          className="font-mono-display text-[13px] font-semibold"
+          style={{
+            color: "hsl(0 0% 97%)",
+            whiteSpace: "nowrap",
+            letterSpacing: "0.01em",
+            display: "inline-block",
+            transformOrigin: "left center",
+            textShadow: "0 0 8px hsl(0 0% 100% / 0.3)",
+          }}
+        >
+          {displayText}
+        </span>
+      )}
+    </div>
+  );
+};
+
 /* ── Decorative side button used on the radio body ── */
 const SideButton = ({
   label,
@@ -246,6 +302,30 @@ const Index = () => {
             QRP<span className="text-primary text-glow">MOBILE</span>
           </span>
         </div>
+
+        {/* CC pill — floats in top bar when captions are active */}
+        {captions.isActive && (
+          <div
+            className="flex-1 mx-3 overflow-hidden"
+            style={{ maxWidth: "200px" }}
+          >
+            <div
+              className="flex items-center px-3 py-1 rounded-full overflow-hidden"
+              style={{
+                background: "hsl(210 20% 10% / 0.55)",
+                backdropFilter: "blur(16px) saturate(1.5)",
+                WebkitBackdropFilter: "blur(16px) saturate(1.5)",
+                border: "1px solid hsl(0 0% 100% / 0.1)",
+                boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.08), 0 2px 8px hsl(220 30% 4% / 0.4)",
+              }}
+            >
+              <HeaderCaptionPanel
+                history={captions.captionHistory}
+                partial={captions.partialText}
+              />
+            </div>
+          </div>
+        )}
 
         <ConnectionStatus connected={false} />
       </header>
