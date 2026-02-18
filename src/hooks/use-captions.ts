@@ -32,6 +32,8 @@ export interface UseCaptionsReturn {
   partialText: string;
   captionHistory: string[];
   toggle: () => void;
+  setLang: (lang: string) => void;
+  lang: string;
   error: string | null;
 }
 
@@ -50,6 +52,18 @@ export function useCaptions(): UseCaptionsReturn {
   const [partialText, setPartialText] = useState("");
   const [captionHistory, setCaptionHistory] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [lang, setLangState] = useState<string>(
+    () => localStorage.getItem("captionsLang") ?? "en-US"
+  );
+
+  const setLang = useCallback((newLang: string) => {
+    localStorage.setItem("captionsLang", newLang);
+    setLangState(newLang);
+    // If currently active, restart recognition with new language
+    if (shouldRunRef.current && recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  }, []);
 
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const shouldRunRef = useRef(false);
@@ -60,8 +74,8 @@ export function useCaptions(): UseCaptionsReturn {
     const recognition = new SpeechRecognitionImpl();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
-    recognition.maxAlternatives = 1;
+    recognition.lang = localStorage.getItem("captionsLang") ?? "en-US";
+    recognition.maxAlternatives = 3;
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -72,16 +86,28 @@ export function useCaptions(): UseCaptionsReturn {
       let partial = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
-        const transcript = result[0].transcript.trim();
+
+        // Pick the alternative with the highest confidence score
+        let bestTranscript = result[0].transcript.trim();
+        let bestConfidence = result[0].confidence ?? 0;
+        for (let a = 1; a < result.length; a++) {
+          const alt = result[a];
+          if ((alt.confidence ?? 0) > bestConfidence) {
+            bestConfidence = alt.confidence ?? 0;
+            bestTranscript = alt.transcript.trim();
+          }
+        }
+
         if (result.isFinal) {
-          if (transcript) {
+          // Skip commits with very low confidence (below ~40%)
+          if (bestTranscript && (bestConfidence === 0 || bestConfidence >= 0.4)) {
             setCaptionHistory((prev) => {
-              const next = [...prev, transcript];
+              const next = [...prev, bestTranscript];
               return next.slice(-MAX_HISTORY);
             });
           }
         } else {
-          partial = transcript;
+          partial = bestTranscript;
         }
       }
       setPartialText(partial);
@@ -154,6 +180,9 @@ export function useCaptions(): UseCaptionsReturn {
     partialText,
     captionHistory,
     toggle,
+    setLang,
+    lang,
     error,
   };
 }
+

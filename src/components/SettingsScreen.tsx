@@ -10,6 +10,8 @@ interface ImportResult { inserted: number; total?: number; error?: string; }
 interface SettingsScreenProps {
   myCallsign: string;
   onCallsignChange: (value: string) => void;
+  captionsLang: string;
+  onCaptionsLangChange: (lang: string) => void;
 }
 
 const EDGE_FN_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/import-chirp-csv`;
@@ -173,7 +175,7 @@ async function detectCountry(): Promise<{ country: string }> {
 }
 
 /* ── Main component ── */
-const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) => {
+const SettingsScreen = ({ myCallsign, onCallsignChange, captionsLang, onCaptionsLangChange }: SettingsScreenProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Callsign draft — only committed on Save
@@ -378,6 +380,37 @@ const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) =
             </div>
           )}
         </div>
+      </Section>
+
+      {/* ── Closed Captions ── */}
+      <Section title="CLOSED CAPTIONS" defaultOpen={false}>
+        <SelectField
+          label="SPEECH LANGUAGE"
+          value={captionsLang}
+          onChange={onCaptionsLangChange}
+          options={[
+            { value: "en-US", label: "🇺🇸 English (US)" },
+            { value: "en-GB", label: "🇬🇧 English (UK)" },
+            { value: "en-AU", label: "🇦🇺 English (Australia)" },
+            { value: "en-CA", label: "🇨🇦 English (Canada)" },
+            { value: "en-NZ", label: "🇳🇿 English (New Zealand)" },
+            { value: "en-ZA", label: "🇿🇦 English (South Africa)" },
+            { value: "fr-FR", label: "🇫🇷 French" },
+            { value: "de-DE", label: "🇩🇪 German" },
+            { value: "es-ES", label: "🇪🇸 Spanish (Spain)" },
+            { value: "es-US", label: "🇺🇸 Spanish (US)" },
+            { value: "it-IT", label: "🇮🇹 Italian" },
+            { value: "nl-NL", label: "🇳🇱 Dutch" },
+            { value: "pt-BR", label: "🇧🇷 Portuguese (Brazil)" },
+            { value: "pt-PT", label: "🇵🇹 Portuguese (Portugal)" },
+            { value: "ja-JP", label: "🇯🇵 Japanese" },
+            { value: "zh-CN", label: "🇨🇳 Chinese (Mandarin)" },
+            { value: "ko-KR", label: "🇰🇷 Korean" },
+          ]}
+        />
+        <p className="tab-meta mt-2 opacity-60 leading-relaxed">
+          Matching your locale improves recognition accuracy for regional accents and pronunciation.
+        </p>
       </Section>
 
       {/* ── Location ── */}
