@@ -201,10 +201,10 @@ const RadioScreen = ({
       <div
         className="w-full rounded-xl overflow-hidden relative"
         style={{
-          background: "linear-gradient(180deg, hsl(220 15% 7%), hsl(220 12% 5%))",
-          border: "1px solid hsl(220 12% 8%)",
+          background: "linear-gradient(180deg, hsl(210 28% 11%), hsl(215 24% 8%))",
+          border: "1px solid hsl(215 20% 13%)",
           boxShadow:
-            "inset 0 3px 10px hsl(220 30% 2% / 0.9), inset 0 1px 4px hsl(220 20% 2% / 0.6)",
+            "inset 0 3px 10px hsl(220 30% 2% / 0.9), inset 0 1px 4px hsl(220 20% 2% / 0.6), inset 0 0 40px hsl(210 40% 8% / 0.6)",
         }}
       >
         {/* CRT scanline overlay */}
