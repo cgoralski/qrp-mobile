@@ -337,22 +337,22 @@ const Index = () => {
               <SideButton label="PWR" />
             </div>
             </div>
-            {/* ── Left taper bevel — CSS gradient strip peaking at chassis edge ── */}
+            {/* ── Left taper bevel — starts at MENU button level ── */}
             <div
               style={{
                 position: "absolute",
                 left: 0,
-                top: "30%",
+                top: "52%",
                 bottom: "3%",
-                width: "18%",
+                width: "10%",
                 background:
                   "linear-gradient(to right, " +
                   "rgba(0,0,0,0) 0%, " +
-                  "rgba(0,0,0,0.12) 22%, " +
-                  "rgba(190,190,190,0.65) 31%, " +
-                  "rgba(255,255,255,0.20) 34%, " +
-                  "rgba(0,0,0,0.38) 40%, " +
-                  "rgba(0,0,0,0) 62%)",
+                  "rgba(0,0,0,0.18) 18%, " +
+                  "rgba(210,210,210,0.82) 28%, " +
+                  "rgba(255,255,255,0.28) 34%, " +
+                  "rgba(0,0,0,0.45) 42%, " +
+                  "rgba(0,0,0,0) 65%)",
                 pointerEvents: "none",
                 zIndex: 50,
               }}
@@ -362,17 +362,17 @@ const Index = () => {
               style={{
                 position: "absolute",
                 right: 0,
-                top: "30%",
+                top: "52%",
                 bottom: "3%",
-                width: "18%",
+                width: "10%",
                 background:
                   "linear-gradient(to left, " +
                   "rgba(0,0,0,0) 0%, " +
-                  "rgba(0,0,0,0.12) 22%, " +
-                  "rgba(190,190,190,0.65) 31%, " +
-                  "rgba(255,255,255,0.20) 34%, " +
-                  "rgba(0,0,0,0.38) 40%, " +
-                  "rgba(0,0,0,0) 62%)",
+                  "rgba(0,0,0,0.18) 18%, " +
+                  "rgba(210,210,210,0.82) 28%, " +
+                  "rgba(255,255,255,0.28) 34%, " +
+                  "rgba(0,0,0,0.45) 42%, " +
+                  "rgba(0,0,0,0) 65%)",
                 pointerEvents: "none",
                 zIndex: 50,
               }}
