@@ -109,7 +109,7 @@ export const SwipeToDelete = ({
     <div
       className={`relative ${className}`}
       style={{
-        maxHeight: collapsed ? 0 : "200px",
+        maxHeight: collapsed ? 0 : undefined,
         opacity: collapsed ? 0 : 1,
         overflow: "hidden",
         transition: collapsed
