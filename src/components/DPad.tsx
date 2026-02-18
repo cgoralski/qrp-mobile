@@ -43,8 +43,8 @@ const DPad = ({
       className="flex flex-col items-center justify-center rounded-md transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
       style={{
         ...navButtonStyle("side"),
-        width: "48px",
-        height: "38px",
+        width: "56px",
+        height: "44px",
       }}
     >
       <span className="font-mono-display text-[12px] font-bold text-white/80 leading-none">{label}</span>
@@ -64,8 +64,8 @@ const DPad = ({
       className="flex items-center justify-center rounded-sm transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
       style={{
         ...navButtonStyle("side"),
-        width: "38px",
-        height: "30px",
+        width: "44px",
+        height: "36px",
         ...extraStyle,
       }}
     >
@@ -102,8 +102,8 @@ const DPad = ({
             className="flex items-center justify-center rounded-md transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
             style={{
               ...navButtonStyle("center"),
-              width: "42px",
-              height: "34px",
+              width: "50px",
+              height: "40px",
             }}
           >
             <span className="font-mono-display text-[13px] font-black text-blue-300/90 tracking-wider">OK</span>
