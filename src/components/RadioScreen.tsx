@@ -223,7 +223,7 @@ const ChannelBlock = ({
         <span className="font-mono-display text-[11px] font-semibold tracking-wider text-white/40">
           {modeLeft}
         </span>
-        <span className="font-mono-display text-[11px] font-semibold tracking-wider text-white/40">
+        <span className="font-mono-display text-[11px] font-semibold tracking-wider text-white/40 pr-2">
           {modeRight}
         </span>
       </div>
