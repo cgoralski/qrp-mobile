@@ -23,10 +23,10 @@ interface RadioScreenProps {
 }
 
 const formatFreq = (value: string): { main: string } => {
-  if (!value) return { main: "000.000" };
+  if (!value) return { main: "000.0000" };
   const parts = value.split(".");
   const integer = parts[0].padStart(3, "0");
-  const decimal = (parts[1] || "").padEnd(3, "0").slice(0, 3);
+  const decimal = (parts[1] || "").padEnd(4, "0").slice(0, 4);
   return { main: `${integer}.${decimal}` };
 };
 
