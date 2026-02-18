@@ -425,11 +425,8 @@ const Index = () => {
                           {/* Pulse ring — only when actively listening */}
                           {captions.isListening && (
                             <span
-                              className="absolute inset-0 rounded-full"
-                              style={{
-                                background: "hsl(140 70% 52% / 0.35)",
-                                animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite",
-                              }}
+                              className="absolute inset-0 rounded-full animate-ping"
+                              style={{ background: "hsl(140 70% 52% / 0.35)" }}
                             />
                           )}
                           {/* Core dot */}
