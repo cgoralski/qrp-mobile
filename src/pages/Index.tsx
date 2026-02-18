@@ -293,7 +293,7 @@ const Index = () => {
               <DPad />
 
               {/* Keypad */}
-              <div className="px-4">
+              <div className="px-10">
                 <NumPad
                   onDigit={handleDigit}
                   onDecimal={handleDecimal}
