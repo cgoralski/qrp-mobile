@@ -291,12 +291,14 @@ const Index = () => {
               <DPad />
 
               {/* Keypad */}
-              <NumPad
-                onDigit={handleDigit}
-                onDecimal={handleDecimal}
-                onBackspace={handleBackspace}
-                onEnter={handleEnter}
-              />
+              <div className="px-4">
+                <NumPad
+                  onDigit={handleDigit}
+                  onDecimal={handleDecimal}
+                  onBackspace={handleBackspace}
+                  onEnter={handleEnter}
+                />
+              </div>
 
               {/* ── Speaker grille ── */}
               <div
