@@ -215,14 +215,6 @@ const RadioScreen = ({
               "repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(0 0% 0% / 0.13) 2px, hsl(0 0% 0% / 0.13) 4px)",
           }}
         />
-        {/* Green phosphor tint */}
-        <div
-          className="absolute inset-0 pointer-events-none z-10 rounded-xl"
-          style={{
-            background: "hsl(140 60% 40% / 0.04)",
-            mixBlendMode: "screen",
-          }}
-        />
         {/* Vignette / inner glow */}
         <div
           className="absolute inset-0 pointer-events-none z-10 rounded-xl"
