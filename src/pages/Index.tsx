@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { Radio, Settings, BookUser } from "lucide-react";
+import { Radio, Settings, BookUser, Radio as RadioIcon, Map } from "lucide-react";
+import type { TabId } from "@/components/BottomTabBar";
 import RadioScreen from "@/components/RadioScreen";
 import NumPad from "@/components/NumPad";
 import DPad from "@/components/DPad";
@@ -173,7 +174,7 @@ const Index = () => {
   const [channelB, setChannelB] = useState("435.00000");
   const [activeChannel, setActiveChannel] = useState<"A" | "B">("A");
   const [inputBuffer, setInputBuffer] = useState("");
-  const [activeTab, setActiveTab] = useState<"voice" | "aprs" | "contacts" | "settings">("voice");
+  const [activeTab, setActiveTab] = useState<TabId>("voice");
   const [isTransmitting, setIsTransmitting] = useState(false);
   const [channelAName, setChannelAName] = useState("REPEATER 1");
   const [channelBName, setChannelBName] = useState("CALLING CH");
@@ -336,6 +337,18 @@ const Index = () => {
           <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground gap-3">
             <BookUser className="h-8 w-8 opacity-30" />
             <span className="font-mono-display text-xs tracking-wider">CONTACTS</span>
+            <span className="text-[11px] text-muted-foreground/60">Coming soon</span>
+          </div>
+        ) : activeTab === "scanner" ? (
+          <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground gap-3">
+            <RadioIcon className="h-8 w-8 opacity-30" />
+            <span className="font-mono-display text-xs tracking-wider">SCANNER</span>
+            <span className="text-[11px] text-muted-foreground/60">Coming soon</span>
+          </div>
+        ) : activeTab === "map" ? (
+          <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground gap-3">
+            <Map className="h-8 w-8 opacity-30" />
+            <span className="font-mono-display text-xs tracking-wider">MAP</span>
             <span className="text-[11px] text-muted-foreground/60">Coming soon</span>
           </div>
         ) : (
