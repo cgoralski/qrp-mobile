@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Search, Radio, UserPlus, X, Check, ChevronRight } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Search, Radio, UserPlus, X, Check, ChevronRight, Trash2 } from "lucide-react";
 
 interface Contact {
   id: string;
@@ -37,6 +37,225 @@ interface ContactsScreenProps {
   activeChannel: "A" | "B";
 }
 
+/* ── Swipeable contact row ── */
+interface ContactRowProps {
+  contact: Contact;
+  isTuned: boolean;
+  onTune: () => void;
+  onDelete: () => void;
+}
+
+const SWIPE_THRESHOLD = 60; // px to reveal delete zone
+const DELETE_THRESHOLD = 120; // px to auto-confirm delete
+
+const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => {
+  const groupColor = GROUP_COLORS[contact.group ?? ""] ?? "hsl(215 15% 42%)";
+
+  // Swipe state
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const [swipeX, setSwipeX] = useState(0); // negative = swiped left
+  const [confirming, setConfirming] = useState(false);
+  const isDragging = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isDragging.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+    // Only track horizontal swipes that are clearly more horizontal than vertical
+    if (!isDragging.current && dy > 8) {
+      // mostly vertical — cancel
+      touchStartX.current = null;
+      return;
+    }
+    if (Math.abs(dx) > 6) isDragging.current = true;
+    if (dx < 0) {
+      // clamp leftward swipe to -DELETE_THRESHOLD
+      setSwipeX(Math.max(dx, -DELETE_THRESHOLD));
+    } else if (swipeX < 0) {
+      // allow swiping back right
+      setSwipeX(Math.min(0, swipeX + (dx > 0 ? Math.abs(dx) : 0)));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeX <= -DELETE_THRESHOLD) {
+      // full swipe → instant confirm
+      setSwipeX(-SWIPE_THRESHOLD);
+      setConfirming(true);
+    } else if (swipeX <= -SWIPE_THRESHOLD) {
+      // partial swipe → snap to reveal delete button
+      setSwipeX(-SWIPE_THRESHOLD);
+      setConfirming(false);
+    } else {
+      // not far enough → snap back
+      setSwipeX(0);
+      setConfirming(false);
+    }
+    touchStartX.current = null;
+    isDragging.current = false;
+  };
+
+  const handleRowClick = () => {
+    if (swipeX < -8) {
+      // row is swiped open — close it instead of tuning
+      setSwipeX(0);
+      setConfirming(false);
+      return;
+    }
+    onTune();
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirming) {
+      onDelete();
+    } else {
+      setConfirming(true);
+    }
+  };
+
+  const handleCancelConfirm = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSwipeX(0);
+    setConfirming(false);
+  };
+
+  const revealWidth = Math.abs(swipeX);
+  const deleteZoneVisible = revealWidth >= 8;
+
+  return (
+    <div className="relative overflow-hidden" style={{ borderColor: "hsl(215 10% 13%)" }}>
+      {/* ── Delete zone (revealed behind row) ── */}
+      <div
+        className="absolute inset-y-0 right-0 flex items-center"
+        style={{
+          width: `${Math.max(revealWidth, confirming ? SWIPE_THRESHOLD : 0)}px`,
+          background: confirming ? "hsl(0 75% 42%)" : "hsl(0 60% 30%)",
+          transition: isDragging.current ? "none" : "width 0.2s ease, background 0.15s ease",
+        }}
+      >
+        {confirming ? (
+          /* Confirmation state */
+          <div className="flex items-center gap-1 w-full px-2">
+            <button
+              onClick={handleDeleteClick}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5"
+            >
+              <Check className="h-3.5 w-3.5" style={{ color: "hsl(0 0% 95%)" }} />
+              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 85%)" }}>
+                YES
+              </span>
+            </button>
+            <div style={{ width: "1px", alignSelf: "stretch", background: "hsl(0 60% 50% / 0.4)" }} />
+            <button
+              onClick={handleCancelConfirm}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5"
+            >
+              <X className="h-3.5 w-3.5" style={{ color: "hsl(0 0% 75%)" }} />
+              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 65%)" }}>
+                NO
+              </span>
+            </button>
+          </div>
+        ) : deleteZoneVisible ? (
+          /* Initial swipe reveal */
+          <button
+            onClick={handleDeleteClick}
+            className="flex flex-col items-center justify-center gap-0.5 w-full h-full"
+          >
+            <Trash2 className="h-3.5 w-3.5" style={{ color: "hsl(0 0% 85%)" }} />
+            {revealWidth > 44 && (
+              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 75%)" }}>
+                DEL
+              </span>
+            )}
+          </button>
+        ) : null}
+      </div>
+
+      {/* ── Contact row (slides left on swipe) ── */}
+      <button
+        onClick={handleRowClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 active:brightness-125 relative z-10"
+        style={{
+          background: isTuned ? "hsl(185 80% 55% / 0.08)" : "hsl(220 12% 11%)",
+          transform: `translateX(${swipeX}px)`,
+          transition: isDragging.current ? "none" : "transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        }}
+      >
+        {/* Group colour dot */}
+        <div
+          className="shrink-0 rounded-full"
+          style={{
+            width: "6px",
+            height: "6px",
+            background: groupColor,
+            boxShadow: `0 0 6px ${groupColor}`,
+          }}
+        />
+
+        {/* Main info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2">
+            <span
+              className="font-mono-display text-[11px] font-bold tracking-wider"
+              style={{ color: isTuned ? "hsl(185 80% 65%)" : "hsl(185 60% 70%)" }}
+            >
+              {contact.callsign}
+            </span>
+            <span
+              className="font-mono-display text-[9px] tracking-wide truncate"
+              style={{ color: "hsl(215 15% 50%)" }}
+            >
+              {contact.name}
+            </span>
+          </div>
+          <div
+            className="font-mono-display text-[10px] tracking-wider mt-0.5"
+            style={{ color: isTuned ? "hsl(185 80% 55%)" : "hsl(200 20% 60%)" }}
+          >
+            {contact.frequency} MHz
+          </div>
+        </div>
+
+        {/* Tune indicator */}
+        <div className="shrink-0 flex items-center justify-center">
+          {isTuned ? (
+            <div
+              className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
+              style={{
+                background: "hsl(185 80% 55% / 0.15)",
+                border: "1px solid hsl(185 80% 55% / 0.35)",
+              }}
+            >
+              <Check className="h-3 w-3" style={{ color: "hsl(185 80% 65%)" }} />
+              <span
+                className="font-mono-display text-[8px] font-bold tracking-wider"
+                style={{ color: "hsl(185 80% 65%)" }}
+              >
+                TUNED
+              </span>
+            </div>
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" style={{ color: "hsl(215 15% 28%)" }} />
+          )}
+        </div>
+      </button>
+    </div>
+  );
+};
+
+/* ── Main screen ── */
 const ContactsScreen = ({ onTuneChannel, activeChannel }: ContactsScreenProps) => {
   const [contacts, setContacts] = useState<Contact[]>(DEFAULT_CONTACTS);
   const [query, setQuery] = useState("");
@@ -64,6 +283,11 @@ const ContactsScreen = ({ onTuneChannel, activeChannel }: ContactsScreenProps) =
     onTuneChannel(contact.frequency);
     setTunedId(contact.id);
     setTimeout(() => setTunedId(null), 1500);
+  };
+
+  const handleDelete = (id: string) => {
+    setContacts((prev) => prev.filter((c) => c.id !== id));
+    if (tunedId === id) setTunedId(null);
   };
 
   const handleAdd = () => {
@@ -271,88 +495,33 @@ const ContactsScreen = ({ onTuneChannel, activeChannel }: ContactsScreenProps) =
       </div>
 
       {/* Contact list */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      <div className="flex-1 overflow-y-auto overscroll-contain divide-y" style={{ borderColor: "hsl(215 10% 13%)" }}>
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground">
             <Radio className="h-6 w-6 opacity-20" />
             <span className="font-mono-display text-[10px] tracking-wider opacity-40">NO CONTACTS FOUND</span>
           </div>
         ) : (
-          <div className="divide-y" style={{ borderColor: "hsl(215 10% 13%)" }}>
-            {filtered.map((contact) => {
-              const isTuned = tunedId === contact.id;
-              const groupColor = GROUP_COLORS[contact.group ?? ""] ?? "hsl(215 15% 42%)";
-              return (
-                <button
-                  key={contact.id}
-                  onClick={() => handleTune(contact)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all duration-150 active:brightness-125"
-                  style={{
-                    background: isTuned ? "hsl(185 80% 55% / 0.08)" : "transparent",
-                  }}
-                >
-                  {/* Group colour dot */}
-                  <div
-                    className="shrink-0 rounded-full"
-                    style={{
-                      width: "6px",
-                      height: "6px",
-                      background: groupColor,
-                      boxShadow: `0 0 6px ${groupColor}`,
-                    }}
-                  />
-
-                  {/* Main info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <span
-                        className="font-mono-display text-[11px] font-bold tracking-wider"
-                        style={{ color: isTuned ? "hsl(185 80% 65%)" : "hsl(185 60% 70%)" }}
-                      >
-                        {contact.callsign}
-                      </span>
-                      <span
-                        className="font-mono-display text-[9px] tracking-wide truncate"
-                        style={{ color: "hsl(215 15% 50%)" }}
-                      >
-                        {contact.name}
-                      </span>
-                    </div>
-                    <div
-                      className="font-mono-display text-[10px] tracking-wider mt-0.5"
-                      style={{ color: isTuned ? "hsl(185 80% 55%)" : "hsl(200 20% 60%)" }}
-                    >
-                      {contact.frequency} MHz
-                    </div>
-                  </div>
-
-                  {/* Tune indicator */}
-                  <div className="shrink-0 flex items-center justify-center">
-                    {isTuned ? (
-                      <div
-                        className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
-                        style={{
-                          background: "hsl(185 80% 55% / 0.15)",
-                          border: "1px solid hsl(185 80% 55% / 0.35)",
-                        }}
-                      >
-                        <Check className="h-3 w-3" style={{ color: "hsl(185 80% 65%)" }} />
-                        <span
-                          className="font-mono-display text-[8px] font-bold tracking-wider"
-                          style={{ color: "hsl(185 80% 65%)" }}
-                        >
-                          TUNED
-                        </span>
-                      </div>
-                    ) : (
-                      <ChevronRight className="h-3.5 w-3.5" style={{ color: "hsl(215 15% 28%)" }} />
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          filtered.map((contact) => (
+            <ContactRow
+              key={contact.id}
+              contact={contact}
+              isTuned={tunedId === contact.id}
+              onTune={() => handleTune(contact)}
+              onDelete={() => handleDelete(contact.id)}
+            />
+          ))
         )}
+      </div>
+
+      {/* Hint */}
+      <div
+        className="flex items-center justify-center gap-1.5 py-1.5"
+        style={{ borderTop: "1px solid hsl(215 10% 13%)" }}
+      >
+        <span className="font-mono-display text-[8px] tracking-wider" style={{ color: "hsl(215 15% 30%)" }}>
+          ← SWIPE LEFT TO DELETE
+        </span>
       </div>
     </div>
   );
