@@ -349,7 +349,10 @@ const Index = () => {
                     captionsSupported={captions.isSupported}
                   />
                 </div>
-                <DPad onVm={captions.toggle} />
+                <DPad
+                  onVm={captions.toggle}
+                  onAb={() => setActiveChannel((ch) => ch === "A" ? "B" : "A")}
+                />
                 <div className="px-10">
                   <NumPad
                     onDigit={handleDigit}
