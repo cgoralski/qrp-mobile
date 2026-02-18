@@ -207,7 +207,7 @@ const SettingsScreen = () => {
       {/* ── Bundled Datasets ── */}
       <Section title="BUNDLED DATASETS">
         <div className="flex flex-col gap-2">
-          <p className="tab-meta leading-relaxed">
+          <p className="tab-body leading-relaxed">
             One-click import from the CSV files you uploaded. Replaces existing data for each country.
           </p>
           {BUNDLED_DATASETS.map(({ file, country, label }) => (
@@ -307,9 +307,7 @@ const SettingsScreen = () => {
             }}
           >
             {apiImporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Globe className="h-3 w-3" />}
-            <span className="font-mono-display text-[9px] font-bold tracking-wider">
-              {apiImporting ? "FETCHING…" : "FETCH & IMPORT"}
-            </span>
+            <span className="tab-callsign">{apiImporting ? "FETCHING…" : "FETCH & IMPORT"}</span>
           </button>
           <StatusBadge result={apiResult} />
         </div>
@@ -334,11 +332,11 @@ const SettingsScreen = () => {
                   <Database className="h-3 w-3 text-primary" />
                   <span className="tab-callsign tab-callsign-primary">TOTAL REPEATERS</span>
                 </div>
-                <span className="font-mono-display text-[11px] font-bold text-primary">{stats.total.toLocaleString()}</span>
+                <span className="tab-callsign tab-callsign-primary">{stats.total.toLocaleString()}</span>
               </div>
               {stats.byCountry.map(({ country, count }) => (
                 <div key={country} className="tab-card flex items-center justify-between px-2.5 py-1.5">
-                  <span className="tab-body text-sm text-muted-foreground">{country}</span>
+                  <span className="tab-body">{country}</span>
                   <span className="tab-callsign tab-callsign-primary">{count.toLocaleString()}</span>
                 </div>
               ))}
@@ -350,7 +348,7 @@ const SettingsScreen = () => {
       {/* ── Danger Zone ── */}
       <Section title="DANGER ZONE" defaultOpen={false}>
         <div className="flex flex-col gap-2.5">
-          <p className="tab-meta leading-relaxed">Delete all repeaters for a specific country.</p>
+          <p className="tab-body leading-relaxed">Delete all repeaters for a specific country.</p>
           <SelectField
             label="SELECT COUNTRY TO DELETE"
             value={deleteCountry}
@@ -368,9 +366,7 @@ const SettingsScreen = () => {
             }}
           >
             {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-            <span className="font-mono-display text-[9px] font-bold tracking-wider">
-              DELETE {deleteCountry ? deleteCountry.toUpperCase() : "SELECTED"} REPEATERS
-            </span>
+            <span className="tab-callsign">DELETE {deleteCountry ? deleteCountry.toUpperCase() : "SELECTED"} REPEATERS</span>
           </button>
         </div>
       </Section>
