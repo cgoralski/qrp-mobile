@@ -337,62 +337,46 @@ const Index = () => {
               <SideButton label="PWR" />
             </div>
             </div>
-            {/* ── Bevel overlay SVG — outside clip-path, draws rolled edges ── */}
-            <svg
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              style={{ zIndex: 50 }}
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                {/* Left edge: bright highlight outer → dark shadow → transparent */}
-                <linearGradient id="bevelLeft" x1="0" y1="0" x2="9" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%"   stopColor="hsl(0,0%,90%)" stopOpacity="0.8" />
-                  <stop offset="18%"  stopColor="hsl(0,0%,80%)" stopOpacity="0.20" />
-                  <stop offset="45%"  stopColor="hsl(0,0%,5%)"  stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="hsl(0,0%,5%)"  stopOpacity="0" />
-                </linearGradient>
-                {/* Right edge: mirrors left */}
-                <linearGradient id="bevelRight" x1="100" y1="0" x2="91" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%"   stopColor="hsl(0,0%,90%)" stopOpacity="0.8" />
-                  <stop offset="18%"  stopColor="hsl(0,0%,80%)" stopOpacity="0.20" />
-                  <stop offset="45%"  stopColor="hsl(0,0%,5%)"  stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="hsl(0,0%,5%)"  stopOpacity="0" />
-                </linearGradient>
-                {/* Bottom edge */}
-                <linearGradient id="bevelBottom" x1="0" y1="100" x2="0" y2="93" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%"   stopColor="hsl(0,0%,75%)" stopOpacity="0.45" />
-                  <stop offset="35%"  stopColor="hsl(0,0%,75%)" stopOpacity="0.12" />
-                  <stop offset="100%" stopColor="hsl(0,0%,5%)"  stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {/* Left tapered edge + bottom-left rounded corner */}
-              <path
-                d="M 0,32 L 3,40 L 6,50 L 7,95 Q 7,100 12,100"
-                fill="none"
-                stroke="url(#bevelLeft)"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {/* Right tapered edge + bottom-right rounded corner */}
-              <path
-                d="M 100,32 L 97,40 L 94,50 L 93,95 Q 93,100 88,100"
-                fill="none"
-                stroke="url(#bevelRight)"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {/* Bottom straight edge */}
-              <path
-                d="M 12,100 L 88,100"
-                fill="none"
-                stroke="url(#bevelBottom)"
-                strokeWidth="4"
-                strokeLinecap="round"
-              />
-            </svg>
+            {/* ── Left taper bevel — CSS gradient strip peaking at chassis edge ── */}
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: "30%",
+                bottom: "3%",
+                width: "18%",
+                background:
+                  "linear-gradient(to right, " +
+                  "rgba(0,0,0,0) 0%, " +
+                  "rgba(0,0,0,0.12) 22%, " +
+                  "rgba(190,190,190,0.65) 31%, " +
+                  "rgba(255,255,255,0.20) 34%, " +
+                  "rgba(0,0,0,0.38) 40%, " +
+                  "rgba(0,0,0,0) 62%)",
+                pointerEvents: "none",
+                zIndex: 50,
+              }}
+            />
+            {/* ── Right taper bevel — mirror of left ── */}
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: "30%",
+                bottom: "3%",
+                width: "18%",
+                background:
+                  "linear-gradient(to left, " +
+                  "rgba(0,0,0,0) 0%, " +
+                  "rgba(0,0,0,0.12) 22%, " +
+                  "rgba(190,190,190,0.65) 31%, " +
+                  "rgba(255,255,255,0.20) 34%, " +
+                  "rgba(0,0,0,0.38) 40%, " +
+                  "rgba(0,0,0,0) 62%)",
+                pointerEvents: "none",
+                zIndex: 50,
+              }}
+            />
           </div>
         ) : activeTab === "aprs" ? (
           <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
