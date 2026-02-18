@@ -315,7 +315,7 @@ const Index = () => {
             </div>
 
             {/* ── Main body column ── */}
-            <div className="flex flex-1 flex-col px-2 pb-2 gap-1 min-w-0">
+            <div className="flex flex-1 flex-col px-1 pb-2 gap-1 min-w-0">
               {/* Top sheen */}
               <div
                 className="absolute inset-x-12 pointer-events-none h-[1px] rounded-full"

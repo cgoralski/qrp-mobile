@@ -22,13 +22,12 @@ interface RadioScreenProps {
   captionsSupported?: boolean;
 }
 
-const formatFreq = (value: string): { main: string; sub: string } => {
-  if (!value) return { main: "000.000", sub: "00" };
+const formatFreq = (value: string): { main: string } => {
+  if (!value) return { main: "000.000" };
   const parts = value.split(".");
   const integer = parts[0].padStart(3, "0");
   const decimal = (parts[1] || "").padEnd(3, "0").slice(0, 3);
-  const sub = (parts[1] || "").slice(3, 5).padEnd(2, "0");
-  return { main: `${integer}.${decimal}`, sub };
+  return { main: `${integer}.${decimal}` };
 };
 
 const ChannelNameEditor = ({
@@ -171,10 +170,6 @@ const ChannelBlock = ({
         textShadow: "none",
       };
 
-  const activeSubStyle = isActive
-    ? { color: `${tintColor}bb`, textShadow: `0 0 6px ${tintColor}55` }
-    : { color: "hsl(0 0% 35%)" };
-
   return (
     <div
       className={`flex flex-col py-1 transition-all ${isActive ? "" : "opacity-60"}`}
@@ -200,7 +195,7 @@ const ChannelBlock = ({
 
       <div className="flex items-baseline gap-0 px-3">
         <span
-          className={`inline-flex h-[26px] w-[26px] items-center justify-center rounded-sm text-[14px] font-black mr-2 ${badgeColor}`}
+          className={`inline-flex h-[28px] w-[28px] items-center justify-center rounded-md text-[15px] font-black mr-3 ${badgeColor}`}
         >
           {label}
         </span>
@@ -209,12 +204,6 @@ const ChannelBlock = ({
           style={activeFreqStyle}
         >
           {freq.main}
-        </span>
-        <span
-          className="font-freq-display text-[21px] ml-0.5 transition-all duration-300"
-          style={activeSubStyle}
-        >
-          {freq.sub}
         </span>
       </div>
 
@@ -347,7 +336,7 @@ const RadioScreen = ({
   return (
     /* Outer bezel — textured dark hardware casing */
     <div
-      className="w-full rounded-[18px] p-[10px] relative"
+      className="w-full rounded-[18px] p-[6px] relative"
       style={{
         background:
           "linear-gradient(160deg, hsl(220 10% 17%) 0%, hsl(220 8% 12%) 50%, hsl(220 8% 9%) 100%)",
