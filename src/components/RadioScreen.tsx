@@ -213,8 +213,8 @@ const ChannelBlock = ({
         >
           {freq.main}
         </span>
-        {/* RSSI bar — to the right of the frequency */}
-        <div className="flex flex-col justify-end ml-3 pb-[3px]">
+        {/* RSSI bar — centered in remaining space between freq and right bezel */}
+        <div className="flex flex-1 items-end justify-center pb-[3px]">
           <RSSIBar level={rssi} label="RSSI" />
         </div>
       </div>
