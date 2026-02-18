@@ -133,7 +133,7 @@ const DPad = ({
             height: "44px",
           }}
         >
-          <CornerDownLeft className="h-4 w-4 text-white/80" />
+          <CornerDownLeft className="h-5 w-5 text-white/80" />
         </button>
         {sideBtn("CC", null, onVm)}
       </div>
