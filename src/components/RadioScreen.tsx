@@ -362,7 +362,7 @@ const RadioScreen = ({
       <div
         className="w-full rounded-xl overflow-hidden relative"
         style={{
-          background: "linear-gradient(180deg, hsl(218 55% 10%) 0%, hsl(220 52% 8%) 100%)",
+          background: "linear-gradient(180deg, hsl(220 8% 13%) 0%, hsl(220 6% 10%) 100%)",
           /*
            * All four chassis edges protrude forward of the screen.
            * All borders are dark — no light catching on any edge.
