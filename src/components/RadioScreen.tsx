@@ -231,6 +231,19 @@ const RadioScreen = ({
               "radial-gradient(ellipse at 50% 50%, transparent 55%, hsl(220 30% 2% / 0.45) 100%)",
           }}
         />
+        {/* RX green bloom — glows when receiving */}
+        <div
+          className="absolute inset-0 pointer-events-none z-10 rounded-xl transition-opacity duration-300"
+          style={{
+            opacity: !isTransmitting && animatedRssi > 3 ? 1 : 0,
+            background:
+              "radial-gradient(ellipse at 50% 40%, hsl(140 70% 45% / 0.14) 0%, hsl(140 60% 40% / 0.05) 50%, transparent 75%)",
+            boxShadow:
+              !isTransmitting && animatedRssi > 3
+                ? "inset 0 0 24px hsl(140 70% 45% / 0.08)"
+                : "none",
+          }}
+        />
         {/* TX red bloom — glows when transmitting */}
         <div
           className="absolute inset-0 pointer-events-none z-10 rounded-xl transition-opacity duration-150"
