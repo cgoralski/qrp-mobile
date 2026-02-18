@@ -352,6 +352,7 @@ const Index = () => {
                 <DPad
                   onVm={captions.toggle}
                   onAb={() => setActiveChannel((ch) => ch === "A" ? "B" : "A")}
+                  onBack={handleEnter}
                 />
                 <div className="px-10">
                   <NumPad
