@@ -48,10 +48,10 @@ const NumPad = ({ onDigit, onBackspace, onEnter }: NumPadProps) => {
                   boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.08), 0 2px 4px hsl(220 20% 4% / 0.5)",
                 }}
               >
-                <span className="font-mono-display text-base font-bold text-white/90 leading-none">
+                <span className="font-mono-display text-lg font-bold text-white/90 leading-none">
                   {key.label}
                 </span>
-                <span className="font-mono-display text-[9px] font-semibold tracking-wide text-blue-400/70 ml-1 leading-none">
+                <span className="font-mono-display text-[11px] font-semibold tracking-wide text-blue-400/70 ml-1.5 leading-none">
                   {key.sub}
                 </span>
               </button>
@@ -84,7 +84,7 @@ const NumPad = ({ onDigit, onBackspace, onEnter }: NumPadProps) => {
           aria-label="Backspace"
         >
           <Delete className="h-4 w-4 text-white/50" />
-          <span className="font-mono-display text-[10px] font-bold tracking-wider text-white/50">
+          <span className="font-mono-display text-[13px] font-bold tracking-wider text-white/50">
             DEL
           </span>
         </button>
@@ -100,7 +100,7 @@ const NumPad = ({ onDigit, onBackspace, onEnter }: NumPadProps) => {
           }}
           aria-label="Enter frequency"
         >
-          <span className="font-mono-display text-[10px] font-bold tracking-wider text-blue-400/80">
+          <span className="font-mono-display text-[13px] font-bold tracking-wider text-blue-400/80">
             ENT
           </span>
         </button>
