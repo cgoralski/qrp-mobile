@@ -94,7 +94,7 @@ const ChannelBlock = ({
 
   return (
     <div
-      className={`flex flex-col px-3 py-2 cursor-pointer transition-all ${
+      className={`flex flex-col px-3 py-1 cursor-pointer transition-all ${
         isActive ? "" : "opacity-60"
       }`}
       onClick={onClick}
@@ -119,13 +119,13 @@ const ChannelBlock = ({
           {label}
         </span>
         <span
-          className="font-freq-display text-[40px] leading-none transition-all duration-300 sm:text-[46px]"
+          className="font-freq-display text-[34px] leading-none transition-all duration-300 sm:text-[40px]"
           style={activeFreqStyle}
         >
           {freq.main}
         </span>
         <span
-          className="font-freq-display text-[20px] ml-0.5 transition-all duration-300 sm:text-[24px]"
+          className="font-freq-display text-[17px] ml-0.5 transition-all duration-300 sm:text-[20px]"
           style={activeSubStyle}
         >
           {freq.sub}
@@ -206,7 +206,7 @@ const RadioScreen = ({
         }}
       >
         {/* Top status icons */}
-        <div className="flex items-center gap-3 px-3 py-1.5 border-b border-white/[0.06]">
+        <div className="flex items-center gap-3 px-3 py-1 border-b border-white/[0.06]">
           <Zap className="h-3 w-3 text-red-400/70" />
           <span className="font-mono-display text-[10px] font-bold text-white/40">Z</span>
           <Music className="h-3 w-3 text-white/30" />
@@ -250,7 +250,7 @@ const RadioScreen = ({
         />
 
         {/* Bottom bar */}
-        <div className="flex items-center px-3 py-1.5 border-t border-white/[0.06]">
+        <div className="flex items-center px-3 py-1 border-t border-white/[0.06]">
           {["VOX", "APRS", "MO", "TW"].map((tag, i) => (
             <span
               key={tag}

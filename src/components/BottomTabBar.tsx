@@ -29,7 +29,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
+            className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 transition-colors ${
               isActive ? "text-primary" : "text-muted-foreground"
             }`}
           >
