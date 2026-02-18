@@ -123,7 +123,7 @@ const DPad = ({
       {/* Right side buttons: BACK + V/M */}
       <div className="flex flex-col gap-1">
         {sideBtn("↩", null, onBack)}
-        {sideBtn("V/M", null, onVm)}
+        {sideBtn("CC", null, onVm)}
       </div>
     </div>
   );
