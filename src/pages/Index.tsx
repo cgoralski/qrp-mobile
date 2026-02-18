@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Radio, Settings, BookUser, Radio as RadioIcon, Map } from "lucide-react";
 import type { TabId } from "@/components/BottomTabBar";
 import RadioScreen from "@/components/RadioScreen";
@@ -169,6 +169,8 @@ const SpeakerGrille = () => (
   </div>
 );
 
+const TAB_ORDER: TabId[] = ["voice", "aprs", "contacts", "scanner", "map", "settings"];
+
 const Index = () => {
   const [channelA, setChannelA] = useState("027.00000");
   const [channelB, setChannelB] = useState("435.00000");
@@ -178,6 +180,31 @@ const Index = () => {
   const [isTransmitting, setIsTransmitting] = useState(false);
   const [channelAName, setChannelAName] = useState("REPEATER 1");
   const [channelBName, setChannelBName] = useState("CALLING CH");
+
+  const swipeTouchStartX = useRef<number | null>(null);
+  const swipeTouchStartY = useRef<number | null>(null);
+
+  const handleSwipeTouchStart = (e: React.TouchEvent) => {
+    swipeTouchStartX.current = e.touches[0].clientX;
+    swipeTouchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleSwipeTouchEnd = (e: React.TouchEvent) => {
+    if (swipeTouchStartX.current === null || swipeTouchStartY.current === null) return;
+    const dx = swipeTouchStartX.current - e.changedTouches[0].clientX;
+    const dy = Math.abs(swipeTouchStartY.current - e.changedTouches[0].clientY);
+    // Only trigger if horizontal movement dominates and is > 50px
+    if (Math.abs(dx) > 50 && Math.abs(dx) > dy * 1.5) {
+      const currentIndex = TAB_ORDER.indexOf(activeTab);
+      if (dx > 0 && currentIndex < TAB_ORDER.length - 1) {
+        setActiveTab(TAB_ORDER[currentIndex + 1]); // swipe left → next
+      } else if (dx < 0 && currentIndex > 0) {
+        setActiveTab(TAB_ORDER[currentIndex - 1]); // swipe right → prev
+      }
+    }
+    swipeTouchStartX.current = null;
+    swipeTouchStartY.current = null;
+  };
 
   const setActiveFreq = activeChannel === "A" ? setChannelA : setChannelB;
 
@@ -225,7 +252,11 @@ const Index = () => {
       </header>
 
       {/* ── Radio body shell ── */}
-      <main className="flex flex-1 flex-col items-center justify-start px-0 py-1 max-w-sm mx-auto w-full overflow-hidden">
+      <main
+        className="flex flex-1 flex-col items-center justify-start px-0 py-1 max-w-sm mx-auto w-full overflow-hidden"
+        onTouchStart={handleSwipeTouchStart}
+        onTouchEnd={handleSwipeTouchEnd}
+      >
         {activeTab === "voice" ? (
           /* Outer radio chassis */
           <div
