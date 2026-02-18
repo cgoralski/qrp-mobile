@@ -244,21 +244,27 @@ const SettingsScreen = () => {
             <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden"
               onChange={e => { setCsvFile(e.target.files?.[0] ?? null); setCsvResult(null); }} />
           </div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <div
-              className="relative rounded-full transition-all"
-              style={{
-                width: "28px", height: "16px",
-                background: clearFirst ? "hsl(var(--primary) / 0.7)" : "hsl(var(--secondary))",
-                border: `1px solid ${clearFirst ? "hsl(var(--primary) / 0.9)" : "hsl(var(--border))"}`,
-              }}
-              onClick={() => setClearFirst(v => !v)}
-            >
-              <div className="absolute top-[2px] rounded-full transition-all"
-                style={{ width: "10px", height: "10px", background: "hsl(var(--foreground))", left: clearFirst ? "14px" : "2px" }} />
-            </div>
-            <span className="tab-meta">Replace existing data for this country</span>
-          </label>
+          <div className="flex flex-col gap-1">
+            <label className="flex items-center gap-2 cursor-pointer" onClick={() => setClearFirst(v => !v)}>
+              <div
+                className="relative rounded-full transition-all shrink-0"
+                style={{
+                  width: "28px", height: "16px",
+                  background: clearFirst ? "hsl(var(--primary) / 0.7)" : "hsl(var(--secondary))",
+                  border: `1px solid ${clearFirst ? "hsl(var(--primary) / 0.9)" : "hsl(var(--border))"}`,
+                }}
+              >
+                <div className="absolute top-[2px] rounded-full transition-all"
+                  style={{ width: "10px", height: "10px", background: "hsl(var(--foreground))", left: clearFirst ? "14px" : "2px" }} />
+              </div>
+              <span className="tab-meta">Replace existing data for this country</span>
+            </label>
+            <p className="tab-meta leading-relaxed pl-9" style={{ color: clearFirst ? "hsl(0 80% 65%)" : "hsl(var(--muted-foreground))", opacity: 0.85 }}>
+              {clearFirst
+                ? "⚠️ All existing records for this country will be deleted before import. For US imports, add states one-by-one with this OFF."
+                : "New records will be added alongside existing data. Use this when importing multiple files for the same country (e.g. US state-by-state)."}
+            </p>
+          </div>
           <button
             onClick={handleCsvImport}
             disabled={!csvFile || csvImporting}
