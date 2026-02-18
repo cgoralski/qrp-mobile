@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Mic, MessageSquare, Settings, BookUser, Radio, Map, ChevronUp, ChevronDown } from "lucide-react";
 
 export type TabId = "voice" | "aprs" | "contacts" | "scanner" | "map" | "settings";
@@ -19,6 +19,19 @@ const ALL_TABS = [
 
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const touchStartY = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return;
+    const delta = touchStartY.current - e.changedTouches[0].clientY;
+    if (delta > 40) setDrawerOpen(true);   // swipe up → open
+    if (delta < -40) setDrawerOpen(false); // swipe down → close
+    touchStartY.current = null;
+  };
 
   const handleSelect = (tab: TabId) => {
     onTabChange(tab);
@@ -38,6 +51,8 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
       {/* Slide-up drawer */}
       <div
         className="fixed left-0 right-0 z-50 transition-transform duration-300 ease-in-out"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         style={{
           bottom: "48px", // sit just above the bar
           transform: drawerOpen ? "translateY(0)" : "translateY(110%)",
@@ -93,6 +108,8 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
       {/* Slim persistent bottom bar */}
       <nav
         className="sticky bottom-0 z-50 flex items-center justify-center"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         style={{
           height: "48px",
           background: "linear-gradient(180deg, hsl(210 20% 8% / 0.88), hsl(210 20% 6% / 0.96))",
