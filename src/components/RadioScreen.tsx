@@ -127,7 +127,7 @@ const RSSIBar = ({ level }: { level: number }) => (
             className="transition-all duration-100"
             style={{
               width: isLast ? "6px" : "4px",
-              height: `${5 + Math.min(i, 8) * 1.6}px`,
+              height: `${5 + Math.min(i, 8) * 1.6 + (isLast ? 1.5 : 0)}px`,
               borderRadius: "0.5px",
               background: barColor,
             }}
