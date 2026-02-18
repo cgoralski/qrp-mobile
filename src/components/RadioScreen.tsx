@@ -250,70 +250,6 @@ const ChannelBlock = ({
 };
 
 
-/* ── Caption Panel — single row, types letter-by-letter ── */
-const CaptionPanel = ({
-  history,
-  partial,
-}: {
-  history: string[];
-  partial: string;
-}) => {
-  const targetText = [...history, partial].filter(Boolean).join(" ").trim();
-
-  const [displayText, setDisplayText] = useState("");
-  const targetRef = useRef(targetText);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
-  targetRef.current = targetText;
-
-  useEffect(() => {
-    if (targetText.length < displayText.length) {
-      setDisplayText(targetText);
-      return;
-    }
-    if (displayText === targetText) return;
-    const timer = setTimeout(() => {
-      setDisplayText(targetRef.current.slice(0, displayText.length + 1));
-    }, 28);
-    return () => clearTimeout(timer);
-  }, [displayText, targetText]);
-
-  // After each new character, shift the text left so the right end stays pinned to the right edge
-  useEffect(() => {
-    if (!containerRef.current || !textRef.current) return;
-    const overflow = textRef.current.scrollWidth - containerRef.current.clientWidth;
-    textRef.current.style.transform = overflow > 0 ? `translateX(-${overflow}px)` : "translateX(0)";
-  }, [displayText]);
-
-  const isEmpty = !displayText;
-
-  return (
-    <div ref={containerRef} className="w-full overflow-hidden">
-      {isEmpty ? (
-        <span
-          className="font-mono-display text-[12px] italic"
-          style={{ color: "hsl(140 35% 25%)" }}
-        >
-          Listening…
-        </span>
-      ) : (
-        <span
-          ref={textRef}
-          className="font-mono-display text-[22px] font-semibold"
-          style={{
-            color: "hsl(0 0% 90%)",
-            whiteSpace: "nowrap",
-            letterSpacing: "0.01em",
-            display: "inline-block",
-            transformOrigin: "left center",
-          }}
-        >
-          {displayText}
-        </span>
-      )}
-    </div>
-  );
-};
 
 const RadioScreen = ({
   channelA,
@@ -535,17 +471,6 @@ const RadioScreen = ({
           onClick={() => onActiveChannelChange("B")}
         />
 
-        {/* Caption row — sits between CH Mode row and the VOX/APRS bar */}
-        {captionsEnabled && (
-          <div
-            className="flex items-center px-3 py-1"
-            style={{ borderTop: "1px solid hsl(0 0% 100% / 0.06)" }}
-          >
-            <div className="flex-1 overflow-hidden">
-              <CaptionPanel history={captionHistory} partial={partialCaption} />
-            </div>
-          </div>
-        )}
 
         {/* Bottom bar */}
         <div className="flex items-center px-3 py-1.5 border-t border-white/[0.06]">
