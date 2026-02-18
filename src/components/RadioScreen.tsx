@@ -338,7 +338,7 @@ const RadioScreen = ({
           <div className="flex-1 flex justify-center">
             {myCallsign ? (
               <span
-                className="font-mono-display text-[10px] font-black tracking-[0.18em]"
+                className="font-mono-display text-[13px] font-black tracking-[0.18em]"
                 style={{
                   color: "hsl(140 70% 52%)",
                   textShadow: "0 0 6px hsl(140 70% 52% / 0.7), 0 0 14px hsl(140 70% 52% / 0.3)",
