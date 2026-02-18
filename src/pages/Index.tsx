@@ -44,13 +44,13 @@ const HeaderCaptionPanel = ({
   return (
     <div ref={containerRef} className="w-full overflow-hidden">
       {!displayText ? (
-        <span className="font-mono-display text-[13px] italic" style={{ color: "hsl(140 35% 50%)" }}>
+        <span className="font-mono-display text-[15px] italic" style={{ color: "hsl(0 0% 97%)" }}>
           Listening…
         </span>
       ) : (
         <span
           ref={textRef}
-          className="font-mono-display text-[16px] font-semibold"
+          className="font-mono-display text-[19px] font-semibold"
           style={{
             color: "hsl(0 0% 97%)",
             whiteSpace: "nowrap",
