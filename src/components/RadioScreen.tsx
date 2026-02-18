@@ -197,7 +197,7 @@ const RadioScreen = ({
 
       {/* Inner LCD screen recess */}
       <div
-        className="w-full rounded-xl overflow-hidden"
+        className="w-full rounded-xl overflow-hidden relative"
         style={{
           background: "linear-gradient(180deg, hsl(220 15% 7%), hsl(220 12% 5%))",
           border: "1px solid hsl(220 12% 8%)",
@@ -205,6 +205,30 @@ const RadioScreen = ({
             "inset 0 3px 10px hsl(220 30% 2% / 0.9), inset 0 1px 4px hsl(220 20% 2% / 0.6)",
         }}
       >
+        {/* CRT scanline overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none z-10 rounded-xl"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(0 0% 0% / 0.13) 2px, hsl(0 0% 0% / 0.13) 4px)",
+          }}
+        />
+        {/* Green phosphor tint */}
+        <div
+          className="absolute inset-0 pointer-events-none z-10 rounded-xl"
+          style={{
+            background: "hsl(140 60% 40% / 0.04)",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* Vignette / inner glow */}
+        <div
+          className="absolute inset-0 pointer-events-none z-10 rounded-xl"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 50%, transparent 55%, hsl(220 30% 2% / 0.45) 100%)",
+          }}
+        />
         {/* Top status icons */}
         <div className="flex items-center gap-3 px-3 py-1 border-b border-white/[0.06]">
           <Zap className="h-3 w-3 text-red-400/70" />
