@@ -152,7 +152,7 @@
 
   /* Input / compose field (mirrors APRS compose bar) */
   .tab-input {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: Arial, sans-serif;
     font-size: 0.875rem; /* text-sm */
     color: hsl(var(--foreground));
     background: linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%));
@@ -169,7 +169,7 @@
 
   /* Callsign / sender label (cyan = primary, amber = received/secondary) */
   .tab-callsign {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: Arial, sans-serif;
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -182,7 +182,7 @@
 
   /* Body text — mirrors APRS message text-sm text-foreground */
   .tab-body {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: Arial, sans-serif;
     font-size: 0.875rem;
     word-spacing: -0.1em;
     letter-spacing: -0.01em;
@@ -192,7 +192,7 @@
 
   /* Sub-label / timestamp / metadata line */
   .tab-meta {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: Arial, sans-serif;
     font-size: 8px;
     color: hsl(var(--muted-foreground));
     letter-spacing: 0.08em;
@@ -200,7 +200,7 @@
 
   /* Section title */
   .tab-section-title {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: Arial, sans-serif;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.18em;
@@ -209,7 +209,7 @@
 
   /* Filter chip — inactive */
   .tab-chip {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: Arial, sans-serif;
     font-size: 8px;
     letter-spacing: 0.08em;
     padding: 2px 8px;
@@ -249,7 +249,7 @@
 
 @layer utilities {
   .font-mono-display {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: Arial, sans-serif;
   }
 
   .font-freq-display {
