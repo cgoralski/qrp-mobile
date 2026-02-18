@@ -421,25 +421,25 @@ const Index = () => {
                     >
                       {/* Listening indicator dot */}
                       <div className="flex items-center gap-2.5 w-full">
-                        <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: "10px", height: "10px" }}>
+                        <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: "16px", height: "16px" }}>
                           {/* Pulse ring — only when actively listening */}
                           {captions.isListening && (
                             <span
                               className="absolute inset-0 rounded-full animate-ping"
-                              style={{ background: "hsl(140 70% 52% / 0.35)" }}
+                              style={{ background: "hsl(140 70% 52% / 0.6)" }}
                             />
                           )}
                           {/* Core dot */}
                           <span
                             className="relative rounded-full"
                             style={{
-                              width: "7px",
-                              height: "7px",
+                              width: "10px",
+                              height: "10px",
                               background: captions.isListening
-                                ? "hsl(140 70% 52%)"
-                                : "hsl(140 40% 32%)",
+                                ? "hsl(140 70% 58%)"
+                                : "hsl(140 30% 28%)",
                               boxShadow: captions.isListening
-                                ? "0 0 6px hsl(140 70% 52% / 0.8)"
+                                ? "0 0 10px 3px hsl(140 70% 52% / 0.7), 0 0 4px hsl(140 80% 70% / 0.9)"
                                 : "none",
                               transition: "background 0.4s ease, box-shadow 0.4s ease",
                             }}
