@@ -146,7 +146,7 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
   const deleteZoneVisible = revealWidth >= 8;
 
   return (
-    <div className="relative overflow-hidden" style={{ borderColor: "hsl(215 10% 13%)" }}>
+    <div className="relative overflow-hidden" style={{ borderColor: "hsl(var(--border))" }}>
       {/* Delete zone */}
       <div
         className="absolute inset-y-0 right-0 flex items-center"
@@ -159,20 +159,20 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
         {confirming ? (
           <div className="flex items-center gap-1 w-full px-2">
             <button onClick={handleDeleteClick} className="flex-1 flex flex-col items-center justify-center gap-0.5">
-              <Check className="h-3.5 w-3.5" style={{ color: "hsl(0 0% 95%)" }} />
-              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 85%)" }}>YES</span>
+              <Check className="h-3.5 w-3.5 text-foreground" />
+              <span className="font-mono-display text-[8px] tracking-wider text-foreground">YES</span>
             </button>
-            <div style={{ width: "1px", alignSelf: "stretch", background: "hsl(0 60% 50% / 0.4)" }} />
+            <div className="self-stretch w-px bg-destructive/40" />
             <button onClick={handleCancelConfirm} className="flex-1 flex flex-col items-center justify-center gap-0.5">
-              <X className="h-3.5 w-3.5" style={{ color: "hsl(0 0% 75%)" }} />
-              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 65%)" }}>NO</span>
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-mono-display text-[8px] tracking-wider text-muted-foreground">NO</span>
             </button>
           </div>
         ) : deleteZoneVisible ? (
           <button onClick={handleDeleteClick} className="flex flex-col items-center justify-center gap-0.5 w-full h-full">
-            <Trash2 className="h-3.5 w-3.5" style={{ color: "hsl(0 0% 85%)" }} />
+            <Trash2 className="h-3.5 w-3.5 text-foreground" />
             {revealWidth > 44 && (
-              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 75%)" }}>DEL</span>
+              <span className="font-mono-display text-[8px] tracking-wider text-muted-foreground">DEL</span>
             )}
           </button>
         ) : null}
@@ -184,44 +184,54 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 active:brightness-125 relative z-10"
+        className="w-full flex items-center gap-3 px-3 py-2.5 text-left active:brightness-125 relative z-10 transition-colors duration-150"
         style={{
-          background: isTuned ? "hsl(185 80% 55% / 0.08)" : "hsl(220 12% 11%)",
+          background: isTuned
+            ? "linear-gradient(135deg, hsl(185 80% 55% / 0.1), hsl(185 80% 55% / 0.04))"
+            : "linear-gradient(135deg, hsl(210 18% 14%), hsl(210 18% 10%))",
+          border: `1px solid ${isTuned ? "hsl(185 80% 55% / 0.2)" : "hsl(210 15% 22% / 0.5)"}`,
           transform: `translateX(${swipeX}px)`,
           transition: isDragging.current ? "none" : "transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          marginBottom: "2px",
         }}
       >
+        {/* Group colour dot */}
         <div className="shrink-0 rounded-full" style={{ width: 6, height: 6, background: groupColor, boxShadow: `0 0 6px ${groupColor}` }} />
+
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono-display text-[11px] font-bold tracking-wider" style={{ color: isTuned ? "hsl(185 80% 65%)" : "hsl(185 60% 70%)" }}>
+          {/* Callsign row — mirrors APRS sender style */}
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className={`font-mono-display text-[9px] font-bold tracking-wider ${isTuned ? "text-primary" : "text-amber-400"}`}>
               {contact.callsign || contact.name}
             </span>
             {contact.callsign && (
-              <span className="font-mono-display text-[9px] tracking-wide truncate" style={{ color: "hsl(215 15% 50%)" }}>
+              <span className="font-mono-display text-[8px] text-muted-foreground truncate">
                 {contact.name}
               </span>
             )}
-          </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="font-mono-display text-[10px] tracking-wider" style={{ color: isTuned ? "hsl(185 80% 55%)" : "hsl(200 20% 60%)" }}>
-              {formatFreq(contact.frequency)} MHz
-            </span>
             {contact.mode && (
-              <span className="font-mono-display text-[8px] tracking-wider px-1 rounded" style={{ color: MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)", background: `${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"  }18`, border: `1px solid ${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}33` }}>
+              <span className="font-mono-display text-[8px] px-1 rounded shrink-0"
+                style={{ color: MODE_COLORS[contact.mode] ?? "hsl(var(--muted-foreground))", background: `${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}1a`, border: `1px solid ${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}33` }}>
                 {contact.mode}
               </span>
             )}
           </div>
+          {/* Frequency — mirrors APRS message body style */}
+          <p className="text-sm text-foreground leading-snug font-mono-display">
+            {formatFreq(contact.frequency)} <span className="text-muted-foreground text-xs">MHz</span>
+            {contact.location_desc ? <span className="text-muted-foreground text-xs ml-2">{contact.location_desc}</span> : null}
+          </p>
         </div>
-        <div className="shrink-0 flex items-center justify-center">
+
+        <div className="shrink-0">
           {isTuned ? (
-            <div className="flex items-center gap-1 rounded-md px-1.5 py-0.5" style={{ background: "hsl(185 80% 55% / 0.15)", border: "1px solid hsl(185 80% 55% / 0.35)" }}>
-              <Check className="h-3 w-3" style={{ color: "hsl(185 80% 65%)" }} />
-              <span className="font-mono-display text-[8px] font-bold tracking-wider" style={{ color: "hsl(185 80% 65%)" }}>TUNED</span>
+            <div className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
+              style={{ background: "hsl(185 80% 55% / 0.15)", border: "1px solid hsl(185 80% 55% / 0.35)" }}>
+              <Check className="h-3 w-3 text-primary" />
+              <span className="font-mono-display text-[8px] font-bold tracking-wider text-primary">TUNED</span>
             </div>
           ) : (
-            <ChevronRight className="h-3.5 w-3.5" style={{ color: "hsl(215 15% 28%)" }} />
+            <ChevronRight className="h-3.5 w-3.5 text-border" />
           )}
         </div>
       </button>
@@ -241,69 +251,68 @@ interface RepeaterRowProps {
 }
 
 const RepeaterRow = ({ repeater, onTune, onAddToContacts, isAdded }: RepeaterRowProps) => {
-  const modeColor = MODE_COLORS[repeater.mode ?? "FM"] ?? "hsl(185 80% 55%)";
+  const modeColor = MODE_COLORS[repeater.mode ?? "FM"] ?? "hsl(var(--primary))";
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2.5"
-      style={{ borderBottom: "1px solid hsl(215 10% 13%)", background: "hsl(220 12% 11%)" }}
+      className="flex items-center gap-2 px-3 py-2 mx-1 mb-0.5 rounded-xl"
+      style={{
+        background: "linear-gradient(135deg, hsl(210 18% 14%), hsl(210 18% 10%))",
+        border: "1px solid hsl(210 15% 22% / 0.5)",
+      }}
     >
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2">
-          <span className="font-mono-display text-[11px] font-bold tracking-wider" style={{ color: "hsl(185 60% 70%)" }}>
+        {/* Callsign — APRS sender style */}
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="font-mono-display text-[9px] font-bold tracking-wider text-amber-400">
             {repeater.callsign || repeater.name}
           </span>
           {repeater.callsign && (
-            <span className="font-mono-display text-[9px] truncate" style={{ color: "hsl(215 15% 45%)" }}>
+            <span className="font-mono-display text-[8px] text-muted-foreground truncate">
               {repeater.name}
             </span>
           )}
-        </div>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className="font-mono-display text-[10px] tracking-wider" style={{ color: "hsl(200 20% 60%)" }}>
-            {formatFreq(repeater.frequency)} MHz
-          </span>
           {repeater.mode && (
-            <span className="font-mono-display text-[8px] px-1 rounded" style={{ color: modeColor, background: `${modeColor}18`, border: `1px solid ${modeColor}33` }}>
+            <span className="font-mono-display text-[8px] px-1 rounded shrink-0"
+              style={{ color: modeColor, background: `${modeColor}1a`, border: `1px solid ${modeColor}33` }}>
               {repeater.mode}
             </span>
           )}
+        </div>
+        {/* Body — APRS message body style */}
+        <p className="text-sm text-foreground leading-snug font-mono-display">
+          {formatFreq(repeater.frequency)} <span className="text-muted-foreground text-xs">MHz</span>
           {repeater.tone_mode && repeater.tone_mode !== "" && (
-            <span className="font-mono-display text-[8px]" style={{ color: "hsl(215 15% 40%)" }}>
-              {repeater.tone_mode} {repeater.r_tone_freq ? `${repeater.r_tone_freq}Hz` : ""}
-            </span>
+            <span className="text-muted-foreground text-xs ml-2">{repeater.tone_mode}{repeater.r_tone_freq ? ` ${repeater.r_tone_freq}Hz` : ""}</span>
           )}
           {repeater.location_desc && (
-            <span className="font-mono-display text-[8px] truncate" style={{ color: "hsl(215 15% 36%)" }}>
-              {repeater.location_desc}
-            </span>
+            <span className="text-muted-foreground text-xs ml-2 truncate"> · {repeater.location_desc}</span>
           )}
-        </div>
+        </p>
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        {/* Tune */}
         <button
           onClick={onTune}
-          className="flex items-center gap-1 rounded-md px-1.5 py-1 transition-all active:brightness-125"
-          style={{ background: "hsl(185 60% 20% / 0.5)", border: "1px solid hsl(185 60% 30% / 0.5)", color: "hsl(185 60% 65%)" }}
+          className="flex items-center justify-center rounded-lg w-8 h-8 transition-all active:brightness-125"
+          style={{ background: "hsl(185 60% 55% / 0.15)", border: "1px solid hsl(185 60% 55% / 0.25)" }}
           title="Tune to frequency"
         >
-          <Radio className="h-3 w-3" />
+          <Radio className="h-3.5 w-3.5 text-primary" />
         </button>
-        {/* Add to contacts */}
         <button
           onClick={onAddToContacts}
           disabled={isAdded}
-          className="flex items-center gap-1 rounded-md px-1.5 py-1 transition-all active:brightness-125 disabled:opacity-40"
+          className="flex items-center justify-center rounded-lg w-8 h-8 transition-all active:brightness-125 disabled:opacity-40"
           style={{
-            background: isAdded ? "hsl(142 60% 20% / 0.5)" : "hsl(215 14% 18%)",
-            border: `1px solid ${isAdded ? "hsl(142 60% 30% / 0.5)" : "hsl(215 10% 24%)"}`,
-            color: isAdded ? "hsl(142 60% 60%)" : "hsl(215 15% 55%)",
+            background: isAdded ? "hsl(142 60% 55% / 0.15)" : "hsl(var(--secondary))",
+            border: `1px solid ${isAdded ? "hsl(142 60% 55% / 0.3)" : "hsl(var(--border))"}`,
           }}
           title={isAdded ? "Already in contacts" : "Add to contacts"}
         >
-          {isAdded ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+          {isAdded
+            ? <Check className="h-3.5 w-3.5" style={{ color: "hsl(142 60% 60%)" }} />
+            : <Plus className="h-3.5 w-3.5 text-muted-foreground" />}
         </button>
       </div>
     </div>
@@ -457,23 +466,21 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: "1px solid hsl(215 10% 15%)" }}>
-        <span className="font-mono-display text-[9px] tracking-wider" style={{ color: "hsl(215 15% 42%)" }}>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
+        <span className="font-mono-display text-[9px] tracking-wider text-muted-foreground">
           {contacts.length} CONTACTS
         </span>
         <div className="flex items-center gap-1">
           <button
             onClick={handleExport}
-            className="flex items-center gap-1 rounded-md px-2 py-1 font-mono-display text-[8px] tracking-wider transition-all"
-            style={{ background: "hsl(215 14% 16%)", border: "1px solid hsl(215 10% 22%)", color: "hsl(215 15% 50%)" }}
+            className="flex items-center gap-1 rounded-md px-2 py-1 font-mono-display text-[8px] tracking-wider transition-all bg-secondary border border-border text-muted-foreground hover:text-foreground"
             title="Export contacts as CSV"
           >
             <Download className="h-3 w-3" /> EXP
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 rounded-md px-2 py-1 font-mono-display text-[8px] tracking-wider transition-all"
-            style={{ background: "hsl(215 14% 16%)", border: "1px solid hsl(215 10% 22%)", color: "hsl(215 15% 50%)" }}
+            className="flex items-center gap-1 rounded-md px-2 py-1 font-mono-display text-[8px] tracking-wider transition-all bg-secondary border border-border text-muted-foreground hover:text-foreground"
             title="Import contacts from CSV"
           >
             <Upload className="h-3 w-3" /> IMP
@@ -481,12 +488,11 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
           <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
           <button
             onClick={() => setShowAdd((v) => !v)}
-            className="flex items-center justify-center rounded-md transition-all"
+            className="flex items-center justify-center rounded-md transition-all w-[26px] h-[26px]"
             style={{
-              width: 26, height: 26,
-              background: showAdd ? "hsl(185 80% 55% / 0.2)" : "hsl(215 12% 18%)",
-              border: `1px solid ${showAdd ? "hsl(185 80% 55% / 0.4)" : "hsl(215 10% 24%)"}`,
-              color: showAdd ? "hsl(185 80% 55%)" : "hsl(215 15% 55%)",
+              background: showAdd ? "hsl(var(--primary) / 0.2)" : "hsl(var(--secondary))",
+              border: `1px solid ${showAdd ? "hsl(var(--primary) / 0.4)" : "hsl(var(--border))"}`,
+              color: showAdd ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
             }}
           >
             {showAdd ? <X className="h-3 w-3" /> : <UserPlus className="h-3 w-3" />}
@@ -494,88 +500,88 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
         </div>
       </div>
 
-      {/* Add form */}
+      {/* Add form — styled like APRS compose area */}
       {showAdd && (
-        <div className="px-3 py-2.5 flex flex-col gap-1.5" style={{ borderBottom: "1px solid hsl(215 10% 15%)", background: "hsl(215 12% 10%)" }}>
+        <div className="px-3 py-2.5 flex flex-col gap-1.5 border-b border-border/40 bg-card/50">
           <div className="grid grid-cols-2 gap-1.5">
             <input type="text" placeholder="CALLSIGN" value={newContact.callsign}
               onChange={(e) => setNewContact((p) => ({ ...p, callsign: e.target.value.toUpperCase() }))}
-              className="font-mono-display text-[10px] tracking-wider rounded-md px-2 py-1.5 outline-none"
-              style={{ background: "hsl(215 14% 14%)", border: "1px solid hsl(215 10% 22%)", color: "hsl(185 80% 65%)", caretColor: "hsl(185 80% 55%)" }}
+              className="font-mono-display text-sm rounded-xl px-3 py-2 outline-none text-primary placeholder:text-muted-foreground/50"
+              style={{ background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))", border: "1px solid hsl(210 15% 20% / 0.5)" }}
             />
             <input type="text" placeholder="FREQUENCY" value={newContact.frequency}
               onChange={(e) => setNewContact((p) => ({ ...p, frequency: e.target.value }))}
-              className="font-mono-display text-[10px] tracking-wider rounded-md px-2 py-1.5 outline-none"
-              style={{ background: "hsl(215 14% 14%)", border: "1px solid hsl(215 10% 22%)", color: "hsl(200 20% 80%)", caretColor: "hsl(185 80% 55%)" }}
+              className="font-mono-display text-sm rounded-xl px-3 py-2 outline-none text-foreground placeholder:text-muted-foreground/50"
+              style={{ background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))", border: "1px solid hsl(210 15% 20% / 0.5)" }}
             />
           </div>
           <input type="text" placeholder="Name / Description" value={newContact.name}
             onChange={(e) => setNewContact((p) => ({ ...p, name: e.target.value }))}
-            className="font-mono-display text-[10px] tracking-wider rounded-md px-2 py-1.5 outline-none"
-            style={{ background: "hsl(215 14% 14%)", border: "1px solid hsl(215 10% 22%)", color: "hsl(200 20% 80%)", caretColor: "hsl(185 80% 55%)" }}
+            className="font-mono-display text-sm rounded-xl px-3 py-2 outline-none text-foreground placeholder:text-muted-foreground/50"
+            style={{ background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))", border: "1px solid hsl(210 15% 20% / 0.5)" }}
           />
           <div className="flex gap-1 flex-wrap">
             {GROUPS.map((g) => (
               <button key={g} onClick={() => setNewContact((p) => ({ ...p, group_tag: g }))}
-                className="font-mono-display text-[8px] tracking-wider px-1.5 py-0.5 rounded transition-all"
+                className="font-mono-display text-[8px] tracking-wider px-1.5 py-0.5 rounded-full transition-all"
                 style={{
-                  background: newContact.group_tag === g ? `${GROUP_COLORS[g]}22` : "hsl(215 14% 16%)",
-                  border: `1px solid ${newContact.group_tag === g ? GROUP_COLORS[g] : "hsl(215 10% 22%)"}`,
-                  color: newContact.group_tag === g ? GROUP_COLORS[g] : "hsl(215 15% 45%)",
+                  background: newContact.group_tag === g ? `${GROUP_COLORS[g]}22` : "hsl(var(--secondary))",
+                  border: `1px solid ${newContact.group_tag === g ? GROUP_COLORS[g] : "hsl(var(--border))"}`,
+                  color: newContact.group_tag === g ? GROUP_COLORS[g] : "hsl(var(--muted-foreground))",
                 }}
               >{g}</button>
             ))}
           </div>
           <button onClick={handleAdd}
-            className="flex items-center justify-center gap-1.5 rounded-md py-1.5 font-mono-display text-[10px] font-bold tracking-wider transition-all"
-            style={{ background: "linear-gradient(180deg, hsl(185 70% 30%), hsl(185 60% 20%))", border: "1px solid hsl(185 70% 35%)", color: "hsl(185 80% 75%)" }}
+            className="flex items-center justify-center gap-1.5 rounded-xl py-2 font-mono-display text-[10px] font-bold tracking-wider transition-all"
+            style={{ background: "linear-gradient(180deg, hsl(185 80% 55% / 0.2), hsl(185 80% 55% / 0.08))", border: "1px solid hsl(185 80% 55% / 0.25)", color: "hsl(var(--primary))" }}
           >
             <Check className="h-3 w-3" /> SAVE CONTACT
           </button>
         </div>
       )}
 
-      {/* Search */}
-      <div className="px-3 py-2" style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}>
-        <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5" style={{ background: "hsl(215 14% 12%)", border: "1px solid hsl(215 10% 20%)" }}>
-          <Search className="h-3 w-3 shrink-0" style={{ color: "hsl(215 15% 38%)" }} />
+      {/* Search — mirrors APRS compose input style */}
+      <div className="px-3 py-2 border-b border-border/40">
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2"
+          style={{ background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))", border: "1px solid hsl(210 15% 20% / 0.5)" }}>
+          <Search className="h-3 w-3 shrink-0 text-muted-foreground" />
           <input type="text" placeholder="Search callsign, name, freq…" value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="font-mono-display text-[10px] tracking-wide bg-transparent outline-none flex-1 min-w-0"
-            style={{ color: "hsl(200 20% 78%)", caretColor: "hsl(185 80% 55%)" }}
+            className="font-mono-display text-sm bg-transparent outline-none flex-1 min-w-0 text-foreground placeholder:text-muted-foreground"
           />
-          {query && <button onClick={() => setQuery("")}><X className="h-3 w-3" style={{ color: "hsl(215 15% 38%)" }} /></button>}
+          {query && <button onClick={() => setQuery("")}><X className="h-3 w-3 text-muted-foreground" /></button>}
         </div>
       </div>
 
       {/* Group chips */}
-      <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none" style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}>
+      <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none border-b border-border/40">
         <button onClick={() => setSelectedGroup(null)}
           className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-          style={{ background: !selectedGroup ? "hsl(185 80% 55% / 0.15)" : "hsl(215 14% 14%)", border: `1px solid ${!selectedGroup ? "hsl(185 80% 55% / 0.4)" : "hsl(215 10% 20%)"}`, color: !selectedGroup ? "hsl(185 80% 65%)" : "hsl(215 15% 42%)" }}
+          style={{ background: !selectedGroup ? "hsl(var(--primary) / 0.15)" : "hsl(var(--secondary))", border: `1px solid ${!selectedGroup ? "hsl(var(--primary) / 0.4)" : "hsl(var(--border))"}`, color: !selectedGroup ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}
         >ALL</button>
         {groups.map((g) => (
           <button key={g} onClick={() => setSelectedGroup(selectedGroup === g ? null : g)}
             className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-            style={{ background: selectedGroup === g ? `${GROUP_COLORS[g] ?? "hsl(185 80% 55%)"}22` : "hsl(215 14% 14%)", border: `1px solid ${selectedGroup === g ? (GROUP_COLORS[g] ?? "hsl(185 80% 55%)") : "hsl(215 10% 20%)"}`, color: selectedGroup === g ? (GROUP_COLORS[g] ?? "hsl(185 80% 65%)") : "hsl(215 15% 42%)" }}
+            style={{ background: selectedGroup === g ? `${GROUP_COLORS[g] ?? "hsl(var(--primary))"}22` : "hsl(var(--secondary))", border: `1px solid ${selectedGroup === g ? (GROUP_COLORS[g] ?? "hsl(var(--primary))") : "hsl(var(--border))"}`, color: selectedGroup === g ? (GROUP_COLORS[g] ?? "hsl(var(--primary))") : "hsl(var(--muted-foreground))" }}
           >{g}</button>
         ))}
       </div>
 
       {/* Contact list */}
-      <div className="flex-1 overflow-y-auto overscroll-contain divide-y" style={{ borderColor: "hsl(215 10% 13%)" }}>
+      <div className="flex-1 overflow-y-auto overscroll-contain px-1 py-1 space-y-0.5">
         {loading ? (
           <div className="flex items-center justify-center py-10">
-            <span className="font-mono-display text-[10px] tracking-wider" style={{ color: "hsl(215 15% 35%)" }}>LOADING…</span>
+            <span className="font-mono-display text-xs tracking-wider text-muted-foreground">LOADING…</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-10">
-            <BookUser className="h-6 w-6 opacity-20" style={{ color: "hsl(215 15% 50%)" }} />
-            <span className="font-mono-display text-[10px] tracking-wider opacity-40" style={{ color: "hsl(215 15% 50%)" }}>
+            <BookUser className="h-6 w-6 opacity-20 text-muted-foreground" />
+            <span className="font-mono-display text-xs tracking-wider text-muted-foreground opacity-40">
               {contacts.length === 0 ? "NO CONTACTS YET" : "NO MATCH"}
             </span>
             {contacts.length === 0 && (
-              <span className="font-mono-display text-[9px] text-center px-6" style={{ color: "hsl(215 15% 30%)" }}>
+              <span className="font-mono-display text-[9px] text-center px-6 text-muted-foreground/50">
                 Add manually or browse the repeater directory →
               </span>
             )}
@@ -594,8 +600,8 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-center gap-1.5 py-1.5" style={{ borderTop: "1px solid hsl(215 10% 13%)" }}>
-        <span className="font-mono-display text-[8px] tracking-wider" style={{ color: "hsl(215 15% 30%)" }}>← SWIPE LEFT TO DELETE</span>
+      <div className="flex items-center justify-center gap-1.5 py-1.5 border-t border-border/40">
+        <span className="font-mono-display text-[8px] tracking-wider text-muted-foreground/50">← SWIPE LEFT TO DELETE</span>
       </div>
     </div>
   );
@@ -697,64 +703,62 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Search */}
-      <div className="px-3 py-2" style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}>
-        <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5" style={{ background: "hsl(215 14% 12%)", border: "1px solid hsl(215 10% 20%)" }}>
-          <Search className="h-3 w-3 shrink-0" style={{ color: "hsl(215 15% 38%)" }} />
+      {/* Search — APRS compose style */}
+      <div className="px-3 py-2 border-b border-border/40">
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2"
+          style={{ background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))", border: "1px solid hsl(210 15% 20% / 0.5)" }}>
+          <Search className="h-3 w-3 shrink-0 text-muted-foreground" />
           <input type="text" placeholder="Callsign, name, location…" value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="font-mono-display text-[10px] tracking-wide bg-transparent outline-none flex-1 min-w-0"
-            style={{ color: "hsl(200 20% 78%)", caretColor: "hsl(185 80% 55%)" }}
+            className="font-mono-display text-sm bg-transparent outline-none flex-1 min-w-0 text-foreground placeholder:text-muted-foreground"
           />
-          {query && <button onClick={() => setQuery("")}><X className="h-3 w-3" style={{ color: "hsl(215 15% 38%)" }} /></button>}
+          {query && <button onClick={() => setQuery("")}><X className="h-3 w-3 text-muted-foreground" /></button>}
         </div>
       </div>
 
       {/* Country filter chips */}
-      <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none" style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}>
-        <Filter className="h-3 w-3 shrink-0 self-center" style={{ color: "hsl(215 15% 30%)" }} />
+      <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none border-b border-border/40">
+        <Filter className="h-3 w-3 shrink-0 self-center text-muted-foreground/40" />
         <button onClick={() => setSelectedCountry(null)}
           className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-          style={{ background: !selectedCountry ? "hsl(185 80% 55% / 0.15)" : "hsl(215 14% 14%)", border: `1px solid ${!selectedCountry ? "hsl(185 80% 55% / 0.4)" : "hsl(215 10% 20%)"}`, color: !selectedCountry ? "hsl(185 80% 65%)" : "hsl(215 15% 42%)" }}
+          style={{ background: !selectedCountry ? "hsl(var(--primary) / 0.15)" : "hsl(var(--secondary))", border: `1px solid ${!selectedCountry ? "hsl(var(--primary) / 0.4)" : "hsl(var(--border))"}`, color: !selectedCountry ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}
         >ALL</button>
         {countries.map((c) => (
           <button key={c} onClick={() => setSelectedCountry(selectedCountry === c ? null : c)}
             className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-            style={{ background: selectedCountry === c ? "hsl(185 80% 55% / 0.15)" : "hsl(215 14% 14%)", border: `1px solid ${selectedCountry === c ? "hsl(185 80% 55% / 0.4)" : "hsl(215 10% 20%)"}`, color: selectedCountry === c ? "hsl(185 80% 65%)" : "hsl(215 15% 42%)" }}
+            style={{ background: selectedCountry === c ? "hsl(var(--primary) / 0.15)" : "hsl(var(--secondary))", border: `1px solid ${selectedCountry === c ? "hsl(var(--primary) / 0.4)" : "hsl(var(--border))"}`, color: selectedCountry === c ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}
           >{c}</button>
         ))}
       </div>
 
       {/* Mode filter chips */}
-      <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none" style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}>
+      <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none border-b border-border/40">
         <button onClick={() => setSelectedMode(null)}
           className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-          style={{ background: !selectedMode ? "hsl(215 15% 20%)" : "hsl(215 14% 14%)", border: `1px solid ${!selectedMode ? "hsl(215 15% 30%)" : "hsl(215 10% 20%)"}`, color: !selectedMode ? "hsl(215 20% 65%)" : "hsl(215 15% 42%)" }}
+          style={{ background: !selectedMode ? "hsl(var(--secondary))" : "hsl(var(--secondary))", border: `1px solid ${!selectedMode ? "hsl(var(--primary) / 0.3)" : "hsl(var(--border))"}`, color: !selectedMode ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}
         >ANY MODE</button>
         {modes.map((m) => {
-          const mc = MODE_COLORS[m] ?? "hsl(185 80% 55%)";
+          const mc = MODE_COLORS[m] ?? "hsl(var(--primary))";
           return (
             <button key={m} onClick={() => setSelectedMode(selectedMode === m ? null : m)}
               className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-              style={{ background: selectedMode === m ? `${mc}22` : "hsl(215 14% 14%)", border: `1px solid ${selectedMode === m ? mc : "hsl(215 10% 20%)"}`, color: selectedMode === m ? mc : "hsl(215 15% 42%)" }}
+              style={{ background: selectedMode === m ? `${mc}22` : "hsl(var(--secondary))", border: `1px solid ${selectedMode === m ? mc : "hsl(var(--border))"}`, color: selectedMode === m ? mc : "hsl(var(--muted-foreground))" }}
             >{m}</button>
           );
         })}
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-1 py-1 space-y-0.5">
         {loading && repeaters.length === 0 ? (
           <div className="flex items-center justify-center py-10">
-            <span className="font-mono-display text-[10px] tracking-wider" style={{ color: "hsl(215 15% 35%)" }}>SCANNING DATABASE…</span>
+            <span className="font-mono-display text-xs tracking-wider text-muted-foreground">SCANNING DATABASE…</span>
           </div>
         ) : repeaters.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-10">
-            <Radio className="h-6 w-6 opacity-20" style={{ color: "hsl(215 15% 50%)" }} />
-            <span className="font-mono-display text-[10px] tracking-wider opacity-40" style={{ color: "hsl(215 15% 50%)" }}>
-              NO REPEATERS FOUND
-            </span>
-            <span className="font-mono-display text-[9px] text-center px-6" style={{ color: "hsl(215 15% 30%)" }}>
+            <Radio className="h-6 w-6 opacity-20 text-muted-foreground" />
+            <span className="font-mono-display text-xs tracking-wider text-muted-foreground opacity-40">NO REPEATERS FOUND</span>
+            <span className="font-mono-display text-[9px] text-center px-6 text-muted-foreground/50">
               Import data from the Settings tab first
             </span>
           </div>
@@ -773,8 +777,7 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
               <button
                 onClick={loadMore}
                 disabled={loading}
-                className="w-full font-mono-display text-[9px] tracking-wider py-3 transition-all"
-                style={{ color: "hsl(185 60% 55%)", background: "hsl(215 12% 10%)" }}
+                className="w-full font-mono-display text-[9px] tracking-wider py-3 transition-all text-primary/60 hover:text-primary"
               >
                 {loading ? "LOADING…" : "LOAD MORE"}
               </button>
