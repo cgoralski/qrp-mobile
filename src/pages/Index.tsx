@@ -337,46 +337,6 @@ const Index = () => {
               <SideButton label="PWR" />
             </div>
             </div>
-            {/* ── Left taper bevel — starts at MENU button level ── */}
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                top: "52%",
-                bottom: "3%",
-                width: "10%",
-                background:
-                  "linear-gradient(to right, " +
-                  "rgba(0,0,0,0) 0%, " +
-                  "rgba(0,0,0,0.18) 18%, " +
-                  "rgba(210,210,210,0.82) 28%, " +
-                  "rgba(255,255,255,0.28) 34%, " +
-                  "rgba(0,0,0,0.45) 42%, " +
-                  "rgba(0,0,0,0) 65%)",
-                pointerEvents: "none",
-                zIndex: 50,
-              }}
-            />
-            {/* ── Right taper bevel — mirror of left ── */}
-            <div
-              style={{
-                position: "absolute",
-                right: 0,
-                top: "52%",
-                bottom: "3%",
-                width: "10%",
-                background:
-                  "linear-gradient(to left, " +
-                  "rgba(0,0,0,0) 0%, " +
-                  "rgba(0,0,0,0.18) 18%, " +
-                  "rgba(210,210,210,0.82) 28%, " +
-                  "rgba(255,255,255,0.28) 34%, " +
-                  "rgba(0,0,0,0.45) 42%, " +
-                  "rgba(0,0,0,0) 65%)",
-                pointerEvents: "none",
-                zIndex: 50,
-              }}
-            />
           </div>
         ) : activeTab === "aprs" ? (
           <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
