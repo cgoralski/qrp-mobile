@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, MessageSquare } from "lucide-react";
+import { Send, MessageSquare, AlertTriangle } from "lucide-react";
 
 interface Message {
   id: string;
@@ -37,22 +37,27 @@ const demoMessages: Message[] = [
   },
 ];
 
-const APRSMessaging = () => {
+interface APRSMessagingProps {
+  myCallsign: string;
+  onNavigateToSettings: () => void;
+}
+
+const APRSMessaging = ({ myCallsign, onNavigateToSettings }: APRSMessagingProps) => {
   const [messages, setMessages] = useState<Message[]>(demoMessages);
   const [draft, setDraft] = useState("");
-  const [callsign, setCallsign] = useState("KE7XYZ");
   const [targetCall, setTargetCall] = useState("KD7ABC");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const callsignValid = myCallsign.trim().length >= 3;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSend = () => {
-    if (!draft.trim()) return;
+    if (!draft.trim() || !callsignValid) return;
     const msg: Message = {
       id: Date.now().toString(),
-      from: callsign,
+      from: myCallsign,
       to: targetCall,
       text: draft.trim(),
       timestamp: new Date(),
@@ -76,13 +81,12 @@ const APRSMessaging = () => {
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end">
             <span className="tab-meta">MY CALL</span>
-            <input
-              value={callsign}
-              onChange={(e) => setCallsign(e.target.value.toUpperCase())}
-              className="tab-callsign tab-callsign-primary bg-transparent text-right w-16 outline-none"
-              style={{ padding: 0, border: "none", borderRadius: 0, width: "4rem", fontSize: "11px" }}
-              maxLength={7}
-            />
+            <span
+              className="tab-callsign tab-callsign-primary"
+              style={{ fontSize: "11px" }}
+            >
+              {myCallsign || "—"}
+            </span>
           </div>
           <div className="w-px h-6 bg-border/30" />
           <div className="flex flex-col items-end">
@@ -97,6 +101,20 @@ const APRSMessaging = () => {
           </div>
         </div>
       </div>
+
+      {/* No callsign warning */}
+      {!callsignValid && (
+        <div
+          className="mx-2 mt-1 flex items-start gap-2 rounded-xl px-3 py-2.5 cursor-pointer"
+          style={{ background: "hsl(0 80% 55% / 0.08)", border: "1px solid hsl(0 80% 55% / 0.25)" }}
+          onClick={onNavigateToSettings}
+        >
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "hsl(0 80% 65%)" }} />
+          <span className="tab-meta leading-relaxed" style={{ color: "hsl(0 80% 65%)" }}>
+            No callsign set — APRS messaging is disabled. Tap here to open Settings and enter your callsign.
+          </span>
+        </div>
+      )}
 
       {/* Messages area */}
       <div
@@ -149,13 +167,14 @@ const APRSMessaging = () => {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Type APRS message…"
-          className="tab-input flex-1"
+          placeholder={callsignValid ? "Type APRS message…" : "Set callsign in Settings to send…"}
+          disabled={!callsignValid}
+          className="tab-input flex-1 disabled:opacity-40"
           maxLength={67}
         />
         <button
           onClick={handleSend}
-          disabled={!draft.trim()}
+          disabled={!draft.trim() || !callsignValid}
           className="tab-icon-btn h-10 w-10 disabled:opacity-30 active:scale-95"
           style={{
             background: "linear-gradient(180deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.08))",

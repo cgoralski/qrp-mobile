@@ -182,6 +182,15 @@ const Index = () => {
   const [isTransmitting, setIsTransmitting] = useState(false);
   const [channelAName, setChannelAName] = useState("REPEATER 1");
   const [channelBName, setChannelBName] = useState("CALLING CH");
+  const [myCallsign, setMyCallsign] = useState<string>(
+    () => localStorage.getItem("myCallsign") ?? ""
+  );
+
+  const handleCallsignChange = (value: string) => {
+    const upper = value.toUpperCase().replace(/[^A-Z0-9/]/g, "").slice(0, 10);
+    setMyCallsign(upper);
+    localStorage.setItem("myCallsign", upper);
+  };
 
   const swipeTouchStartX = useRef<number | null>(null);
   const swipeTouchStartY = useRef<number | null>(null);
@@ -365,7 +374,7 @@ const Index = () => {
             </div>
           </div>
         ) : activeTab === "aprs" ? (
-          <APRSMessaging />
+          <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
         ) : activeTab === "contacts" ? (
           <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">
             <ContactsScreen
@@ -416,7 +425,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">
-            <SettingsScreen />
+            <SettingsScreen myCallsign={myCallsign} onCallsignChange={handleCallsignChange} />
           </div>
         )}
       </main>
