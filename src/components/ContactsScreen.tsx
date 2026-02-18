@@ -1,8 +1,9 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
-  Search, Radio, UserPlus, X, Check, ChevronRight, Trash2,
-  Download, Upload, BookUser, Antenna, Plus, Filter,
+  Search, Radio, UserPlus, X, Check, ChevronRight,
+  Download, Upload, BookUser, Plus, Filter,
 } from "lucide-react";
+import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import { supabase } from "@/integrations/supabase/client";
 
 // ─────────────────────────────────────────────
@@ -70,9 +71,6 @@ const MODE_COLORS: Record<string, string> = {
   AM:   "hsl(30 90% 60%)",
 };
 
-const SWIPE_THRESHOLD = 60;
-const DELETE_THRESHOLD = 120;
-
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
@@ -83,7 +81,7 @@ function formatFreq(f: number | string) {
 }
 
 // ─────────────────────────────────────────────
-// Swipeable contact row
+// Contact row (uses global SwipeToDelete)
 // ─────────────────────────────────────────────
 
 interface ContactRowProps {
@@ -95,113 +93,31 @@ interface ContactRowProps {
 
 const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => {
   const groupColor = GROUP_COLORS[contact.group_tag ?? ""] ?? "hsl(215 15% 42%)";
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  const [swipeX, setSwipeX] = useState(0);
-  const [confirming, setConfirming] = useState(false);
-  const isDragging = useRef(false);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    isDragging.current = false;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    const dx = e.touches[0].clientX - touchStartX.current;
-    const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
-    if (!isDragging.current && dy > 8) { touchStartX.current = null; return; }
-    if (Math.abs(dx) > 6) isDragging.current = true;
-    if (dx < 0) setSwipeX(Math.max(dx, -DELETE_THRESHOLD));
-    else if (swipeX < 0) setSwipeX(Math.min(0, swipeX + (dx > 0 ? Math.abs(dx) : 0)));
-  };
-
-  const handleTouchEnd = () => {
-    if (swipeX <= -DELETE_THRESHOLD) { setSwipeX(-SWIPE_THRESHOLD); setConfirming(true); }
-    else if (swipeX <= -SWIPE_THRESHOLD) { setSwipeX(-SWIPE_THRESHOLD); setConfirming(false); }
-    else { setSwipeX(0); setConfirming(false); }
-    touchStartX.current = null;
-    isDragging.current = false;
-  };
-
-  const handleRowClick = () => {
-    if (swipeX < -8) { setSwipeX(0); setConfirming(false); return; }
-    onTune();
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirming) onDelete();
-    else setConfirming(true);
-  };
-
-  const handleCancelConfirm = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSwipeX(0);
-    setConfirming(false);
-  };
-
-  const revealWidth = Math.abs(swipeX);
-  const deleteZoneVisible = revealWidth >= 8;
 
   return (
-    <div className="relative overflow-hidden" style={{ borderColor: "hsl(var(--border))" }}>
-      {/* Delete zone */}
+    <SwipeToDelete onTap={onTune} onDelete={onDelete}>
       <div
-        className="absolute inset-y-0 right-0 flex items-center"
-        style={{
-          width: `${Math.max(revealWidth, confirming ? SWIPE_THRESHOLD : 0)}px`,
-          background: confirming ? "hsl(0 75% 42%)" : "hsl(0 60% 30%)",
-          transition: isDragging.current ? "none" : "width 0.2s ease, background 0.15s ease",
-        }}
-      >
-        {confirming ? (
-          <div className="flex items-center gap-1 w-full px-2">
-            <button onClick={handleDeleteClick} className="flex-1 flex flex-col items-center justify-center gap-0.5">
-              <Check className="h-3.5 w-3.5 text-foreground" />
-              <span className="font-mono-display text-[8px] tracking-wider text-foreground">YES</span>
-            </button>
-            <div className="self-stretch w-px bg-destructive/40" />
-            <button onClick={handleCancelConfirm} className="flex-1 flex flex-col items-center justify-center gap-0.5">
-              <X className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-mono-display text-[8px] tracking-wider text-muted-foreground">NO</span>
-            </button>
-          </div>
-        ) : deleteZoneVisible ? (
-          <button onClick={handleDeleteClick} className="flex flex-col items-center justify-center gap-0.5 w-full h-full">
-            <Trash2 className="h-3.5 w-3.5 text-foreground" />
-            {revealWidth > 44 && (
-              <span className="font-mono-display text-[8px] tracking-wider text-muted-foreground">DEL</span>
-            )}
-          </button>
-        ) : null}
-      </div>
-
-      {/* Row */}
-      <button
-        onClick={handleRowClick}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="w-full flex items-center gap-3 px-3 py-2.5 text-left active:brightness-125 relative z-10 transition-colors duration-150"
+        className="flex items-center gap-3 px-3 py-2.5"
         style={{
           background: isTuned
-            ? "linear-gradient(135deg, hsl(185 80% 55% / 0.1), hsl(185 80% 55% / 0.04))"
+            ? "linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.04))"
             : "linear-gradient(135deg, hsl(210 18% 14%), hsl(210 18% 10%))",
-          border: `1px solid ${isTuned ? "hsl(185 80% 55% / 0.2)" : "hsl(210 15% 22% / 0.5)"}`,
-          transform: `translateX(${swipeX}px)`,
-          transition: isDragging.current ? "none" : "transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          border: `1px solid ${isTuned ? "hsl(var(--primary) / 0.2)" : "hsl(210 15% 22% / 0.5)"}`,
           marginBottom: "2px",
         }}
       >
         {/* Group colour dot */}
-        <div className="shrink-0 rounded-full" style={{ width: 6, height: 6, background: groupColor, boxShadow: `0 0 6px ${groupColor}` }} />
+        <div
+          className="shrink-0 rounded-full"
+          style={{ width: 6, height: 6, background: groupColor, boxShadow: `0 0 6px ${groupColor}` }}
+        />
 
         <div className="flex-1 min-w-0">
-          {/* Callsign row — mirrors APRS sender style */}
+          {/* Callsign row */}
           <div className="flex items-center gap-2 mb-0.5">
-            <span className={`font-mono-display text-[9px] font-bold tracking-wider ${isTuned ? "text-primary" : "text-amber-400"}`}>
+            <span
+              className={`font-mono-display text-[9px] font-bold tracking-wider ${isTuned ? "text-primary" : "text-amber-400"}`}
+            >
               {contact.callsign || contact.name}
             </span>
             {contact.callsign && (
@@ -210,23 +126,37 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
               </span>
             )}
             {contact.mode && (
-              <span className="font-mono-display text-[8px] px-1 rounded shrink-0"
-                style={{ color: MODE_COLORS[contact.mode] ?? "hsl(var(--muted-foreground))", background: `${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}1a`, border: `1px solid ${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}33` }}>
+              <span
+                className="font-mono-display text-[8px] px-1 rounded shrink-0"
+                style={{
+                  color: MODE_COLORS[contact.mode] ?? "hsl(var(--muted-foreground))",
+                  background: `${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}1a`,
+                  border: `1px solid ${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}33`,
+                }}
+              >
                 {contact.mode}
               </span>
             )}
           </div>
-          {/* Frequency — mirrors APRS message body style */}
+          {/* Frequency */}
           <p className="text-sm text-foreground leading-snug font-mono-display">
-            {formatFreq(contact.frequency)} <span className="text-muted-foreground text-xs">MHz</span>
-            {contact.location_desc ? <span className="text-muted-foreground text-xs ml-2">{contact.location_desc}</span> : null}
+            {formatFreq(contact.frequency)}{" "}
+            <span className="text-muted-foreground text-xs">MHz</span>
+            {contact.location_desc ? (
+              <span className="text-muted-foreground text-xs ml-2">{contact.location_desc}</span>
+            ) : null}
           </p>
         </div>
 
         <div className="shrink-0">
           {isTuned ? (
-            <div className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
-              style={{ background: "hsl(185 80% 55% / 0.15)", border: "1px solid hsl(185 80% 55% / 0.35)" }}>
+            <div
+              className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
+              style={{
+                background: "hsl(var(--primary) / 0.15)",
+                border: "1px solid hsl(var(--primary) / 0.35)",
+              }}
+            >
               <Check className="h-3 w-3 text-primary" />
               <span className="font-mono-display text-[8px] font-bold tracking-wider text-primary">TUNED</span>
             </div>
@@ -234,8 +164,8 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
             <ChevronRight className="h-3.5 w-3.5 text-border" />
           )}
         </div>
-      </button>
-    </div>
+      </div>
+    </SwipeToDelete>
   );
 };
 
@@ -601,7 +531,7 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
 
       {/* Footer */}
       <div className="flex items-center justify-center gap-1.5 py-1.5 border-t border-border/40">
-        <span className="font-mono-display text-[8px] tracking-wider text-muted-foreground/50">← SWIPE LEFT TO DELETE</span>
+        <span className="font-mono-display text-[8px] tracking-wider text-muted-foreground/50">← SWIPE LEFT TO REVEAL DELETE</span>
       </div>
     </div>
   );
