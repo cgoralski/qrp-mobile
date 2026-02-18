@@ -9,6 +9,7 @@ interface RadioScreenProps {
   activeChannel: "A" | "B";
   onActiveChannelChange: (channel: "A" | "B") => void;
   rssi: number;
+  isTransmitting?: boolean;
 }
 
 const formatFreq = (value: string): { main: string; sub: string } => {
@@ -154,6 +155,7 @@ const RadioScreen = ({
   activeChannel,
   onActiveChannelChange,
   rssi,
+  isTransmitting = false,
 }: RadioScreenProps) => {
   const [animatedRssi, setAnimatedRssi] = useState(rssi);
 
@@ -227,6 +229,18 @@ const RadioScreen = ({
           style={{
             background:
               "radial-gradient(ellipse at 50% 50%, transparent 55%, hsl(220 30% 2% / 0.45) 100%)",
+          }}
+        />
+        {/* TX red bloom — glows when transmitting */}
+        <div
+          className="absolute inset-0 pointer-events-none z-10 rounded-xl transition-opacity duration-150"
+          style={{
+            opacity: isTransmitting ? 1 : 0,
+            background:
+              "radial-gradient(ellipse at 50% 40%, hsl(var(--transmit) / 0.18) 0%, hsl(var(--transmit) / 0.06) 50%, transparent 75%)",
+            boxShadow: isTransmitting
+              ? "inset 0 0 24px hsl(var(--transmit) / 0.12)"
+              : "none",
           }}
         />
         {/* Top status icons */}
