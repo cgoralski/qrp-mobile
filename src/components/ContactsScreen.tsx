@@ -1,28 +1,55 @@
-import { useState, useMemo, useRef } from "react";
-import { Search, Radio, UserPlus, X, Check, ChevronRight, Trash2 } from "lucide-react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import {
+  Search, Radio, UserPlus, X, Check, ChevronRight, Trash2,
+  Download, Upload, BookUser, Antenna, Plus, Filter,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
 
 interface Contact {
   id: string;
   callsign: string;
   name: string;
-  frequency: string;
-  group?: string;
+  frequency: number;
+  freq_offset: number;
+  duplex: string;
+  tone_mode: string;
+  r_tone_freq: number;
+  c_tone_freq: number;
+  dtcs_code: string;
+  mode: string;
+  country: string;
+  region: string;
+  location_desc: string;
+  comment: string;
+  group_tag: string;
+  source_repeater_id: string | null;
 }
 
-const DEFAULT_CONTACTS: Contact[] = [
-  { id: "1",  callsign: "W1AW",   name: "ARRL HQ",         frequency: "145.15000", group: "REPEATERS" },
-  { id: "2",  callsign: "KD9VXR", name: "Sarah Mitchell",  frequency: "146.52000", group: "LOCAL" },
-  { id: "3",  callsign: "VE3TKI", name: "Toronto Net",     frequency: "147.12000", group: "REPEATERS" },
-  { id: "4",  callsign: "N5TW",   name: "Tom Walters",     frequency: "446.00000", group: "LOCAL" },
-  { id: "5",  callsign: "G4ABC",  name: "UK Relay",        frequency: "145.50000", group: "DX" },
-  { id: "6",  callsign: "K7LFR",  name: "Larry Freeman",   frequency: "144.39000", group: "APRS" },
-  { id: "7",  callsign: "ZL2BCB", name: "New Zealand DX",  frequency: "14.225000", group: "DX" },
-  { id: "8",  callsign: "WB8WKQ", name: "EmComm Group",    frequency: "147.33000", group: "EMCOMM" },
-  { id: "9",  callsign: "KG5YZP", name: "James Owens",     frequency: "462.55000", group: "LOCAL" },
-  { id: "10", callsign: "VK4BXG", name: "Brisbane Net",    frequency: "146.80000", group: "DX" },
-  { id: "11", callsign: "AA1ON",  name: "EOC Primary",     frequency: "155.34000", group: "EMCOMM" },
-  { id: "12", callsign: "KJ4QLP", name: "Rachel Torres",   frequency: "446.52500", group: "LOCAL" },
-];
+interface Repeater {
+  id: string;
+  callsign: string | null;
+  name: string;
+  frequency: number;
+  freq_offset: number | null;
+  duplex: string | null;
+  tone_mode: string | null;
+  r_tone_freq: number | null;
+  c_tone_freq: number | null;
+  dtcs_code: string | null;
+  mode: string | null;
+  country: string;
+  region: string | null;
+  location_desc: string | null;
+  comment: string | null;
+}
+
+// ─────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────
 
 const GROUP_COLORS: Record<string, string> = {
   REPEATERS: "hsl(185 80% 55%)",
@@ -30,14 +57,35 @@ const GROUP_COLORS: Record<string, string> = {
   DX:        "hsl(270 70% 65%)",
   APRS:      "hsl(45 90% 55%)",
   EMCOMM:    "hsl(0 85% 60%)",
+  NET:       "hsl(210 80% 60%)",
 };
 
-interface ContactsScreenProps {
-  onTuneChannel: (frequency: string) => void;
-  activeChannel: "A" | "B";
+const GROUPS = ["LOCAL", "REPEATERS", "DX", "APRS", "EMCOMM", "NET"];
+
+const MODE_COLORS: Record<string, string> = {
+  FM:   "hsl(185 80% 55%)",
+  DMR:  "hsl(270 70% 65%)",
+  "D-STAR": "hsl(45 90% 55%)",
+  "C4FM": "hsl(142 70% 50%)",
+  AM:   "hsl(30 90% 60%)",
+};
+
+const SWIPE_THRESHOLD = 60;
+const DELETE_THRESHOLD = 120;
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function formatFreq(f: number | string) {
+  const n = typeof f === "string" ? parseFloat(f) : f;
+  return isNaN(n) ? String(f) : n.toFixed(5);
 }
 
-/* ── Swipeable contact row ── */
+// ─────────────────────────────────────────────
+// Swipeable contact row
+// ─────────────────────────────────────────────
+
 interface ContactRowProps {
   contact: Contact;
   isTuned: boolean;
@@ -45,16 +93,11 @@ interface ContactRowProps {
   onDelete: () => void;
 }
 
-const SWIPE_THRESHOLD = 60; // px to reveal delete zone
-const DELETE_THRESHOLD = 120; // px to auto-confirm delete
-
 const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => {
-  const groupColor = GROUP_COLORS[contact.group ?? ""] ?? "hsl(215 15% 42%)";
-
-  // Swipe state
+  const groupColor = GROUP_COLORS[contact.group_tag ?? ""] ?? "hsl(215 15% 42%)";
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
-  const [swipeX, setSwipeX] = useState(0); // negative = swiped left
+  const [swipeX, setSwipeX] = useState(0);
   const [confirming, setConfirming] = useState(false);
   const isDragging = useRef(false);
 
@@ -68,57 +111,29 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
     if (touchStartX.current === null || touchStartY.current === null) return;
     const dx = e.touches[0].clientX - touchStartX.current;
     const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
-    // Only track horizontal swipes that are clearly more horizontal than vertical
-    if (!isDragging.current && dy > 8) {
-      // mostly vertical — cancel
-      touchStartX.current = null;
-      return;
-    }
+    if (!isDragging.current && dy > 8) { touchStartX.current = null; return; }
     if (Math.abs(dx) > 6) isDragging.current = true;
-    if (dx < 0) {
-      // clamp leftward swipe to -DELETE_THRESHOLD
-      setSwipeX(Math.max(dx, -DELETE_THRESHOLD));
-    } else if (swipeX < 0) {
-      // allow swiping back right
-      setSwipeX(Math.min(0, swipeX + (dx > 0 ? Math.abs(dx) : 0)));
-    }
+    if (dx < 0) setSwipeX(Math.max(dx, -DELETE_THRESHOLD));
+    else if (swipeX < 0) setSwipeX(Math.min(0, swipeX + (dx > 0 ? Math.abs(dx) : 0)));
   };
 
   const handleTouchEnd = () => {
-    if (swipeX <= -DELETE_THRESHOLD) {
-      // full swipe → instant confirm
-      setSwipeX(-SWIPE_THRESHOLD);
-      setConfirming(true);
-    } else if (swipeX <= -SWIPE_THRESHOLD) {
-      // partial swipe → snap to reveal delete button
-      setSwipeX(-SWIPE_THRESHOLD);
-      setConfirming(false);
-    } else {
-      // not far enough → snap back
-      setSwipeX(0);
-      setConfirming(false);
-    }
+    if (swipeX <= -DELETE_THRESHOLD) { setSwipeX(-SWIPE_THRESHOLD); setConfirming(true); }
+    else if (swipeX <= -SWIPE_THRESHOLD) { setSwipeX(-SWIPE_THRESHOLD); setConfirming(false); }
+    else { setSwipeX(0); setConfirming(false); }
     touchStartX.current = null;
     isDragging.current = false;
   };
 
   const handleRowClick = () => {
-    if (swipeX < -8) {
-      // row is swiped open — close it instead of tuning
-      setSwipeX(0);
-      setConfirming(false);
-      return;
-    }
+    if (swipeX < -8) { setSwipeX(0); setConfirming(false); return; }
     onTune();
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirming) {
-      onDelete();
-    } else {
-      setConfirming(true);
-    }
+    if (confirming) onDelete();
+    else setConfirming(true);
   };
 
   const handleCancelConfirm = (e: React.MouseEvent) => {
@@ -132,7 +147,7 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
 
   return (
     <div className="relative overflow-hidden" style={{ borderColor: "hsl(215 10% 13%)" }}>
-      {/* ── Delete zone (revealed behind row) ── */}
+      {/* Delete zone */}
       <div
         className="absolute inset-y-0 right-0 flex items-center"
         style={{
@@ -142,45 +157,28 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
         }}
       >
         {confirming ? (
-          /* Confirmation state */
           <div className="flex items-center gap-1 w-full px-2">
-            <button
-              onClick={handleDeleteClick}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5"
-            >
+            <button onClick={handleDeleteClick} className="flex-1 flex flex-col items-center justify-center gap-0.5">
               <Check className="h-3.5 w-3.5" style={{ color: "hsl(0 0% 95%)" }} />
-              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 85%)" }}>
-                YES
-              </span>
+              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 85%)" }}>YES</span>
             </button>
             <div style={{ width: "1px", alignSelf: "stretch", background: "hsl(0 60% 50% / 0.4)" }} />
-            <button
-              onClick={handleCancelConfirm}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5"
-            >
+            <button onClick={handleCancelConfirm} className="flex-1 flex flex-col items-center justify-center gap-0.5">
               <X className="h-3.5 w-3.5" style={{ color: "hsl(0 0% 75%)" }} />
-              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 65%)" }}>
-                NO
-              </span>
+              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 65%)" }}>NO</span>
             </button>
           </div>
         ) : deleteZoneVisible ? (
-          /* Initial swipe reveal */
-          <button
-            onClick={handleDeleteClick}
-            className="flex flex-col items-center justify-center gap-0.5 w-full h-full"
-          >
+          <button onClick={handleDeleteClick} className="flex flex-col items-center justify-center gap-0.5 w-full h-full">
             <Trash2 className="h-3.5 w-3.5" style={{ color: "hsl(0 0% 85%)" }} />
             {revealWidth > 44 && (
-              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 75%)" }}>
-                DEL
-              </span>
+              <span className="font-mono-display text-[7px] tracking-wider" style={{ color: "hsl(0 0% 75%)" }}>DEL</span>
             )}
           </button>
         ) : null}
       </div>
 
-      {/* ── Contact row (slides left on swipe) ── */}
+      {/* Row */}
       <button
         onClick={handleRowClick}
         onTouchStart={handleTouchStart}
@@ -193,58 +191,34 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
           transition: isDragging.current ? "none" : "transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
         }}
       >
-        {/* Group colour dot */}
-        <div
-          className="shrink-0 rounded-full"
-          style={{
-            width: "6px",
-            height: "6px",
-            background: groupColor,
-            boxShadow: `0 0 6px ${groupColor}`,
-          }}
-        />
-
-        {/* Main info */}
+        <div className="shrink-0 rounded-full" style={{ width: 6, height: 6, background: groupColor, boxShadow: `0 0 6px ${groupColor}` }} />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
-            <span
-              className="font-mono-display text-[11px] font-bold tracking-wider"
-              style={{ color: isTuned ? "hsl(185 80% 65%)" : "hsl(185 60% 70%)" }}
-            >
-              {contact.callsign}
+            <span className="font-mono-display text-[11px] font-bold tracking-wider" style={{ color: isTuned ? "hsl(185 80% 65%)" : "hsl(185 60% 70%)" }}>
+              {contact.callsign || contact.name}
             </span>
-            <span
-              className="font-mono-display text-[9px] tracking-wide truncate"
-              style={{ color: "hsl(215 15% 50%)" }}
-            >
-              {contact.name}
-            </span>
+            {contact.callsign && (
+              <span className="font-mono-display text-[9px] tracking-wide truncate" style={{ color: "hsl(215 15% 50%)" }}>
+                {contact.name}
+              </span>
+            )}
           </div>
-          <div
-            className="font-mono-display text-[10px] tracking-wider mt-0.5"
-            style={{ color: isTuned ? "hsl(185 80% 55%)" : "hsl(200 20% 60%)" }}
-          >
-            {contact.frequency} MHz
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="font-mono-display text-[10px] tracking-wider" style={{ color: isTuned ? "hsl(185 80% 55%)" : "hsl(200 20% 60%)" }}>
+              {formatFreq(contact.frequency)} MHz
+            </span>
+            {contact.mode && (
+              <span className="font-mono-display text-[8px] tracking-wider px-1 rounded" style={{ color: MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)", background: `${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"  }18`, border: `1px solid ${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}33` }}>
+                {contact.mode}
+              </span>
+            )}
           </div>
         </div>
-
-        {/* Tune indicator */}
         <div className="shrink-0 flex items-center justify-center">
           {isTuned ? (
-            <div
-              className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
-              style={{
-                background: "hsl(185 80% 55% / 0.15)",
-                border: "1px solid hsl(185 80% 55% / 0.35)",
-              }}
-            >
+            <div className="flex items-center gap-1 rounded-md px-1.5 py-0.5" style={{ background: "hsl(185 80% 55% / 0.15)", border: "1px solid hsl(185 80% 55% / 0.35)" }}>
               <Check className="h-3 w-3" style={{ color: "hsl(185 80% 65%)" }} />
-              <span
-                className="font-mono-display text-[8px] font-bold tracking-wider"
-                style={{ color: "hsl(185 80% 65%)" }}
-              >
-                TUNED
-              </span>
+              <span className="font-mono-display text-[8px] font-bold tracking-wider" style={{ color: "hsl(185 80% 65%)" }}>TUNED</span>
             </div>
           ) : (
             <ChevronRight className="h-3.5 w-3.5" style={{ color: "hsl(215 15% 28%)" }} />
@@ -255,251 +229,356 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
   );
 };
 
-/* ── Main screen ── */
-const ContactsScreen = ({ onTuneChannel, activeChannel }: ContactsScreenProps) => {
-  const [contacts, setContacts] = useState<Contact[]>(DEFAULT_CONTACTS);
+// ─────────────────────────────────────────────
+// Repeater Browser Row
+// ─────────────────────────────────────────────
+
+interface RepeaterRowProps {
+  repeater: Repeater;
+  onTune: () => void;
+  onAddToContacts: () => void;
+  isAdded: boolean;
+}
+
+const RepeaterRow = ({ repeater, onTune, onAddToContacts, isAdded }: RepeaterRowProps) => {
+  const modeColor = MODE_COLORS[repeater.mode ?? "FM"] ?? "hsl(185 80% 55%)";
+
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-2.5"
+      style={{ borderBottom: "1px solid hsl(215 10% 13%)", background: "hsl(220 12% 11%)" }}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2">
+          <span className="font-mono-display text-[11px] font-bold tracking-wider" style={{ color: "hsl(185 60% 70%)" }}>
+            {repeater.callsign || repeater.name}
+          </span>
+          {repeater.callsign && (
+            <span className="font-mono-display text-[9px] truncate" style={{ color: "hsl(215 15% 45%)" }}>
+              {repeater.name}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <span className="font-mono-display text-[10px] tracking-wider" style={{ color: "hsl(200 20% 60%)" }}>
+            {formatFreq(repeater.frequency)} MHz
+          </span>
+          {repeater.mode && (
+            <span className="font-mono-display text-[8px] px-1 rounded" style={{ color: modeColor, background: `${modeColor}18`, border: `1px solid ${modeColor}33` }}>
+              {repeater.mode}
+            </span>
+          )}
+          {repeater.tone_mode && repeater.tone_mode !== "" && (
+            <span className="font-mono-display text-[8px]" style={{ color: "hsl(215 15% 40%)" }}>
+              {repeater.tone_mode} {repeater.r_tone_freq ? `${repeater.r_tone_freq}Hz` : ""}
+            </span>
+          )}
+          {repeater.location_desc && (
+            <span className="font-mono-display text-[8px] truncate" style={{ color: "hsl(215 15% 36%)" }}>
+              {repeater.location_desc}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0">
+        {/* Tune */}
+        <button
+          onClick={onTune}
+          className="flex items-center gap-1 rounded-md px-1.5 py-1 transition-all active:brightness-125"
+          style={{ background: "hsl(185 60% 20% / 0.5)", border: "1px solid hsl(185 60% 30% / 0.5)", color: "hsl(185 60% 65%)" }}
+          title="Tune to frequency"
+        >
+          <Radio className="h-3 w-3" />
+        </button>
+        {/* Add to contacts */}
+        <button
+          onClick={onAddToContacts}
+          disabled={isAdded}
+          className="flex items-center gap-1 rounded-md px-1.5 py-1 transition-all active:brightness-125 disabled:opacity-40"
+          style={{
+            background: isAdded ? "hsl(142 60% 20% / 0.5)" : "hsl(215 14% 18%)",
+            border: `1px solid ${isAdded ? "hsl(142 60% 30% / 0.5)" : "hsl(215 10% 24%)"}`,
+            color: isAdded ? "hsl(142 60% 60%)" : "hsl(215 15% 55%)",
+          }}
+          title={isAdded ? "Already in contacts" : "Add to contacts"}
+        >
+          {isAdded ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// My Contacts Tab
+// ─────────────────────────────────────────────
+
+interface MyContactsTabProps {
+  onTuneChannel: (freq: string) => void;
+  activeChannel: "A" | "B";
+}
+
+const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => {
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [tunedId, setTunedId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [newContact, setNewContact] = useState({ callsign: "", name: "", frequency: "", group: "LOCAL" });
+  const [newContact, setNewContact] = useState({ callsign: "", name: "", frequency: "", group_tag: "LOCAL", mode: "FM" });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const groups = useMemo(() => Array.from(new Set(contacts.map((c) => c.group).filter(Boolean))) as string[], [contacts]);
+  // Load contacts
+  const loadContacts = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from("contacts").select("*").order("created_at", { ascending: false });
+    if (data) setContacts(data as Contact[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadContacts(); }, [loadContacts]);
+
+  const groups = useMemo(() => Array.from(new Set(contacts.map((c) => c.group_tag).filter(Boolean))) as string[], [contacts]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     return contacts.filter((c) => {
-      const matchesQuery =
-        !q ||
-        c.callsign.toLowerCase().includes(q) ||
-        c.name.toLowerCase().includes(q) ||
-        c.frequency.includes(q);
-      const matchesGroup = !selectedGroup || c.group === selectedGroup;
+      const matchesQuery = !q || c.callsign.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || String(c.frequency).includes(q);
+      const matchesGroup = !selectedGroup || c.group_tag === selectedGroup;
       return matchesQuery && matchesGroup;
     });
   }, [contacts, query, selectedGroup]);
 
   const handleTune = (contact: Contact) => {
-    onTuneChannel(contact.frequency);
+    onTuneChannel(formatFreq(contact.frequency));
     setTunedId(contact.id);
     setTimeout(() => setTunedId(null), 1500);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    await supabase.from("contacts").delete().eq("id", id);
     setContacts((prev) => prev.filter((c) => c.id !== id));
     if (tunedId === id) setTunedId(null);
   };
 
-  const handleAdd = () => {
-    if (!newContact.callsign.trim() || !newContact.frequency.trim()) return;
-    const id = String(Date.now());
-    setContacts((prev) => [
-      { ...newContact, id, callsign: newContact.callsign.toUpperCase() },
-      ...prev,
-    ]);
-    setNewContact({ callsign: "", name: "", frequency: "", group: "LOCAL" });
-    setShowAdd(false);
+  const handleAdd = async () => {
+    if (!newContact.frequency.trim()) return;
+    const freq = parseFloat(newContact.frequency);
+    if (isNaN(freq)) return;
+    const { data, error } = await supabase.from("contacts").insert({
+      callsign: newContact.callsign.toUpperCase().trim(),
+      name: newContact.name.trim() || newContact.callsign.toUpperCase().trim(),
+      frequency: freq,
+      group_tag: newContact.group_tag,
+      mode: newContact.mode,
+    }).select().single();
+    if (!error && data) {
+      setContacts((prev) => [data as Contact, ...prev]);
+      setNewContact({ callsign: "", name: "", frequency: "", group_tag: "LOCAL", mode: "FM" });
+      setShowAdd(false);
+    }
+  };
+
+  // Export as CSV
+  const handleExport = () => {
+    const headers = ["callsign", "name", "frequency", "freq_offset", "duplex", "tone_mode", "r_tone_freq", "c_tone_freq", "dtcs_code", "mode", "country", "region", "location_desc", "comment", "group_tag"];
+      const rows = contacts.map((c) =>
+      headers.map((h) => {
+        const val = (c as unknown as Record<string, unknown>)[h] ?? "";
+        return `"${String(val).replace(/"/g, '""')}"`;
+      }).join(",")
+    );
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `contacts-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Import from CSV
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines.length < 2) return;
+    const headers = lines[0].split(",").map((h) => h.replace(/"/g, "").trim().toLowerCase());
+
+    const parseRow = (line: string) => {
+      // Simple CSV parse (handles quoted fields)
+      const result: string[] = [];
+      let current = "";
+      let inQuotes = false;
+      for (const char of line) {
+        if (char === '"') { inQuotes = !inQuotes; }
+        else if (char === "," && !inQuotes) { result.push(current); current = ""; }
+        else { current += char; }
+      }
+      result.push(current);
+      return result;
+    };
+
+    const records = lines.slice(1).map((line) => {
+      const vals = parseRow(line);
+      const obj: Record<string, string> = {};
+      headers.forEach((h, i) => { obj[h] = vals[i]?.replace(/^"|"$/g, "") ?? ""; });
+      return obj;
+    }).filter((r) => r.frequency && !isNaN(parseFloat(r.frequency)));
+
+    if (records.length === 0) return;
+
+    const inserts = records.map((r) => ({
+      callsign: r.callsign ?? "",
+      name: r.name ?? r.callsign ?? "",
+      frequency: parseFloat(r.frequency),
+      freq_offset: r.freq_offset ? parseFloat(r.freq_offset) : 0,
+      duplex: r.duplex ?? "",
+      tone_mode: r.tone_mode ?? "",
+      r_tone_freq: r.r_tone_freq ? parseFloat(r.r_tone_freq) : 88.5,
+      c_tone_freq: r.c_tone_freq ? parseFloat(r.c_tone_freq) : 88.5,
+      dtcs_code: r.dtcs_code ?? "023",
+      mode: r.mode ?? "FM",
+      country: r.country ?? "",
+      region: r.region ?? "",
+      location_desc: r.location_desc ?? "",
+      comment: r.comment ?? "",
+      group_tag: r.group_tag ?? "LOCAL",
+    }));
+
+    await supabase.from("contacts").insert(inserts);
+    await loadContacts();
+    e.target.value = "";
   };
 
   return (
-    <div
-      className="flex flex-col w-full h-full animate-fade-in"
-      style={{
-        background: "linear-gradient(175deg, hsl(220 12% 11%) 0%, hsl(220 10% 8%) 100%)",
-        border: "1px solid hsl(220 10% 18%)",
-        borderRadius: "16px",
-        overflow: "hidden",
-      }}
-    >
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-3 py-2.5"
-        style={{ borderBottom: "1px solid hsl(215 10% 15%)" }}
-      >
-        <div className="flex items-center gap-2">
-          <span className="font-mono-display text-[10px] font-bold tracking-[0.18em] text-primary">
-            CONTACTS
-          </span>
-          <span
-            className="font-mono-display text-[9px] px-1.5 py-0.5 rounded"
-            style={{
-              background: "hsl(185 80% 55% / 0.12)",
-              color: "hsl(185 80% 55%)",
-              border: "1px solid hsl(185 80% 55% / 0.25)",
-            }}
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: "1px solid hsl(215 10% 15%)" }}>
+        <span className="font-mono-display text-[9px] tracking-wider" style={{ color: "hsl(215 15% 42%)" }}>
+          {contacts.length} CONTACTS
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1 rounded-md px-2 py-1 font-mono-display text-[8px] tracking-wider transition-all"
+            style={{ background: "hsl(215 14% 16%)", border: "1px solid hsl(215 10% 22%)", color: "hsl(215 15% 50%)" }}
+            title="Export contacts as CSV"
           >
-            {contacts.length}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span
-            className="font-mono-display text-[8px] tracking-wider px-1.5 py-0.5 rounded"
-            style={{
-              background: "hsl(185 80% 55% / 0.1)",
-              color: "hsl(185 80% 55% / 0.7)",
-              border: "1px solid hsl(185 80% 55% / 0.2)",
-            }}
+            <Download className="h-3 w-3" /> EXP
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-1 rounded-md px-2 py-1 font-mono-display text-[8px] tracking-wider transition-all"
+            style={{ background: "hsl(215 14% 16%)", border: "1px solid hsl(215 10% 22%)", color: "hsl(215 15% 50%)" }}
+            title="Import contacts from CSV"
           >
-            CH {activeChannel}
-          </span>
+            <Upload className="h-3 w-3" /> IMP
+          </button>
+          <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
           <button
             onClick={() => setShowAdd((v) => !v)}
             className="flex items-center justify-center rounded-md transition-all"
             style={{
-              width: "26px",
-              height: "26px",
+              width: 26, height: 26,
               background: showAdd ? "hsl(185 80% 55% / 0.2)" : "hsl(215 12% 18%)",
               border: `1px solid ${showAdd ? "hsl(185 80% 55% / 0.4)" : "hsl(215 10% 24%)"}`,
               color: showAdd ? "hsl(185 80% 55%)" : "hsl(215 15% 55%)",
             }}
-            aria-label="Add contact"
           >
             {showAdd ? <X className="h-3 w-3" /> : <UserPlus className="h-3 w-3" />}
           </button>
         </div>
       </div>
 
-      {/* Add contact form */}
+      {/* Add form */}
       {showAdd && (
-        <div
-          className="px-3 py-2.5 flex flex-col gap-2"
-          style={{ borderBottom: "1px solid hsl(215 10% 15%)", background: "hsl(215 12% 10%)" }}
-        >
+        <div className="px-3 py-2.5 flex flex-col gap-1.5" style={{ borderBottom: "1px solid hsl(215 10% 15%)", background: "hsl(215 12% 10%)" }}>
           <div className="grid grid-cols-2 gap-1.5">
-            <input
-              type="text"
-              placeholder="CALLSIGN"
-              value={newContact.callsign}
+            <input type="text" placeholder="CALLSIGN" value={newContact.callsign}
               onChange={(e) => setNewContact((p) => ({ ...p, callsign: e.target.value.toUpperCase() }))}
-              className="font-mono-display text-[10px] tracking-wider uppercase rounded-md px-2 py-1.5 outline-none w-full"
-              style={{
-                background: "hsl(215 14% 14%)",
-                border: "1px solid hsl(215 10% 22%)",
-                color: "hsl(185 80% 65%)",
-                caretColor: "hsl(185 80% 55%)",
-              }}
+              className="font-mono-display text-[10px] tracking-wider rounded-md px-2 py-1.5 outline-none"
+              style={{ background: "hsl(215 14% 14%)", border: "1px solid hsl(215 10% 22%)", color: "hsl(185 80% 65%)", caretColor: "hsl(185 80% 55%)" }}
             />
-            <input
-              type="text"
-              placeholder="FREQUENCY"
-              value={newContact.frequency}
+            <input type="text" placeholder="FREQUENCY" value={newContact.frequency}
               onChange={(e) => setNewContact((p) => ({ ...p, frequency: e.target.value }))}
-              className="font-mono-display text-[10px] tracking-wider rounded-md px-2 py-1.5 outline-none w-full"
-              style={{
-                background: "hsl(215 14% 14%)",
-                border: "1px solid hsl(215 10% 22%)",
-                color: "hsl(200 20% 80%)",
-                caretColor: "hsl(185 80% 55%)",
-              }}
+              className="font-mono-display text-[10px] tracking-wider rounded-md px-2 py-1.5 outline-none"
+              style={{ background: "hsl(215 14% 14%)", border: "1px solid hsl(215 10% 22%)", color: "hsl(200 20% 80%)", caretColor: "hsl(185 80% 55%)" }}
             />
           </div>
-          <input
-            type="text"
-            placeholder="Name"
-            value={newContact.name}
+          <input type="text" placeholder="Name / Description" value={newContact.name}
             onChange={(e) => setNewContact((p) => ({ ...p, name: e.target.value }))}
-            className="font-mono-display text-[10px] tracking-wider rounded-md px-2 py-1.5 outline-none w-full"
-            style={{
-              background: "hsl(215 14% 14%)",
-              border: "1px solid hsl(215 10% 22%)",
-              color: "hsl(200 20% 80%)",
-              caretColor: "hsl(185 80% 55%)",
-            }}
+            className="font-mono-display text-[10px] tracking-wider rounded-md px-2 py-1.5 outline-none"
+            style={{ background: "hsl(215 14% 14%)", border: "1px solid hsl(215 10% 22%)", color: "hsl(200 20% 80%)", caretColor: "hsl(185 80% 55%)" }}
           />
-          <div className="flex gap-1.5">
-            {["LOCAL", "REPEATERS", "DX", "APRS", "EMCOMM"].map((g) => (
-              <button
-                key={g}
-                onClick={() => setNewContact((p) => ({ ...p, group: g }))}
+          <div className="flex gap-1 flex-wrap">
+            {GROUPS.map((g) => (
+              <button key={g} onClick={() => setNewContact((p) => ({ ...p, group_tag: g }))}
                 className="font-mono-display text-[8px] tracking-wider px-1.5 py-0.5 rounded transition-all"
                 style={{
-                  background: newContact.group === g ? `${GROUP_COLORS[g]}22` : "hsl(215 14% 16%)",
-                  border: `1px solid ${newContact.group === g ? GROUP_COLORS[g] : "hsl(215 10% 22%)"}`,
-                  color: newContact.group === g ? GROUP_COLORS[g] : "hsl(215 15% 45%)",
+                  background: newContact.group_tag === g ? `${GROUP_COLORS[g]}22` : "hsl(215 14% 16%)",
+                  border: `1px solid ${newContact.group_tag === g ? GROUP_COLORS[g] : "hsl(215 10% 22%)"}`,
+                  color: newContact.group_tag === g ? GROUP_COLORS[g] : "hsl(215 15% 45%)",
                 }}
-              >
-                {g}
-              </button>
+              >{g}</button>
             ))}
           </div>
-          <button
-            onClick={handleAdd}
+          <button onClick={handleAdd}
             className="flex items-center justify-center gap-1.5 rounded-md py-1.5 font-mono-display text-[10px] font-bold tracking-wider transition-all"
-            style={{
-              background: "linear-gradient(180deg, hsl(185 70% 30%), hsl(185 60% 20%))",
-              border: "1px solid hsl(185 70% 35%)",
-              color: "hsl(185 80% 75%)",
-            }}
+            style={{ background: "linear-gradient(180deg, hsl(185 70% 30%), hsl(185 60% 20%))", border: "1px solid hsl(185 70% 35%)", color: "hsl(185 80% 75%)" }}
           >
             <Check className="h-3 w-3" /> SAVE CONTACT
           </button>
         </div>
       )}
 
-      {/* Search bar */}
+      {/* Search */}
       <div className="px-3 py-2" style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}>
-        <div
-          className="flex items-center gap-2 rounded-md px-2.5 py-1.5"
-          style={{
-            background: "hsl(215 14% 12%)",
-            border: "1px solid hsl(215 10% 20%)",
-          }}
-        >
+        <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5" style={{ background: "hsl(215 14% 12%)", border: "1px solid hsl(215 10% 20%)" }}>
           <Search className="h-3 w-3 shrink-0" style={{ color: "hsl(215 15% 38%)" }} />
-          <input
-            type="text"
-            placeholder="Search callsign, name, freq…"
-            value={query}
+          <input type="text" placeholder="Search callsign, name, freq…" value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="font-mono-display text-[10px] tracking-wide bg-transparent outline-none flex-1 min-w-0"
             style={{ color: "hsl(200 20% 78%)", caretColor: "hsl(185 80% 55%)" }}
           />
-          {query && (
-            <button onClick={() => setQuery("")}>
-              <X className="h-3 w-3" style={{ color: "hsl(215 15% 38%)" }} />
-            </button>
-          )}
+          {query && <button onClick={() => setQuery("")}><X className="h-3 w-3" style={{ color: "hsl(215 15% 38%)" }} /></button>}
         </div>
       </div>
 
-      {/* Group filter chips */}
-      <div
-        className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none"
-        style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}
-      >
-        <button
-          onClick={() => setSelectedGroup(null)}
+      {/* Group chips */}
+      <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none" style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}>
+        <button onClick={() => setSelectedGroup(null)}
           className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-          style={{
-            background: !selectedGroup ? "hsl(185 80% 55% / 0.15)" : "hsl(215 14% 14%)",
-            border: `1px solid ${!selectedGroup ? "hsl(185 80% 55% / 0.4)" : "hsl(215 10% 20%)"}`,
-            color: !selectedGroup ? "hsl(185 80% 65%)" : "hsl(215 15% 42%)",
-          }}
-        >
-          ALL
-        </button>
+          style={{ background: !selectedGroup ? "hsl(185 80% 55% / 0.15)" : "hsl(215 14% 14%)", border: `1px solid ${!selectedGroup ? "hsl(185 80% 55% / 0.4)" : "hsl(215 10% 20%)"}`, color: !selectedGroup ? "hsl(185 80% 65%)" : "hsl(215 15% 42%)" }}
+        >ALL</button>
         {groups.map((g) => (
-          <button
-            key={g}
-            onClick={() => setSelectedGroup(selectedGroup === g ? null : g)}
+          <button key={g} onClick={() => setSelectedGroup(selectedGroup === g ? null : g)}
             className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-            style={{
-              background: selectedGroup === g ? `${GROUP_COLORS[g]}22` : "hsl(215 14% 14%)",
-              border: `1px solid ${selectedGroup === g ? GROUP_COLORS[g] : "hsl(215 10% 20%)"}`,
-              color: selectedGroup === g ? GROUP_COLORS[g] : "hsl(215 15% 42%)",
-            }}
-          >
-            {g}
-          </button>
+            style={{ background: selectedGroup === g ? `${GROUP_COLORS[g] ?? "hsl(185 80% 55%)"}22` : "hsl(215 14% 14%)", border: `1px solid ${selectedGroup === g ? (GROUP_COLORS[g] ?? "hsl(185 80% 55%)") : "hsl(215 10% 20%)"}`, color: selectedGroup === g ? (GROUP_COLORS[g] ?? "hsl(185 80% 65%)") : "hsl(215 15% 42%)" }}
+          >{g}</button>
         ))}
       </div>
 
       {/* Contact list */}
       <div className="flex-1 overflow-y-auto overscroll-contain divide-y" style={{ borderColor: "hsl(215 10% 13%)" }}>
-        {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground">
-            <Radio className="h-6 w-6 opacity-20" />
-            <span className="font-mono-display text-[10px] tracking-wider opacity-40">NO CONTACTS FOUND</span>
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <span className="font-mono-display text-[10px] tracking-wider" style={{ color: "hsl(215 15% 35%)" }}>LOADING…</span>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-10">
+            <BookUser className="h-6 w-6 opacity-20" style={{ color: "hsl(215 15% 50%)" }} />
+            <span className="font-mono-display text-[10px] tracking-wider opacity-40" style={{ color: "hsl(215 15% 50%)" }}>
+              {contacts.length === 0 ? "NO CONTACTS YET" : "NO MATCH"}
+            </span>
+            {contacts.length === 0 && (
+              <span className="font-mono-display text-[9px] text-center px-6" style={{ color: "hsl(215 15% 30%)" }}>
+                Add manually or browse the repeater directory →
+              </span>
+            )}
           </div>
         ) : (
           filtered.map((contact) => (
@@ -514,15 +593,263 @@ const ContactsScreen = ({ onTuneChannel, activeChannel }: ContactsScreenProps) =
         )}
       </div>
 
-      {/* Hint */}
-      <div
-        className="flex items-center justify-center gap-1.5 py-1.5"
-        style={{ borderTop: "1px solid hsl(215 10% 13%)" }}
-      >
-        <span className="font-mono-display text-[8px] tracking-wider" style={{ color: "hsl(215 15% 30%)" }}>
-          ← SWIPE LEFT TO DELETE
+      {/* Footer */}
+      <div className="flex items-center justify-center gap-1.5 py-1.5" style={{ borderTop: "1px solid hsl(215 10% 13%)" }}>
+        <span className="font-mono-display text-[8px] tracking-wider" style={{ color: "hsl(215 15% 30%)" }}>← SWIPE LEFT TO DELETE</span>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Repeater Browser Tab
+// ─────────────────────────────────────────────
+
+interface RepeaterBrowserTabProps {
+  onTuneChannel: (freq: string) => void;
+  activeChannel: "A" | "B";
+}
+
+const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
+  const [repeaters, setRepeaters] = useState<Repeater[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const [selectedMode, setSelectedMode] = useState<string | null>(null);
+  const [countries, setCountries] = useState<string[]>([]);
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 40;
+
+  // Load available countries
+  useEffect(() => {
+    supabase.from("repeaters").select("country").then(({ data }) => {
+      if (data) {
+        const unique = Array.from(new Set(data.map((r) => r.country))).sort();
+        setCountries(unique);
+      }
+    });
+  }, []);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(0);
+      fetchRepeaters(0);
+    }, 350);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, selectedCountry, selectedMode]);
+
+  const fetchRepeaters = async (pageNum: number) => {
+    setLoading(true);
+    let q = supabase
+      .from("repeaters")
+      .select("id,callsign,name,frequency,freq_offset,duplex,tone_mode,r_tone_freq,c_tone_freq,dtcs_code,mode,country,region,location_desc,comment")
+      .order("frequency", { ascending: true })
+      .range(pageNum * PAGE_SIZE, pageNum * PAGE_SIZE + PAGE_SIZE - 1);
+
+    if (selectedCountry) q = q.eq("country", selectedCountry);
+    if (selectedMode) q = q.eq("mode", selectedMode);
+    if (query.trim()) {
+      q = q.or(`callsign.ilike.%${query}%,name.ilike.%${query}%,location_desc.ilike.%${query}%`);
+    }
+
+    const { data } = await q;
+    if (data) {
+      if (pageNum === 0) setRepeaters(data as Repeater[]);
+      else setRepeaters((prev) => [...prev, ...data as Repeater[]]);
+    }
+    setLoading(false);
+  };
+
+  const handleAddToContacts = async (repeater: Repeater) => {
+    const { data, error } = await supabase.from("contacts").insert({
+      callsign: repeater.callsign ?? "",
+      name: repeater.name,
+      frequency: repeater.frequency,
+      freq_offset: repeater.freq_offset ?? 0,
+      duplex: repeater.duplex ?? "",
+      tone_mode: repeater.tone_mode ?? "",
+      r_tone_freq: repeater.r_tone_freq ?? 88.5,
+      c_tone_freq: repeater.c_tone_freq ?? 88.5,
+      dtcs_code: repeater.dtcs_code ?? "023",
+      mode: repeater.mode ?? "FM",
+      country: repeater.country,
+      region: repeater.region ?? "",
+      location_desc: repeater.location_desc ?? "",
+      comment: repeater.comment ?? "",
+      group_tag: "REPEATERS",
+      source_repeater_id: repeater.id,
+    }).select().single();
+    if (!error && data) {
+      setAddedIds((prev) => new Set([...prev, repeater.id]));
+    }
+  };
+
+  const modes = ["FM", "DMR", "D-STAR", "C4FM", "AM"];
+
+  const loadMore = () => {
+    const next = page + 1;
+    setPage(next);
+    fetchRepeaters(next);
+  };
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Search */}
+      <div className="px-3 py-2" style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}>
+        <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5" style={{ background: "hsl(215 14% 12%)", border: "1px solid hsl(215 10% 20%)" }}>
+          <Search className="h-3 w-3 shrink-0" style={{ color: "hsl(215 15% 38%)" }} />
+          <input type="text" placeholder="Callsign, name, location…" value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="font-mono-display text-[10px] tracking-wide bg-transparent outline-none flex-1 min-w-0"
+            style={{ color: "hsl(200 20% 78%)", caretColor: "hsl(185 80% 55%)" }}
+          />
+          {query && <button onClick={() => setQuery("")}><X className="h-3 w-3" style={{ color: "hsl(215 15% 38%)" }} /></button>}
+        </div>
+      </div>
+
+      {/* Country filter chips */}
+      <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none" style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}>
+        <Filter className="h-3 w-3 shrink-0 self-center" style={{ color: "hsl(215 15% 30%)" }} />
+        <button onClick={() => setSelectedCountry(null)}
+          className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
+          style={{ background: !selectedCountry ? "hsl(185 80% 55% / 0.15)" : "hsl(215 14% 14%)", border: `1px solid ${!selectedCountry ? "hsl(185 80% 55% / 0.4)" : "hsl(215 10% 20%)"}`, color: !selectedCountry ? "hsl(185 80% 65%)" : "hsl(215 15% 42%)" }}
+        >ALL</button>
+        {countries.map((c) => (
+          <button key={c} onClick={() => setSelectedCountry(selectedCountry === c ? null : c)}
+            className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
+            style={{ background: selectedCountry === c ? "hsl(185 80% 55% / 0.15)" : "hsl(215 14% 14%)", border: `1px solid ${selectedCountry === c ? "hsl(185 80% 55% / 0.4)" : "hsl(215 10% 20%)"}`, color: selectedCountry === c ? "hsl(185 80% 65%)" : "hsl(215 15% 42%)" }}
+          >{c}</button>
+        ))}
+      </div>
+
+      {/* Mode filter chips */}
+      <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none" style={{ borderBottom: "1px solid hsl(215 10% 13%)" }}>
+        <button onClick={() => setSelectedMode(null)}
+          className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
+          style={{ background: !selectedMode ? "hsl(215 15% 20%)" : "hsl(215 14% 14%)", border: `1px solid ${!selectedMode ? "hsl(215 15% 30%)" : "hsl(215 10% 20%)"}`, color: !selectedMode ? "hsl(215 20% 65%)" : "hsl(215 15% 42%)" }}
+        >ANY MODE</button>
+        {modes.map((m) => {
+          const mc = MODE_COLORS[m] ?? "hsl(185 80% 55%)";
+          return (
+            <button key={m} onClick={() => setSelectedMode(selectedMode === m ? null : m)}
+              className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
+              style={{ background: selectedMode === m ? `${mc}22` : "hsl(215 14% 14%)", border: `1px solid ${selectedMode === m ? mc : "hsl(215 10% 20%)"}`, color: selectedMode === m ? mc : "hsl(215 15% 42%)" }}
+            >{m}</button>
+          );
+        })}
+      </div>
+
+      {/* List */}
+      <div className="flex-1 overflow-y-auto overscroll-contain">
+        {loading && repeaters.length === 0 ? (
+          <div className="flex items-center justify-center py-10">
+            <span className="font-mono-display text-[10px] tracking-wider" style={{ color: "hsl(215 15% 35%)" }}>SCANNING DATABASE…</span>
+          </div>
+        ) : repeaters.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-10">
+            <Radio className="h-6 w-6 opacity-20" style={{ color: "hsl(215 15% 50%)" }} />
+            <span className="font-mono-display text-[10px] tracking-wider opacity-40" style={{ color: "hsl(215 15% 50%)" }}>
+              NO REPEATERS FOUND
+            </span>
+            <span className="font-mono-display text-[9px] text-center px-6" style={{ color: "hsl(215 15% 30%)" }}>
+              Import data from the Settings tab first
+            </span>
+          </div>
+        ) : (
+          <>
+            {repeaters.map((r) => (
+              <RepeaterRow
+                key={r.id}
+                repeater={r}
+                onTune={() => onTuneChannel(formatFreq(r.frequency))}
+                onAddToContacts={() => handleAddToContacts(r)}
+                isAdded={addedIds.has(r.id)}
+              />
+            ))}
+            {repeaters.length % PAGE_SIZE === 0 && (
+              <button
+                onClick={loadMore}
+                disabled={loading}
+                className="w-full font-mono-display text-[9px] tracking-wider py-3 transition-all"
+                style={{ color: "hsl(185 60% 55%)", background: "hsl(215 12% 10%)" }}
+              >
+                {loading ? "LOADING…" : "LOAD MORE"}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Main ContactsScreen
+// ─────────────────────────────────────────────
+
+interface ContactsScreenProps {
+  onTuneChannel: (frequency: string) => void;
+  activeChannel: "A" | "B";
+}
+
+const ContactsScreen = ({ onTuneChannel, activeChannel }: ContactsScreenProps) => {
+  const [tab, setTab] = useState<"contacts" | "repeaters">("contacts");
+
+  return (
+    <div
+      className="flex flex-col w-full h-full animate-fade-in"
+      style={{
+        background: "linear-gradient(175deg, hsl(220 12% 11%) 0%, hsl(220 10% 8%) 100%)",
+        border: "1px solid hsl(220 10% 18%)",
+        borderRadius: "16px",
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: "1px solid hsl(215 10% 15%)" }}>
+        <div className="flex items-center gap-2">
+          {/* Tab toggle */}
+          <div className="flex rounded-md overflow-hidden" style={{ border: "1px solid hsl(215 10% 20%)" }}>
+            <button
+              onClick={() => setTab("contacts")}
+              className="flex items-center gap-1.5 px-2.5 py-1 font-mono-display text-[9px] tracking-wider transition-all"
+              style={{
+                background: tab === "contacts" ? "hsl(185 70% 25%)" : "hsl(215 14% 14%)",
+                color: tab === "contacts" ? "hsl(185 80% 75%)" : "hsl(215 15% 42%)",
+                borderRight: "1px solid hsl(215 10% 20%)",
+              }}
+            >
+              <BookUser className="h-3 w-3" /> MY LIST
+            </button>
+            <button
+              onClick={() => setTab("repeaters")}
+              className="flex items-center gap-1.5 px-2.5 py-1 font-mono-display text-[9px] tracking-wider transition-all"
+              style={{
+                background: tab === "repeaters" ? "hsl(185 70% 25%)" : "hsl(215 14% 14%)",
+                color: tab === "repeaters" ? "hsl(185 80% 75%)" : "hsl(215 15% 42%)",
+              }}
+            >
+              <Radio className="h-3 w-3" /> REPEATERS
+            </button>
+          </div>
+        </div>
+        <span
+          className="font-mono-display text-[8px] tracking-wider px-1.5 py-0.5 rounded"
+          style={{ background: "hsl(185 80% 55% / 0.1)", color: "hsl(185 80% 55% / 0.7)", border: "1px solid hsl(185 80% 55% / 0.2)" }}
+        >
+          CH {activeChannel}
         </span>
       </div>
+
+      {/* Tab content */}
+      {tab === "contacts" ? (
+        <MyContactsTab onTuneChannel={onTuneChannel} activeChannel={activeChannel} />
+      ) : (
+        <RepeaterBrowserTab onTuneChannel={onTuneChannel} activeChannel={activeChannel} />
+      )}
     </div>
   );
 };
