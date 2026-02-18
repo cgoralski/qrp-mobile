@@ -292,46 +292,26 @@ const CaptionPanel = ({
   const isEmpty = !displayText;
 
   return (
-    <div
-      className="mx-2 mb-1 rounded-lg overflow-hidden animate-fade-in"
-      style={{
-        background: "hsl(220 40% 4%)",
-        border: "1px solid hsl(140 30% 14% / 0.7)",
-        boxShadow: "inset 0 3px 12px hsl(220 60% 2% / 0.9)",
-        position: "relative",
-        height: "38px",
-      }}
-    >
-      {/* Scanlines */}
-      <div
-        className="absolute inset-0 pointer-events-none z-10 rounded-lg"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, transparent, transparent 3px, hsl(0 0% 0% / 0.08) 3px, hsl(0 0% 0% / 0.08) 6px)",
-        }}
-      />
-
-      <div className="relative z-10 h-full flex items-center px-3">
-        {isEmpty ? (
-          <span
-            className="font-mono-display text-[13px] italic"
-            style={{ color: "hsl(140 35% 25%)" }}
-          >
-            Listening…
-          </span>
-        ) : (
-          <span
-            className="font-mono-display text-[17px] font-semibold"
-            style={{
-              color: "hsl(0 0% 95%)",
-              whiteSpace: "pre",
-              letterSpacing: "0.01em",
-            }}
-          >
-            {display}
-          </span>
-        )}
-      </div>
+    <div className="flex items-center overflow-hidden">
+      {isEmpty ? (
+        <span
+          className="font-mono-display text-[11px] italic"
+          style={{ color: "hsl(140 35% 25%)" }}
+        >
+          Listening…
+        </span>
+      ) : (
+        <span
+          className="font-mono-display text-[13px] font-semibold"
+          style={{
+            color: "hsl(0 0% 85%)",
+            whiteSpace: "nowrap",
+            letterSpacing: "0.01em",
+          }}
+        >
+          {display}
+        </span>
+      )}
     </div>
   );
 };
@@ -557,14 +537,9 @@ const RadioScreen = ({
         />
 
 
-        {/* Caption panel — shown when CC is active */}
-        {captionsEnabled && (
-          <CaptionPanel history={captionHistory} partial={partialCaption} />
-        )}
-
         {/* Bottom bar */}
         <div className="flex items-center px-3 py-1.5 border-t border-white/[0.06]">
-          {["VOX", "APRS", "MO", "TW"].map((tag, i) => (
+          {!captionsEnabled && ["VOX", "APRS", "MO", "TW"].map((tag, i) => (
             <span
               key={tag}
               className={`font-mono-display text-[11px] font-bold tracking-[0.12em] mr-4 ${
@@ -574,7 +549,13 @@ const RadioScreen = ({
               {tag}
             </span>
           ))}
-          <div className="flex-1" />
+          {/* Caption text — fills the bar when CC is active */}
+          {captionsEnabled && (
+            <div className="flex-1 mr-2 overflow-hidden">
+              <CaptionPanel history={captionHistory} partial={partialCaption} />
+            </div>
+          )}
+          {!captionsEnabled && <div className="flex-1" />}
           {/* CC toggle button — prominent, labelled */}
           {captionsSupported && (
             <button
