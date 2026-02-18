@@ -306,24 +306,6 @@ const Index = () => {
         <ConnectionStatus connected={false} />
       </header>
 
-      {/* CC bar — full-width strip just below the header */}
-      {captions.isActive && (
-        <div
-          className="w-full overflow-hidden z-40 px-3 py-1.5"
-          style={{
-            background: "hsl(210 20% 8% / 0.6)",
-            backdropFilter: "blur(20px) saturate(1.6)",
-            WebkitBackdropFilter: "blur(20px) saturate(1.6)",
-            borderBottom: "1px solid hsl(0 0% 100% / 0.07)",
-            boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.05), 0 4px 12px hsl(220 30% 2% / 0.4)",
-          }}
-        >
-          <HeaderCaptionPanel
-            history={captions.captionHistory}
-            partial={captions.partialText}
-          />
-        </div>
-      )}
 
       {/* ── Radio body shell ── */}
       <main
@@ -424,6 +406,24 @@ const Index = () => {
                     captionsSupported={captions.isSupported}
                   />
                 </div>
+                {captions.isActive && (
+                  <div
+                    className="w-full overflow-hidden px-2 py-1.5"
+                    style={{
+                      background: "hsl(210 20% 8% / 0.6)",
+                      backdropFilter: "blur(20px) saturate(1.6)",
+                      WebkitBackdropFilter: "blur(20px) saturate(1.6)",
+                      borderTop: "1px solid hsl(0 0% 100% / 0.06)",
+                      borderBottom: "1px solid hsl(0 0% 100% / 0.06)",
+                      boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.04), 0 4px 12px hsl(220 30% 2% / 0.4)",
+                    }}
+                  >
+                    <HeaderCaptionPanel
+                      history={captions.captionHistory}
+                      partial={captions.partialText}
+                    />
+                  </div>
+                )}
                 <DPad
                   onVm={captions.toggle}
                   onAb={() => setActiveChannel((ch) => ch === "A" ? "B" : "A")}
