@@ -127,7 +127,7 @@ const RSSIBar = ({ level }: { level: number }) => (
             className="transition-all duration-100"
             style={{
               width: isLast ? "6px" : "4px",
-              height: `${5 + i * 1.6}px`,
+              height: `${5 + Math.min(i, 8) * 1.6}px`,
               borderRadius: "0.5px",
               background: barColor,
             }}
@@ -135,7 +135,7 @@ const RSSIBar = ({ level }: { level: number }) => (
           <span
             className="font-mono-display leading-none transition-all duration-100"
             style={{
-              fontSize: isLast ? "6px" : "8px",
+              fontSize: "8px",
               color: labelColor,
               whiteSpace: "nowrap",
             }}
