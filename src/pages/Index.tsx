@@ -24,7 +24,7 @@ const SideButton = ({
   <div
     className="relative flex items-center justify-center cursor-pointer select-none"
     style={{
-      width: "14px",
+    width: "10px",
       height: top ? "44px" : "32px",
       borderRadius: "3px 0 0 3px",
       background: accent
@@ -37,16 +37,18 @@ const SideButton = ({
     }}
   >
     <span
-      className="font-mono-display text-[6px] tracking-wider"
-      style={{
-        writingMode: "vertical-rl",
-        textOrientation: "mixed",
-        transform: "rotate(180deg)",
-        color: accent ? "hsl(185 70% 65%)" : "hsl(0 0% 35%)",
-      }}
-    >
-      {label}
-    </span>
+        className="font-mono-display text-[5px] tracking-wider"
+        style={{
+          writingMode: "vertical-rl",
+          textOrientation: "mixed",
+          transform: "rotate(180deg)",
+          color: accent ? "hsl(185 70% 65%)" : "hsl(0 0% 35%)",
+          overflow: "hidden",
+          maxHeight: "28px",
+        }}
+      >
+        {label}
+      </span>
     {/* Grip ridge */}
     {[0, 1, 2].map((i) => (
       <div
@@ -230,7 +232,7 @@ const Index = () => {
             }}
           >
             {/* ── Left side buttons ── */}
-            <div className="flex flex-col items-end" style={{ width: "28px" }}>
+            <div className="flex flex-col items-end" style={{ width: "20px" }}>
               {/* Antenna stub at top-left */}
               <div className="flex justify-center w-full pt-2 pb-1">
                 <div
@@ -316,7 +318,7 @@ const Index = () => {
             {/* ── Right side buttons ── */}
             <div
               className="flex flex-col items-start pt-10 gap-2 pr-0"
-              style={{ width: "28px", transform: "scaleX(-1)" }}
+              style={{ width: "20px", transform: "scaleX(-1)" }}
             >
               <SideButton label="SQL" top />
               <SideButton label="SCAN" accent />
