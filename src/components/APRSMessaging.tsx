@@ -79,13 +79,27 @@ const APRSMessaging = ({ myCallsign, onNavigateToSettings }: APRSMessagingProps)
           <span className="tab-section-title">APRS MSG</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex flex-col items-end">
-            <span className="tab-meta">MY CALL</span>
+          {/* MY CALL identity badge */}
+          <div
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
+            style={{
+              background: callsignValid
+                ? "hsl(var(--primary) / 0.12)"
+                : "hsl(0 0% 50% / 0.08)",
+              border: `1px solid ${callsignValid ? "hsl(var(--primary) / 0.25)" : "hsl(0 0% 40% / 0.2)"}`,
+            }}
+          >
+            <span className="tab-meta" style={{ lineHeight: 1 }}>FROM</span>
             <span
-              className="tab-callsign tab-callsign-primary"
-              style={{ fontSize: "11px" }}
+              className="font-mono-display font-black tracking-widest"
+              style={{
+                fontSize: "13px",
+                lineHeight: 1,
+                color: callsignValid ? "hsl(var(--primary))" : "hsl(0 0% 45%)",
+                textShadow: callsignValid ? "0 0 8px hsl(var(--primary) / 0.5)" : "none",
+              }}
             >
-              {myCallsign || "—"}
+              {myCallsign || "NO CALL"}
             </span>
           </div>
           <div className="w-px h-6 bg-border/30" />
