@@ -342,7 +342,7 @@ const RadioScreen = ({
                 style={{
                   color: "hsl(0 0% 98%)",
                   textShadow:
-                    "0 0 6px hsl(200 100% 90% / 0.9), 0 0 14px hsl(200 100% 80% / 0.6), 0 0 30px hsl(200 90% 70% / 0.35), 0 0 2px hsl(0 0% 100% / 1)",
+                    "0 0 4px hsl(200 80% 90% / 0.5), 0 0 12px hsl(200 70% 80% / 0.25)",
                 }}
               >
                 {myCallsign}
