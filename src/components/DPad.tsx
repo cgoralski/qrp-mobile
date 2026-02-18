@@ -23,6 +23,7 @@ interface DPadProps {
   onMenu?: () => void;
   onBack?: () => void;
   onVm?: () => void;
+  onAb?: () => void;
 }
 
 const DPad = ({
@@ -34,6 +35,7 @@ const DPad = ({
   onMenu,
   onBack,
   onVm,
+  onAb,
 }: DPadProps) => {
   const sideBtn = (label: string, sub: string | null, onClick?: () => void) => (
     <button
@@ -76,7 +78,7 @@ const DPad = ({
       {/* Left side buttons: MENU + A/B */}
       <div className="flex flex-col gap-1">
         {sideBtn("MENU", null, onMenu)}
-        {sideBtn("A/B", null)}
+        {sideBtn("A/B", null, onAb)}
       </div>
 
       {/* D-pad cross */}
