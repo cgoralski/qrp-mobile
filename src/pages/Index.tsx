@@ -9,6 +9,7 @@ import BottomTabBar from "@/components/BottomTabBar";
 import APRSMessaging from "@/components/APRSMessaging";
 import ContactsScreen from "@/components/ContactsScreen";
 import SettingsScreen from "@/components/SettingsScreen";
+import { useCaptions } from "@/hooks/use-captions";
 
 /* ── Decorative side button used on the radio body ── */
 const SideButton = ({
@@ -186,6 +187,8 @@ const Index = () => {
     () => localStorage.getItem("myCallsign") ?? ""
   );
 
+  const captions = useCaptions();
+
   const handleCallsignChange = (value: string) => {
     const upper = value.toUpperCase().replace(/[^A-Z0-9/]/g, "").slice(0, 10);
     setMyCallsign(upper);
@@ -338,6 +341,11 @@ const Index = () => {
                   onChannelANameChange={setChannelAName}
                   onChannelBNameChange={setChannelBName}
                   myCallsign={myCallsign}
+                  captionsEnabled={captions.isActive}
+                  onToggleCaptions={captions.toggle}
+                  partialCaption={captions.partialText}
+                  captionHistory={captions.captionHistory}
+                  captionsSupported={captions.isSupported}
                 />
               </div>
 
