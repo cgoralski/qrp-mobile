@@ -250,43 +250,7 @@ const ChannelBlock = ({
 };
 
 
-/* ── Caption Panel — two-row scrolling ticker ── */
-const CaptionTicker = ({
-  text,
-  animKey,
-  isLive,
-  isEmpty,
-}: {
-  text: string;
-  animKey: number;
-  isLive: boolean;
-  isEmpty: boolean;
-}) => (
-  <div className="relative h-[34px] flex items-center overflow-hidden">
-    {isEmpty ? (
-      <span
-        className="font-mono-display text-[13px] italic whitespace-nowrap px-3"
-        style={{ color: "hsl(140 35% 25%)" }}
-      >
-        Listening…
-      </span>
-    ) : (
-      <span
-        key={animKey}
-        className="font-mono-display text-[17px] font-semibold whitespace-nowrap"
-        style={{
-          color: isLive ? "hsl(0 0% 95%)" : "hsl(0 0% 50%)",
-          animation: "caption-ticker 14s linear 1",
-          display: "inline-block",
-          willChange: "transform",
-        }}
-      >
-        &nbsp;&nbsp;&nbsp;&nbsp;{text}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      </span>
-    )}
-  </div>
-);
-
+/* ── Caption Panel — teleprinter fill: left→right, row1 then row2 ── */
 const CaptionPanel = ({
   history,
   partial,
@@ -294,10 +258,22 @@ const CaptionPanel = ({
   history: string[];
   partial: string;
 }) => {
-  const prevLine = history[history.length - 1] || "";
-  const liveLine = partial || history[history.length - 1] || "";
-  const showPrev = history.length > 0;
-  const isEmpty = !liveLine;
+  // Merge all history + current partial into one continuous string
+  const allText = [...history, partial].filter(Boolean).join(" ").trim();
+
+  // Characters per row — ~17px monospace in ~340px container ≈ 34 chars/row
+  const CHARS_PER_ROW = 34;
+  const MAX_CHARS = CHARS_PER_ROW * 2;
+
+  // Always show the LAST MAX_CHARS characters so the display fills from left
+  // and old text is pushed off the top when both rows are full
+  const display = allText.length > MAX_CHARS
+    ? allText.slice(allText.length - MAX_CHARS)
+    : allText;
+
+  const row1 = display.slice(0, CHARS_PER_ROW);
+  const row2 = display.length > CHARS_PER_ROW ? display.slice(CHARS_PER_ROW) : "";
+  const isEmpty = !allText;
 
   return (
     <div
@@ -317,37 +293,44 @@ const CaptionPanel = ({
             "repeating-linear-gradient(0deg, transparent, transparent 3px, hsl(0 0% 0% / 0.08) 3px, hsl(0 0% 0% / 0.08) 6px)",
         }}
       />
-      {/* Left fade mask */}
-      <div
-        className="absolute left-0 top-0 bottom-0 w-8 pointer-events-none z-20"
-        style={{ background: "linear-gradient(to right, hsl(220 40% 4%), transparent)" }}
-      />
-      {/* Right fade mask */}
-      <div
-        className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none z-20"
-        style={{ background: "linear-gradient(to left, hsl(220 40% 4%), transparent)" }}
-      />
 
-      <div className="relative z-10 flex flex-col">
-        {/* Row 1 — previous completed sentence (dimmed) */}
-        <div
-          className="border-b"
-          style={{ borderColor: "hsl(140 20% 12% / 0.6)" }}
-        >
-          <CaptionTicker
-            text={showPrev && history.length >= 2 ? history[history.length - 2] : prevLine}
-            animKey={history.length - 1}
-            isLive={false}
-            isEmpty={!showPrev || history.length < 2}
-          />
-        </div>
-        {/* Row 2 — live / current line (bright white) */}
-        <CaptionTicker
-          text={liveLine}
-          animKey={history.length}
-          isLive={true}
-          isEmpty={isEmpty}
-        />
+      <div className="relative z-10 flex flex-col px-3 py-1">
+        {isEmpty ? (
+          <div
+            className="font-mono-display text-[13px] italic flex items-center"
+            style={{ color: "hsl(140 35% 25%)", height: "60px" }}
+          >
+            Listening…
+          </div>
+        ) : (
+          <>
+            {/* Row 1 — fills left to right first */}
+            <div
+              className="font-mono-display text-[17px] font-semibold"
+              style={{
+                color: row2 ? "hsl(0 0% 55%)" : "hsl(0 0% 95%)",
+                lineHeight: "30px",
+                whiteSpace: "pre",
+                letterSpacing: "0.01em",
+              }}
+            >
+              {row1}
+            </div>
+            {/* Row 2 — wraps here when row 1 is full */}
+            <div
+              className="font-mono-display text-[17px] font-semibold"
+              style={{
+                color: "hsl(0 0% 95%)",
+                lineHeight: "30px",
+                whiteSpace: "pre",
+                letterSpacing: "0.01em",
+                minHeight: "30px",
+              }}
+            >
+              {row2}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
