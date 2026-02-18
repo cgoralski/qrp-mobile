@@ -347,14 +347,14 @@ const Index = () => {
               <defs>
                 {/* Left edge: bright highlight outer → dark shadow → transparent */}
                 <linearGradient id="bevelLeft" x1="0" y1="0" x2="9" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%"   stopColor="hsl(0,0%,80%)" stopOpacity="0.55" />
+                  <stop offset="0%"   stopColor="hsl(0,0%,90%)" stopOpacity="0.8" />
                   <stop offset="18%"  stopColor="hsl(0,0%,80%)" stopOpacity="0.20" />
                   <stop offset="45%"  stopColor="hsl(0,0%,5%)"  stopOpacity="0.18" />
                   <stop offset="100%" stopColor="hsl(0,0%,5%)"  stopOpacity="0" />
                 </linearGradient>
                 {/* Right edge: mirrors left */}
                 <linearGradient id="bevelRight" x1="100" y1="0" x2="91" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%"   stopColor="hsl(0,0%,80%)" stopOpacity="0.55" />
+                  <stop offset="0%"   stopColor="hsl(0,0%,90%)" stopOpacity="0.8" />
                   <stop offset="18%"  stopColor="hsl(0,0%,80%)" stopOpacity="0.20" />
                   <stop offset="45%"  stopColor="hsl(0,0%,5%)"  stopOpacity="0.18" />
                   <stop offset="100%" stopColor="hsl(0,0%,5%)"  stopOpacity="0" />
