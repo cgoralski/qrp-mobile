@@ -196,6 +196,9 @@ const ChannelBlock = ({
       <div className="flex items-baseline gap-0 px-3">
         <span
           className={`inline-flex h-[28px] w-[28px] items-center justify-center text-[15px] font-black mr-3 ${badgeColor}`}
+          style={{
+            boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.18), inset 0 -1px 0 hsl(0 0% 0% / 0.35), inset 1px 0 0 hsl(0 0% 100% / 0.08), inset -1px 0 0 hsl(0 0% 0% / 0.2)",
+          }}
         >
           {label}
         </span>
