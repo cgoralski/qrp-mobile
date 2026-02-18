@@ -250,7 +250,7 @@ const ChannelBlock = ({
 };
 
 
-/* ── Caption Panel — teleprinter fill: left→right, row1 then row2 ── */
+/* ── Caption Panel — single row, fills left→right, trims oldest chars ── */
 const CaptionPanel = ({
   history,
   partial,
@@ -258,21 +258,14 @@ const CaptionPanel = ({
   history: string[];
   partial: string;
 }) => {
-  // Merge all history + current partial into one continuous string
   const allText = [...history, partial].filter(Boolean).join(" ").trim();
 
-  // Characters per row — ~17px monospace in ~340px container ≈ 34 chars/row
+  // Show the last ~34 characters so the row is always full on the right
   const CHARS_PER_ROW = 34;
-  const MAX_CHARS = CHARS_PER_ROW * 2;
-
-  // Always show the LAST MAX_CHARS characters so the display fills from left
-  // and old text is pushed off the top when both rows are full
-  const display = allText.length > MAX_CHARS
-    ? allText.slice(allText.length - MAX_CHARS)
+  const display = allText.length > CHARS_PER_ROW
+    ? allText.slice(allText.length - CHARS_PER_ROW)
     : allText;
 
-  const row1 = display.slice(0, CHARS_PER_ROW);
-  const row2 = display.length > CHARS_PER_ROW ? display.slice(CHARS_PER_ROW) : "";
   const isEmpty = !allText;
 
   return (
@@ -283,6 +276,7 @@ const CaptionPanel = ({
         border: "1px solid hsl(140 30% 14% / 0.7)",
         boxShadow: "inset 0 3px 12px hsl(220 60% 2% / 0.9)",
         position: "relative",
+        height: "38px",
       }}
     >
       {/* Scanlines */}
@@ -294,42 +288,25 @@ const CaptionPanel = ({
         }}
       />
 
-      <div className="relative z-10 flex flex-col px-3 py-1">
+      <div className="relative z-10 h-full flex items-center px-3">
         {isEmpty ? (
-          <div
-            className="font-mono-display text-[13px] italic flex items-center"
-            style={{ color: "hsl(140 35% 25%)", height: "60px" }}
+          <span
+            className="font-mono-display text-[13px] italic"
+            style={{ color: "hsl(140 35% 25%)" }}
           >
             Listening…
-          </div>
+          </span>
         ) : (
-          <>
-            {/* Row 1 — fills left to right first */}
-            <div
-              className="font-mono-display text-[17px] font-semibold"
-              style={{
-                color: row2 ? "hsl(0 0% 55%)" : "hsl(0 0% 95%)",
-                lineHeight: "30px",
-                whiteSpace: "pre",
-                letterSpacing: "0.01em",
-              }}
-            >
-              {row1}
-            </div>
-            {/* Row 2 — wraps here when row 1 is full */}
-            <div
-              className="font-mono-display text-[17px] font-semibold"
-              style={{
-                color: "hsl(0 0% 95%)",
-                lineHeight: "30px",
-                whiteSpace: "pre",
-                letterSpacing: "0.01em",
-                minHeight: "30px",
-              }}
-            >
-              {row2}
-            </div>
-          </>
+          <span
+            className="font-mono-display text-[17px] font-semibold"
+            style={{
+              color: "hsl(0 0% 95%)",
+              whiteSpace: "pre",
+              letterSpacing: "0.01em",
+            }}
+          >
+            {display}
+          </span>
         )}
       </div>
     </div>
