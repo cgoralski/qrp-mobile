@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
 import {
-  Upload, Database, Trash2, CheckCircle2, XCircle,
-  Loader2, ChevronDown, ChevronRight, RefreshCw, Globe,
+  Upload, Trash2, CheckCircle2, XCircle,
+  Loader2, ChevronDown, ChevronRight, Globe, AlertTriangle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ImportResult { inserted: number; total?: number; error?: string; }
-interface DbStats { total: number; byCountry: { country: string; count: number }[]; }
+
 
 const EDGE_FN_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/import-chirp-csv`;
 
@@ -158,23 +158,9 @@ const SettingsScreen = () => {
   const [apiImporting, setApiImporting] = useState(false);
   const [apiResult, setApiResult] = useState<ImportResult | null>(null);
 
-  const [stats, setStats] = useState<DbStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(false);
-  const [deleteCountry, setDeleteCountry] = useState("");
-  const [deleting, setDeleting] = useState(false);
-
-  const loadStats = async () => {
-    setStatsLoading(true);
-    try {
-      const { count } = await supabase.from("repeaters").select("*", { count: "exact", head: true });
-      const { data: rows } = await supabase.from("repeaters").select("country");
-      const map: Record<string, number> = {};
-      (rows ?? []).forEach(r => { map[r.country] = (map[r.country] ?? 0) + 1; });
-      const byCountry = Object.entries(map).sort((a, b) => b[1] - a[1]).map(([country, count]) => ({ country, count }));
-      setStats({ total: count ?? 0, byCountry });
-    } catch (e) { console.error(e); }
-    finally { setStatsLoading(false); }
-  };
+  const [resetting, setResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
 
   const handleCsvImport = async () => {
     if (!csvFile) return;
@@ -183,7 +169,7 @@ const SettingsScreen = () => {
       const csvText = await csvFile.text();
       const data = await importCsvToDb(csvText, csvCountry, clearFirst);
       setCsvResult(data);
-      if (!data.error) { setCsvFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; loadStats(); }
+      if (!data.error) { setCsvFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }
     } catch (err) { setCsvResult({ inserted: 0, error: String(err) }); }
     finally { setCsvImporting(false); }
   };
@@ -198,19 +184,19 @@ const SettingsScreen = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await importCsvToDb(await res.text(), apiCountry, false);
       setApiResult(data);
-      if (!data.error) loadStats();
     } catch (err) { setApiResult({ inserted: 0, error: String(err) }); }
     finally { setApiImporting(false); }
   };
 
-  const handleDelete = async () => {
-    if (!deleteCountry) return;
-    setDeleting(true);
+  const handleResetAll = async () => {
+    setResetting(true);
     try {
-      await supabase.from("repeaters").delete().eq("country", deleteCountry);
-      setDeleteCountry(""); loadStats();
+      await supabase.from("repeaters").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      setResetDone(true);
+      setShowResetConfirm(false);
+      setTimeout(() => setResetDone(false), 3000);
     } catch (e) { console.error(e); }
-    finally { setDeleting(false); }
+    finally { setResetting(false); }
   };
 
   return (
@@ -305,51 +291,22 @@ const SettingsScreen = () => {
         </div>
       </Section>
 
-      {/* ── DB Stats ── */}
-      <Section title="DATABASE STATS" defaultOpen={false}>
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={loadStats}
-            disabled={statsLoading}
-            className="tab-icon-btn self-start flex items-center gap-1.5 px-2.5 py-1.5"
-          >
-            {statsLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-            <span className="tab-meta">REFRESH STATS</span>
-          </button>
-          {stats && (
-            <div className="flex flex-col gap-2">
-              <div className="tab-card flex items-center justify-between px-2.5 py-2"
-                style={{ background: "hsl(var(--primary) / 0.07)", border: "1px solid hsl(var(--primary) / 0.18)" }}>
-                <div className="flex items-center gap-1.5">
-                  <Database className="h-3 w-3 text-primary" />
-                  <span className="tab-callsign tab-callsign-primary">TOTAL REPEATERS</span>
-                </div>
-                <span className="tab-callsign tab-callsign-primary">{stats.total.toLocaleString()}</span>
-              </div>
-              {stats.byCountry.map(({ country, count }) => (
-                <div key={country} className="tab-card flex items-center justify-between px-2.5 py-1.5">
-                  <span className="tab-body">{country}</span>
-                  <span className="tab-callsign tab-callsign-primary">{count.toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </Section>
-
       {/* ── Danger Zone ── */}
       <Section title="DANGER ZONE" defaultOpen={false}>
         <div className="flex flex-col gap-2.5">
-          <p className="tab-body leading-relaxed">Delete all repeaters for a specific country.</p>
-          <SelectField
-            label="SELECT COUNTRY TO DELETE"
-            value={deleteCountry}
-            onChange={setDeleteCountry}
-            options={[{ value: "", label: "— Select country —" }, ...COUNTRY_OPTIONS]}
-          />
+          <p className="tab-body leading-relaxed">
+            Permanently delete all repeater data from the database. This cannot be undone.
+          </p>
+          {resetDone && (
+            <div className="flex items-center gap-2 rounded-xl px-2.5 py-2"
+              style={{ background: "hsl(142 70% 50% / 0.08)", border: "1px solid hsl(142 70% 50% / 0.25)" }}>
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(142 70% 50%)" }} />
+              <span className="tab-meta" style={{ color: "hsl(142 70% 60%)" }}>All repeater data has been deleted.</span>
+            </div>
+          )}
           <button
-            onClick={handleDelete}
-            disabled={!deleteCountry || deleting}
+            onClick={() => setShowResetConfirm(true)}
+            disabled={resetting}
             className="flex items-center justify-center gap-1.5 rounded-xl py-2 transition-all disabled:opacity-40"
             style={{
               background: "linear-gradient(180deg, hsl(0 60% 28%), hsl(0 55% 18%))",
@@ -357,11 +314,66 @@ const SettingsScreen = () => {
               color: "hsl(0 80% 75%)",
             }}
           >
-            {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-            <span className="tab-callsign">DELETE {deleteCountry ? deleteCountry.toUpperCase() : "SELECTED"} REPEATERS</span>
+            {resetting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+            <span className="tab-callsign">RESET ALL USER DATA</span>
           </button>
         </div>
       </Section>
+
+      {/* ── Reset Confirmation Dialog ── */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "hsl(0 0% 0% / 0.7)" }}
+          onClick={() => setShowResetConfirm(false)}>
+          <div
+            className="flex flex-col gap-4 rounded-2xl p-5 w-full max-w-xs"
+            style={{
+              background: "hsl(210 18% 10%)",
+              border: "1px solid hsl(0 60% 32%)",
+              boxShadow: "0 20px 60px hsl(0 0% 0% / 0.6)",
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl p-2 shrink-0" style={{ background: "hsl(0 60% 28% / 0.3)", border: "1px solid hsl(0 60% 32%)" }}>
+                <AlertTriangle className="h-4 w-4" style={{ color: "hsl(0 80% 70%)" }} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="tab-callsign" style={{ color: "hsl(0 80% 75%)" }}>RESET ALL USER DATA</span>
+                <p className="tab-meta leading-relaxed" style={{ color: "hsl(var(--muted-foreground))" }}>
+                  This will permanently delete <strong style={{ color: "hsl(var(--foreground))" }}>all repeaters</strong> from the database. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="flex-1 rounded-xl py-2 tab-callsign transition-all"
+                style={{
+                  background: "hsl(var(--secondary))",
+                  border: "1px solid hsl(var(--border))",
+                  color: "hsl(var(--muted-foreground))",
+                }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleResetAll}
+                disabled={resetting}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 transition-all disabled:opacity-40"
+                style={{
+                  background: "linear-gradient(180deg, hsl(0 60% 32%), hsl(0 55% 22%))",
+                  border: "1px solid hsl(0 60% 38%)",
+                  color: "hsl(0 80% 80%)",
+                }}
+              >
+                {resetting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                <span className="tab-callsign">DELETE ALL</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
