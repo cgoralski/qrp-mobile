@@ -403,10 +403,10 @@ const RadioScreen = ({
           style={{
             opacity: !isTransmitting && animatedRssi > 3 ? 1 : 0,
             background:
-              "radial-gradient(ellipse at 50% 40%, hsl(140 70% 45% / 0.14) 0%, hsl(140 60% 40% / 0.05) 50%, transparent 75%)",
+              "radial-gradient(ellipse at 50% 40%, hsl(140 70% 45% / 0.05) 0%, hsl(140 60% 40% / 0.02) 50%, transparent 70%)",
             boxShadow:
               !isTransmitting && animatedRssi > 3
-                ? "inset 0 0 24px hsl(140 70% 45% / 0.08)"
+                ? "inset 0 0 16px hsl(140 70% 45% / 0.03)"
                 : "none",
           }}
         />
