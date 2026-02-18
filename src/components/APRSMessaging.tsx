@@ -137,6 +137,7 @@ const APRSMessaging = ({ myCallsign, onNavigateToSettings }: APRSMessagingProps)
             myCallsign={myCallsign}
             onSelect={handleSelect}
             onNewChat={() => setShowNewChat(true)}
+            onDelete={(id) => setConversations((prev) => prev.filter((c) => c.id !== id))}
           />
         )}
       </div>
