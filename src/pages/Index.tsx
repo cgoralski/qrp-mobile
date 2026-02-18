@@ -44,13 +44,13 @@ const HeaderCaptionPanel = ({
   return (
     <div ref={containerRef} className="w-full overflow-hidden">
       {!displayText ? (
-        <span className="font-mono-display text-[11px] italic" style={{ color: "hsl(140 35% 40%)" }}>
+        <span className="font-mono-display text-[13px] italic" style={{ color: "hsl(140 35% 50%)" }}>
           Listening…
         </span>
       ) : (
         <span
           ref={textRef}
-          className="font-mono-display text-[13px] font-semibold"
+          className="font-mono-display text-[16px] font-semibold"
           style={{
             color: "hsl(0 0% 97%)",
             whiteSpace: "nowrap",
@@ -407,21 +407,23 @@ const Index = () => {
                   />
                 </div>
                 {captions.isActive && (
-                  <div
-                    className="w-full overflow-hidden px-2 py-1.5"
-                    style={{
-                      background: "hsl(210 20% 8% / 0.6)",
-                      backdropFilter: "blur(20px) saturate(1.6)",
-                      WebkitBackdropFilter: "blur(20px) saturate(1.6)",
-                      borderTop: "1px solid hsl(0 0% 100% / 0.06)",
-                      borderBottom: "1px solid hsl(0 0% 100% / 0.06)",
-                      boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.04), 0 4px 12px hsl(220 30% 2% / 0.4)",
-                    }}
-                  >
-                    <HeaderCaptionPanel
-                      history={captions.captionHistory}
-                      partial={captions.partialText}
-                    />
+                  <div className="w-full px-3 py-1">
+                    <div
+                      className="w-full overflow-hidden px-4 py-2"
+                      style={{
+                        background: "hsl(220 15% 30% / 0.45)",
+                        backdropFilter: "blur(20px) saturate(1.6)",
+                        WebkitBackdropFilter: "blur(20px) saturate(1.6)",
+                        borderRadius: "9999px",
+                        border: "1px solid hsl(0 0% 100% / 0.12)",
+                        boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.1), 0 4px 12px hsl(220 30% 2% / 0.3)",
+                      }}
+                    >
+                      <HeaderCaptionPanel
+                        history={captions.captionHistory}
+                        partial={captions.partialText}
+                      />
+                    </div>
                   </div>
                 )}
                 <DPad
