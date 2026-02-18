@@ -124,6 +124,7 @@ export const SwipeToDelete = ({
         style={{
           width: REVEAL_PX,
           background: "linear-gradient(135deg, hsl(0 72% 40%), hsl(0 80% 28%))",
+          pointerEvents: offsetX < -SNAP_THRESHOLD ? "auto" : "none",
         }}
       >
         <button
