@@ -250,7 +250,7 @@ const ChannelBlock = ({
 };
 
 
-/* ── Caption Panel ── */
+/* ── Caption Panel — single-line scrolling ticker ── */
 const CaptionPanel = ({
   history,
   partial,
@@ -258,64 +258,62 @@ const CaptionPanel = ({
   history: string[];
   partial: string;
 }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  // Show the partial (live) text if available, otherwise the last completed line
+  const displayText = partial || history[history.length - 1] || "";
+  const isEmpty = !displayText;
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [history, partial]);
-
-  const visibleHistory = history.slice(-4);
+  // Key the animation so it restarts each time the text changes
+  const animKey = displayText;
 
   return (
     <div
       className="mx-2 mb-1 rounded-lg overflow-hidden animate-fade-in"
       style={{
-        background: "hsl(220 40% 5%)",
-        border: "1px solid hsl(140 40% 18% / 0.6)",
-        boxShadow: "inset 0 3px 12px hsl(220 60% 2% / 0.8)",
+        background: "hsl(220 40% 4%)",
+        border: "1px solid hsl(140 30% 14% / 0.7)",
+        boxShadow: "inset 0 3px 12px hsl(220 60% 2% / 0.9)",
         position: "relative",
+        height: "38px",
       }}
     >
-      {/* Scanline overlay */}
+      {/* Scanlines */}
       <div
         className="absolute inset-0 pointer-events-none z-10 rounded-lg"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(0deg, transparent, transparent 3px, hsl(0 0% 0% / 0.07) 3px, hsl(0 0% 0% / 0.07) 6px)",
+            "repeating-linear-gradient(0deg, transparent, transparent 3px, hsl(0 0% 0% / 0.08) 3px, hsl(0 0% 0% / 0.08) 6px)",
         }}
       />
+      {/* Left fade mask */}
       <div
-        ref={scrollRef}
-        className="relative z-20 px-3 py-2 max-h-[88px] overflow-hidden flex flex-col justify-end gap-1"
-      >
-        {visibleHistory.length === 0 && !partial && (
+        className="absolute left-0 top-0 bottom-0 w-6 pointer-events-none z-20"
+        style={{ background: "linear-gradient(to right, hsl(220 40% 4%), transparent)" }}
+      />
+      {/* Right fade mask */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-6 pointer-events-none z-20"
+        style={{ background: "linear-gradient(to left, hsl(220 40% 4%), transparent)" }}
+      />
+
+      <div className="relative z-10 h-full flex items-center px-3 overflow-hidden">
+        {isEmpty ? (
           <span
-            className="font-mono-display text-[12px] italic"
-            style={{ color: "hsl(140 40% 35%)" }}
+            className="font-mono-display text-[15px] italic whitespace-nowrap"
+            style={{ color: "hsl(140 35% 30%)" }}
           >
             Listening…
           </span>
-        )}
-        {visibleHistory.map((line, i) => (
+        ) : (
           <span
-            key={i}
-            className="font-mono-display text-[13px] leading-snug block truncate"
+            key={animKey}
+            className="font-mono-display text-[17px] font-semibold whitespace-nowrap"
             style={{
-              color: i < visibleHistory.length - 1 ? "hsl(0 0% 65%)" : "hsl(0 0% 95%)",
-              textShadow: i < visibleHistory.length - 1 ? "none" : "0 0 8px hsl(0 0% 100% / 0.2)",
+              color: partial ? "hsl(0 0% 88%)" : "hsl(0 0% 60%)",
+              animation: "caption-ticker 12s linear infinite",
+              display: "inline-block",
             }}
           >
-            {line}
-          </span>
-        ))}
-        {partial && (
-          <span
-            className="font-mono-display text-[13px] leading-snug italic block truncate"
-            style={{ color: "hsl(0 0% 50%)" }}
-          >
-            {partial}
+            {displayText}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           </span>
         )}
       </div>
