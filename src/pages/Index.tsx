@@ -238,10 +238,10 @@ const Index = () => {
               style={{
                 background:
                   "linear-gradient(to right, " +
-                  "hsl(0 0% 85% / 0.22) 0px, " +
-                  "hsl(0 0% 85% / 0.22) 1px, " +
-                  "hsl(0 0% 10% / 0.25) 2px, " +
-                  "hsl(0 0% 10% / 0.1) 6px, " +
+                  "hsl(0 0% 85% / 0.12) 0px, " +
+                  "hsl(0 0% 85% / 0.12) 1px, " +
+                  "hsl(0 0% 10% / 0.18) 2px, " +
+                  "hsl(0 0% 10% / 0.07) 6px, " +
                   "transparent 14px)",
                 zIndex: 3,
               }}
@@ -252,10 +252,10 @@ const Index = () => {
               style={{
                 background:
                   "linear-gradient(to left, " +
-                  "hsl(0 0% 85% / 0.22) 0px, " +
-                  "hsl(0 0% 85% / 0.22) 1px, " +
-                  "hsl(0 0% 10% / 0.25) 2px, " +
-                  "hsl(0 0% 10% / 0.1) 6px, " +
+                  "hsl(0 0% 85% / 0.12) 0px, " +
+                  "hsl(0 0% 85% / 0.12) 1px, " +
+                  "hsl(0 0% 10% / 0.18) 2px, " +
+                  "hsl(0 0% 10% / 0.07) 6px, " +
                   "transparent 14px)",
                 zIndex: 3,
               }}
