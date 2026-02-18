@@ -350,9 +350,4 @@
     0% { transform: translateX(0); opacity: 1; }
     100% { transform: translateX(100%); opacity: 0; }
   }
-  /* Caption ticker — starts off the right edge, scrolls smoothly left */
-  @keyframes caption-ticker {
-    0%   { transform: translateX(100vw); }
-    100% { transform: translateX(-100%); }
-  }
 }
