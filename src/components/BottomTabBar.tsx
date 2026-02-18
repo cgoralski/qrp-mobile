@@ -81,22 +81,22 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
               <button
                 key={tab.id}
                 onClick={() => handleSelect(tab.id)}
-                className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${
+                className={`flex flex-col items-center justify-center gap-2 py-4 rounded-xl transition-all ${
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-white/5"
                 }`}
               >
                 <div className="relative">
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-7 w-7" />
                   {isActive && (
                     <div
-                      className="absolute -bottom-1 left-1/2 h-[2px] w-4 -translate-x-1/2 rounded-full bg-primary"
+                      className="absolute -bottom-1 left-1/2 h-[2px] w-5 -translate-x-1/2 rounded-full bg-primary"
                       style={{ boxShadow: "0 0 6px hsl(185 80% 55% / 0.5)" }}
                     />
                   )}
                 </div>
-                <span className="font-mono-display text-[9px] font-semibold tracking-[0.12em]">
+                <span className="font-mono-display text-[11px] font-semibold tracking-[0.12em]">
                   {tab.label.toUpperCase()}
                 </span>
               </button>
