@@ -91,7 +91,7 @@ const PttSideButton = () => {
         className="select-none transition-all duration-100"
         style={{
           width: "22px",
-          height: "72px",
+          height: "56px",
           borderRadius: "4px 0 0 4px",
           background: isPressed
             ? "linear-gradient(180deg, hsl(var(--transmit) / 0.95), hsl(0 75% 38%))"
@@ -143,10 +143,10 @@ const PttSideButton = () => {
 /* ── Speaker grille dots ── */
 const SpeakerGrille = () => (
   <div
-    className="w-full grid gap-[3px] px-3 py-2"
+    className="w-full grid gap-[3px] px-3 py-1.5"
     style={{ gridTemplateColumns: "repeat(12, 1fr)" }}
   >
-    {Array.from({ length: 48 }).map((_, i) => (
+    {Array.from({ length: 36 }).map((_, i) => (
       <div
         key={i}
         className="rounded-full"
@@ -201,7 +201,7 @@ const Index = () => {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-mesh">
       {/* App header */}
-      <header className="glass-header sticky top-0 z-50 flex items-center justify-between px-4 py-3">
+      <header className="glass-header sticky top-0 z-50 flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
             <Radio className="h-4 w-4 text-primary" />
@@ -214,7 +214,7 @@ const Index = () => {
       </header>
 
       {/* ── Radio body shell ── */}
-      <main className="flex flex-1 flex-col items-center justify-start px-0 py-3 max-w-sm mx-auto w-full">
+      <main className="flex flex-1 flex-col items-center justify-start px-0 py-1 max-w-sm mx-auto w-full overflow-hidden">
         {activeTab === "voice" ? (
           /* Outer radio chassis */
           <div
@@ -251,14 +251,14 @@ const Index = () => {
               <PttSideButton />
 
               {/* Lower side buttons */}
-              <div className="flex flex-col gap-2 pt-2">
+              <div className="flex flex-col gap-1.5 pt-1">
                 <SideButton label="VOL" top accent />
                 <SideButton label="MON" />
               </div>
             </div>
 
             {/* ── Main body column ── */}
-            <div className="flex flex-1 flex-col px-2 pb-3 gap-2 min-w-0">
+            <div className="flex flex-1 flex-col px-2 pb-2 gap-1 min-w-0">
               {/* Top sheen */}
               <div
                 className="absolute inset-x-12 pointer-events-none h-[1px] rounded-full"
@@ -269,7 +269,7 @@ const Index = () => {
               />
 
               {/* Radio screen */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <RadioScreen
                   channelA={channelA}
                   channelB={channelB}
