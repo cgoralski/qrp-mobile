@@ -340,8 +340,8 @@ const RadioScreen = ({
               <span
                 className="font-mono-display text-[13px] font-black tracking-[0.18em]"
                 style={{
-                  color: "hsl(140 70% 52%)",
-                  textShadow: "0 0 6px hsl(140 70% 52% / 0.7), 0 0 14px hsl(140 70% 52% / 0.3)",
+                  color: "hsl(0 0% 95%)",
+                  textShadow: "0 0 8px hsl(0 0% 100% / 0.4)",
                 }}
               >
                 {myCallsign}
