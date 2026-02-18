@@ -266,15 +266,15 @@ const CaptionPanel = ({
     }
   }, [history, partial]);
 
-  const visibleHistory = history.slice(-3);
+  const visibleHistory = history.slice(-4);
 
   return (
     <div
       className="mx-2 mb-1 rounded-lg overflow-hidden animate-fade-in"
       style={{
-        background: "hsl(218 55% 8%)",
-        border: "1px solid hsl(140 50% 22% / 0.5)",
-        boxShadow: "inset 0 2px 8px hsl(220 60% 2% / 0.6)",
+        background: "hsl(220 40% 5%)",
+        border: "1px solid hsl(140 40% 18% / 0.6)",
+        boxShadow: "inset 0 3px 12px hsl(220 60% 2% / 0.8)",
         position: "relative",
       }}
     >
@@ -283,17 +283,17 @@ const CaptionPanel = ({
         className="absolute inset-0 pointer-events-none z-10 rounded-lg"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(0 0% 0% / 0.06) 2px, hsl(0 0% 0% / 0.06) 4px)",
+            "repeating-linear-gradient(0deg, transparent, transparent 3px, hsl(0 0% 0% / 0.07) 3px, hsl(0 0% 0% / 0.07) 6px)",
         }}
       />
       <div
         ref={scrollRef}
-        className="relative z-20 px-2.5 py-1.5 max-h-[52px] overflow-hidden flex flex-col justify-end gap-0.5"
+        className="relative z-20 px-3 py-2 max-h-[88px] overflow-hidden flex flex-col justify-end gap-1"
       >
         {visibleHistory.length === 0 && !partial && (
           <span
-            className="font-mono-display text-[9px] italic"
-            style={{ color: "hsl(140 50% 25%)" }}
+            className="font-mono-display text-[12px] italic"
+            style={{ color: "hsl(140 40% 35%)" }}
           >
             Listening…
           </span>
@@ -301,16 +301,19 @@ const CaptionPanel = ({
         {visibleHistory.map((line, i) => (
           <span
             key={i}
-            className="font-mono-display text-[9px] leading-tight block truncate"
-            style={{ color: "hsl(140 70% 52%)", textShadow: "0 0 6px hsl(140 70% 52% / 0.4)" }}
+            className="font-mono-display text-[13px] leading-snug block truncate"
+            style={{
+              color: i < visibleHistory.length - 1 ? "hsl(0 0% 65%)" : "hsl(0 0% 95%)",
+              textShadow: i < visibleHistory.length - 1 ? "none" : "0 0 8px hsl(0 0% 100% / 0.2)",
+            }}
           >
-            {i === 0 && visibleHistory.length > 1 ? "" : "▌ "}{line}
+            {line}
           </span>
         ))}
         {partial && (
           <span
-            className="font-mono-display text-[9px] leading-tight italic block truncate"
-            style={{ color: "hsl(140 60% 32%)" }}
+            className="font-mono-display text-[13px] leading-snug italic block truncate"
+            style={{ color: "hsl(0 0% 50%)" }}
           >
             {partial}
           </span>
@@ -559,11 +562,23 @@ const RadioScreen = ({
             </span>
           ))}
           <div className="flex-1" />
-          {/* CC toggle button */}
+          {/* CC toggle button — prominent, labelled */}
           {captionsSupported && (
             <button
               onClick={onToggleCaptions}
-              className="flex items-center gap-0.5 mr-2 transition-all duration-150"
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded transition-all duration-150 mr-1"
+              style={
+                captionsEnabled
+                  ? {
+                      background: "hsl(140 60% 18% / 0.7)",
+                      border: "1px solid hsl(140 60% 35% / 0.6)",
+                      boxShadow: "0 0 8px hsl(140 70% 45% / 0.25)",
+                    }
+                  : {
+                      background: "hsl(220 15% 12%)",
+                      border: "1px solid hsl(220 10% 22%)",
+                    }
+              }
               title="Toggle Closed Captions"
               aria-label="Toggle closed captions"
             >
@@ -571,23 +586,25 @@ const RadioScreen = ({
                 className="h-4 w-4"
                 style={
                   captionsEnabled
-                    ? {
-                        color: "hsl(140 70% 52%)",
-                        filter: "drop-shadow(0 0 4px hsl(140 70% 52% / 0.8))",
-                      }
-                    : { color: "hsl(0 0% 25%)" }
+                    ? { color: "hsl(140 70% 52%)", filter: "drop-shadow(0 0 3px hsl(140 70% 52% / 0.7))" }
+                    : { color: "hsl(0 0% 40%)" }
                 }
               />
+              <span
+                className="font-mono-display text-[11px] font-bold tracking-wider"
+                style={
+                  captionsEnabled
+                    ? { color: "hsl(140 70% 52%)", textShadow: "0 0 6px hsl(140 70% 52% / 0.7)" }
+                    : { color: "hsl(0 0% 40%)" }
+                }
+              >
+                CC
+              </span>
               {captionsEnabled && (
                 <span
-                  className="font-mono-display text-[9px] font-black"
-                  style={{
-                    color: "hsl(140 70% 52%)",
-                    textShadow: "0 0 4px hsl(140 70% 52% / 0.8)",
-                  }}
-                >
-                  ●
-                </span>
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: "hsl(140 70% 52%)", boxShadow: "0 0 4px hsl(140 70% 52%)" }}
+                />
               )}
             </button>
           )}
