@@ -363,22 +363,32 @@ const RadioScreen = ({
         className="w-full rounded-xl overflow-hidden relative"
         style={{
           background: "linear-gradient(180deg, hsl(218 55% 10%) 0%, hsl(220 52% 8%) 100%)",
-          /* Simulate sunken recess: dark top/side borders, light bottom border */
-          borderTop: "1.5px solid hsl(220 15% 8%)",
-          borderLeft: "1.5px solid hsl(220 15% 9%)",
-          borderRight: "1.5px solid hsl(220 12% 14%)",
-          borderBottom: "1.5px solid hsl(220 12% 22%)",
+          /*
+           * Border physics: chassis protrudes FORWARD of the screen surface.
+           * Top chassis lip blocks light → top inner edge is darkest (in shadow).
+           * Bottom chassis wall faces upward → catches light → lighter inner edge.
+           * Sides: moderately shadowed.
+           */
+          borderTop: "2px solid hsl(220 18% 5%)",
+          borderLeft: "1.5px solid hsl(220 15% 7%)",
+          borderRight: "1.5px solid hsl(220 12% 9%)",
+          borderBottom: "1.5px solid hsl(220 10% 30%)",
           boxShadow:
-            /* Deep inset shadows from top and sides — the chassis walls casting shadow down into the pit */
-            "inset 0 6px 18px hsl(220 60% 2% / 0.95), " +
-            "inset 0 3px 8px hsl(220 50% 3% / 0.8), " +
-            "inset 4px 0 10px hsl(220 50% 2% / 0.5), " +
-            "inset -4px 0 10px hsl(220 50% 2% / 0.5), " +
-            /* Faint ambient fill across the screen */
-            "inset 0 0 40px hsl(218 60% 10% / 0.4), " +
-            /* Outer shadow — chassis edge above LCD casts a hard dark lip */
-            "0 -2px 4px hsl(220 20% 2% / 0.9), " +
-            "0 2px 3px hsl(220 10% 28% / 0.15)",
+            /* Heavy shadow cast by the top chassis lip downward into the pit */
+            "inset 0 10px 24px hsl(220 60% 1% / 0.98), " +
+            "inset 0 5px 12px hsl(220 50% 2% / 0.85), " +
+            "inset 0 2px 5px hsl(220 40% 3% / 0.6), " +
+            /* Side wall shadows */
+            "inset 7px 0 16px hsl(220 50% 2% / 0.55), " +
+            "inset -7px 0 16px hsl(220 50% 2% / 0.55), " +
+            /* Bottom inner highlight — light catches the bottom recess wall */
+            "inset 0 -5px 10px hsl(220 20% 22% / 0.28), " +
+            /* Ambient screen fill */
+            "inset 0 0 40px hsl(218 60% 8% / 0.4), " +
+            /* Outer: hard dark shadow just above the LCD (chassis overhang casting outward) */
+            "0 -3px 6px hsl(220 25% 2% / 0.95), " +
+            /* Outer: tiny light catch on the bottom chassis rim */
+            "0 2px 2px hsl(220 10% 32% / 0.2)",
         }}
       >
         {/* Vignette / inner glow */}
