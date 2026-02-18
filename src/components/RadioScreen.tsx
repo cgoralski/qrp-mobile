@@ -100,9 +100,8 @@ const ChannelNameEditor = ({
 
 const RSSIBar = ({ level, label }: { level: number; label: string }) => (
   <div className="flex flex-col gap-[2px]">
-    {/* Row 1: label + bars */}
+    {/* Row 1: bars only */}
     <div className="flex items-end gap-[2px]">
-      <span className="font-mono-display text-[9px] text-white/30 mr-1 mb-[1px]">{label}</span>
       {Array.from({ length: 10 }).map((_, i) => (
         <div
           key={i}
@@ -122,8 +121,9 @@ const RSSIBar = ({ level, label }: { level: number; label: string }) => (
         />
       ))}
     </div>
-    {/* Row 2: S-meter scale */}
-    <div className="flex items-center ml-[calc(1.5rem+3px)] gap-[8px]">
+    {/* Row 2: label + S-meter scale inline */}
+    <div className="flex items-center gap-[4px]">
+      <span className="font-mono-display text-[7px] text-white/30 leading-none mr-[2px]">{label}</span>
       {["1", "3", "5", "7", "9"].map((n) => (
         <span key={n} className="font-mono-display text-[7px] text-white/20 leading-none">{n}</span>
       ))}
