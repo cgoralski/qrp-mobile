@@ -73,9 +73,18 @@
     @apply border-border;
   }
 
+  html {
+    overflow: hidden;
+    height: 100%;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    height: 100%;
+    position: fixed;
+    width: 100%;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     overscroll-behavior: none;

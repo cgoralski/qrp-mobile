@@ -226,7 +226,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-mesh">
+    <div className="flex h-[100dvh] flex-col bg-mesh overflow-hidden">
       {/* App header */}
       <header className="glass-header sticky top-0 z-50 flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-2.5">
