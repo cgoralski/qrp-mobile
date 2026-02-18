@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import {
   Upload, Trash2, CheckCircle2, XCircle,
-  Loader2, ChevronDown, ChevronRight, Globe, AlertTriangle, Radio,
+  Loader2, ChevronDown, ChevronRight, Globe, AlertTriangle, Radio, Save,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -150,6 +150,18 @@ const SelectField = ({ label, value, onChange, options }: {
 const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Callsign draft — only committed on Save
+  const [callsignDraft, setCallsignDraft] = useState(myCallsign);
+  const [callsignSaved, setCallsignSaved] = useState(false);
+  const draftChanged = callsignDraft !== myCallsign;
+  const draftValid = callsignDraft.trim().length >= 3;
+
+  const handleSaveCallsign = () => {
+    onCallsignChange(callsignDraft);
+    setCallsignSaved(true);
+    setTimeout(() => setCallsignSaved(false), 2500);
+  };
+
   const [csvCountry, setCsvCountry] = useState("Australia");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [clearFirst, setClearFirst] = useState(false);
@@ -203,7 +215,7 @@ const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) =
     finally { setResetting(false); }
   };
 
-  const callsignValid = myCallsign.trim().length >= 3;
+  
 
   return (
     <div className="tab-panel flex flex-col w-full h-full animate-fade-in gap-3 overflow-y-auto overscroll-contain px-2 py-2">
@@ -224,28 +236,64 @@ const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) =
                 className="flex items-center gap-2 flex-1 rounded-xl px-3 py-2"
                 style={{
                   background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))",
-                  border: `1px solid ${callsignValid ? "hsl(var(--primary) / 0.4)" : "hsl(0 80% 55% / 0.35)"}`,
+                  border: `1px solid ${draftValid ? "hsl(var(--primary) / 0.4)" : "hsl(0 80% 55% / 0.35)"}`,
                 }}
               >
-                <Radio className="h-3 w-3 shrink-0" style={{ color: callsignValid ? "hsl(var(--primary))" : "hsl(0 80% 60%)" }} />
+                <Radio className="h-3 w-3 shrink-0" style={{ color: draftValid ? "hsl(var(--primary))" : "hsl(0 80% 60%)" }} />
                 <input
                   type="text"
-                  value={myCallsign}
-                  onChange={e => onCallsignChange(e.target.value)}
+                  value={callsignDraft}
+                  onChange={e => {
+                    setCallsignDraft(e.target.value.toUpperCase().replace(/[^A-Z0-9/]/g, "").slice(0, 10));
+                    setCallsignSaved(false);
+                  }}
+                  onKeyDown={e => { if (e.key === "Enter" && draftValid) handleSaveCallsign(); }}
                   placeholder="e.g. VK2ABC"
                   maxLength={10}
                   className="flex-1 bg-transparent outline-none tab-callsign tab-callsign-primary uppercase tracking-widest placeholder:normal-case placeholder:tracking-normal placeholder:text-muted-foreground"
                   style={{ fontSize: "13px", border: "none", padding: 0 }}
                 />
               </div>
+              <button
+                onClick={handleSaveCallsign}
+                disabled={!draftValid || !draftChanged}
+                className="flex items-center gap-1.5 rounded-xl px-3 py-2 transition-all disabled:opacity-40"
+                style={{
+                  background: "linear-gradient(180deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.08))",
+                  border: "1px solid hsl(var(--primary) / 0.25)",
+                  color: "hsl(var(--primary))",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <Save className="h-3 w-3" />
+                <span className="tab-callsign tab-callsign-primary" style={{ fontSize: "10px" }}>SAVE</span>
+              </button>
             </div>
           </div>
-          {!callsignValid ? (
+
+          {/* Status feedback */}
+          {callsignSaved ? (
+            <div className="flex items-center gap-2 rounded-xl px-2.5 py-2"
+              style={{ background: "hsl(142 70% 50% / 0.08)", border: "1px solid hsl(142 70% 50% / 0.25)" }}>
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(142 70% 50%)" }} />
+              <span className="tab-meta" style={{ color: "hsl(142 70% 60%)" }}>
+                Callsign saved — radio functions are enabled.
+              </span>
+            </div>
+          ) : !myCallsign || myCallsign.trim().length < 3 ? (
             <div className="flex items-start gap-2 rounded-xl px-2.5 py-2"
               style={{ background: "hsl(0 80% 55% / 0.08)", border: "1px solid hsl(0 80% 55% / 0.25)" }}>
               <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "hsl(0 80% 65%)" }} />
               <span className="tab-meta leading-relaxed" style={{ color: "hsl(0 80% 65%)" }}>
                 A valid callsign is required before the radio can transmit or send APRS messages.
+              </span>
+            </div>
+          ) : draftChanged ? (
+            <div className="flex items-center gap-2 rounded-xl px-2.5 py-2"
+              style={{ background: "hsl(42 90% 55% / 0.08)", border: "1px solid hsl(42 90% 55% / 0.25)" }}>
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(42 90% 65%)" }} />
+              <span className="tab-meta" style={{ color: "hsl(42 90% 65%)" }}>
+                Unsaved changes — press SAVE to apply.
               </span>
             </div>
           ) : (
