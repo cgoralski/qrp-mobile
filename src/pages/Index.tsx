@@ -303,32 +303,27 @@ const Index = () => {
           </span>
         </div>
 
-        {/* CC pill — floats in top bar when captions are active */}
-        {captions.isActive && (
-          <div
-            className="flex-1 mx-3 overflow-hidden"
-            style={{ maxWidth: "200px" }}
-          >
-            <div
-              className="flex items-center px-3 py-1 rounded-full overflow-hidden"
-              style={{
-                background: "hsl(210 20% 10% / 0.55)",
-                backdropFilter: "blur(16px) saturate(1.5)",
-                WebkitBackdropFilter: "blur(16px) saturate(1.5)",
-                border: "1px solid hsl(0 0% 100% / 0.1)",
-                boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.08), 0 2px 8px hsl(220 30% 4% / 0.4)",
-              }}
-            >
-              <HeaderCaptionPanel
-                history={captions.captionHistory}
-                partial={captions.partialText}
-              />
-            </div>
-          </div>
-        )}
-
         <ConnectionStatus connected={false} />
       </header>
+
+      {/* CC bar — full-width strip just below the header */}
+      {captions.isActive && (
+        <div
+          className="w-full overflow-hidden z-40 px-3 py-1.5"
+          style={{
+            background: "hsl(210 20% 8% / 0.6)",
+            backdropFilter: "blur(20px) saturate(1.6)",
+            WebkitBackdropFilter: "blur(20px) saturate(1.6)",
+            borderBottom: "1px solid hsl(0 0% 100% / 0.07)",
+            boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.05), 0 4px 12px hsl(220 30% 2% / 0.4)",
+          }}
+        >
+          <HeaderCaptionPanel
+            history={captions.captionHistory}
+            partial={captions.partialText}
+          />
+        </div>
+      )}
 
       {/* ── Radio body shell ── */}
       <main
