@@ -377,16 +377,42 @@ const Index = () => {
             />
           </div>
         ) : activeTab === "scanner" ? (
-          <div className="tab-panel flex flex-1 flex-col items-center justify-center gap-3 w-full">
-            <RadioIcon className="h-8 w-8 opacity-20 text-primary" />
-            <span className="tab-section-title opacity-60">SCANNER</span>
-            <span className="tab-meta opacity-50">Coming soon</span>
+          <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">
+            <div className="tab-panel flex flex-1 flex-col w-full animate-fade-in">
+              <div className="tab-header flex items-center justify-between px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <RadioIcon className="h-4 w-4 text-primary" />
+                  <span className="tab-section-title">SCANNER</span>
+                </div>
+                <span className="tab-meta">FREQUENCY SCAN</span>
+              </div>
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 px-3 py-6">
+                <RadioIcon className="h-8 w-8 opacity-20 text-primary" />
+                <span className="tab-section-title opacity-50">COMING SOON</span>
+                <span className="tab-meta opacity-40 text-center leading-relaxed">
+                  Frequency scanner will step through repeaters from the database filtered by country or band.
+                </span>
+              </div>
+            </div>
           </div>
         ) : activeTab === "map" ? (
-          <div className="tab-panel flex flex-1 flex-col items-center justify-center gap-3 w-full">
-            <Map className="h-8 w-8 opacity-20 text-primary" />
-            <span className="tab-section-title opacity-60">MAP</span>
-            <span className="tab-meta opacity-50">Coming soon</span>
+          <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">
+            <div className="tab-panel flex flex-1 flex-col w-full animate-fade-in">
+              <div className="tab-header flex items-center justify-between px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <Map className="h-4 w-4 text-primary" />
+                  <span className="tab-section-title">MAP</span>
+                </div>
+                <span className="tab-meta">REPEATER MAP</span>
+              </div>
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 px-3 py-6">
+                <Map className="h-8 w-8 opacity-20 text-primary" />
+                <span className="tab-section-title opacity-50">COMING SOON</span>
+                <span className="tab-meta opacity-40 text-center leading-relaxed">
+                  Interactive map showing repeater locations with pins for each country.
+                </span>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">
