@@ -523,7 +523,7 @@ const Index = () => {
 
           {/* ── Settings tab ── */}
           <div className="flex flex-col flex-1 min-h-0 px-1 py-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
-            <SettingsScreen myCallsign={myCallsign} onCallsignChange={handleCallsignChange} />
+            <SettingsScreen myCallsign={myCallsign} onCallsignChange={handleCallsignChange} captionsLang={captions.lang} onCaptionsLangChange={captions.setLang} />
           </div>
         </div>
         </div>
