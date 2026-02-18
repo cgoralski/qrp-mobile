@@ -87,7 +87,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                     : "text-muted-foreground hover:bg-white/5"
                 }`}
               >
-                <div className="relative">
+                <div className="relative mb-1">
                   <Icon className="h-7 w-7" />
                   {isActive && (
                     <div
