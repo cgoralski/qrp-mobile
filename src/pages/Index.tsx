@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Radio, BookUser, Radio as RadioIcon, Map } from "lucide-react";
 import type { TabId } from "@/components/BottomTabBar";
 import RadioScreen from "@/components/RadioScreen";
@@ -110,6 +110,15 @@ const Index = () => {
   const [isSwiping, setIsSwiping] = useState(false);
 
   const captions = useCaptions();
+
+  // Reset any browser-induced scroll offset whenever the tab changes.
+  // On mobile, opening a keyboard in APRS chat can push window.scrollY up;
+  // this snaps it back immediately when switching tabs.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [activeTab]);
 
   const handleCallsignChange = (value: string) => {
     const upper = value.toUpperCase().replace(/[^A-Z0-9/]/g, "").slice(0, 10);
