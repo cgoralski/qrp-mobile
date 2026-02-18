@@ -65,91 +65,8 @@ const SideButton = ({
   </div>
 );
 
-/* ── PTT side button (large left-side, like real radio) ── */
-const PttSideButton = ({
-  isPressed,
-  onPressStart,
-  onPressEnd,
-}: {
-  isPressed: boolean;
-  onPressStart: () => void;
-  onPressEnd: () => void;
-}) => {
-  return (
-    <div className="flex flex-col items-center w-full mt-1 mb-1">
-      {/* TX LED */}
-      <div
-        className="rounded-full mb-1 transition-all duration-150"
-        style={{
-          width: "5px",
-          height: "5px",
-          background: isPressed ? "hsl(var(--transmit))" : "hsl(0 0% 12%)",
-          boxShadow: isPressed
-            ? "0 0 6px hsl(var(--transmit) / 0.9), 0 0 14px hsl(var(--transmit) / 0.4)"
-            : "inset 0 1px 2px hsl(0 0% 0% / 0.6)",
-          border: "1px solid hsl(0 0% 8%)",
-        }}
-      />
-      {/* PTT button body */}
-      <button
-        onMouseDown={onPressStart}
-        onMouseUp={onPressEnd}
-        onMouseLeave={onPressEnd}
-        onTouchStart={onPressStart}
-        onTouchEnd={onPressEnd}
-        onTouchCancel={onPressEnd}
-        aria-label="Push to talk"
-        className="select-none transition-all duration-100"
-        style={{
-          width: "22px",
-          height: "56px",
-          borderRadius: "4px 0 0 4px",
-          background: isPressed
-            ? "linear-gradient(180deg, hsl(var(--transmit) / 0.95), hsl(0 75% 38%))"
-            : "linear-gradient(180deg, hsl(130 50% 30%), hsl(130 45% 18%))",
-          border: "1px solid hsl(130 40% 22%)",
-          borderRight: "none",
-          boxShadow: isPressed
-            ? "inset 0 2px 6px hsl(0 0% 0% / 0.5), 0 0 16px hsl(var(--transmit) / 0.4)"
-            : "inset 0 1px 0 hsl(0 0% 50% / 0.15), inset 0 -1px 0 hsl(0 0% 0% / 0.5), -3px 2px 8px hsl(220 30% 2% / 0.7)",
-          transform: isPressed ? "scaleX(0.93)" : "scaleX(1)",
-        }}
-      >
-        {/* Grip ridges */}
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="absolute"
-            style={{
-              left: "3px",
-              right: "3px",
-              top: `${20 + i * 14}%`,
-              height: "1px",
-              borderRadius: "1px",
-              background: isPressed
-                ? "hsl(0 0% 100% / 0.2)"
-                : "hsl(0 0% 0% / 0.3)",
-            }}
-          />
-        ))}
-      </button>
-      {/* PTT label */}
-      <span
-        className="font-mono-display mt-1 transition-colors duration-150"
-        style={{
-          fontSize: "5px",
-          writingMode: "vertical-rl",
-          textOrientation: "mixed",
-          transform: "rotate(180deg)",
-          letterSpacing: "0.15em",
-          color: isPressed ? "hsl(var(--transmit))" : "hsl(0 0% 30%)",
-        }}
-      >
-        PTT
-      </span>
-    </div>
-  );
-};
+
+
 
 /* ── Speaker grille dots ── */
 const SpeakerGrille = () => (
@@ -312,7 +229,7 @@ const Index = () => {
               backgroundBlendMode: "overlay, normal",
             }}
           >
-            {/* ── Left side: PTT + side buttons ── */}
+            {/* ── Left side buttons ── */}
             <div className="flex flex-col items-end" style={{ width: "28px" }}>
               {/* Antenna stub at top-left */}
               <div className="flex justify-center w-full pt-2 pb-1">
@@ -328,11 +245,8 @@ const Index = () => {
                 />
               </div>
 
-              {/* PTT button — large prominent left-side button */}
-              <PttSideButton isPressed={isTransmitting} onPressStart={() => setIsTransmitting(true)} onPressEnd={() => setIsTransmitting(false)} />
-
-              {/* Lower side buttons */}
-              <div className="flex flex-col gap-1.5 pt-1">
+              {/* Side buttons */}
+              <div className="flex flex-col gap-1.5 pt-2">
                 <SideButton label="VOL" top accent />
                 <SideButton label="MON" />
               </div>
