@@ -262,33 +262,33 @@ const CaptionPanel = ({
 
   const [displayText, setDisplayText] = useState("");
   const targetRef = useRef(targetText);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
   targetRef.current = targetText;
 
   useEffect(() => {
-    // If target shrank (e.g. CC was reset), snap immediately
     if (targetText.length < displayText.length) {
       setDisplayText(targetText);
       return;
     }
-
     if (displayText === targetText) return;
-
     const timer = setTimeout(() => {
       setDisplayText(targetRef.current.slice(0, displayText.length + 1));
     }, 28);
-
     return () => clearTimeout(timer);
   }, [displayText, targetText]);
+
+  // After each new character, shift the text left so the right end stays pinned to the right edge
+  useEffect(() => {
+    if (!containerRef.current || !textRef.current) return;
+    const overflow = textRef.current.scrollWidth - containerRef.current.clientWidth;
+    textRef.current.style.transform = overflow > 0 ? `translateX(-${overflow}px)` : "translateX(0)";
+  }, [displayText]);
 
   const isEmpty = !displayText;
 
   return (
-    // overflow:hidden + text-align:right means text grows leftward from the right edge.
-    // Once it fills the row, the left side clips naturally — no character counting needed.
-    <div
-      className="w-full overflow-hidden"
-      style={{ textAlign: "right" }}
-    >
+    <div ref={containerRef} className="w-full overflow-hidden">
       {isEmpty ? (
         <span
           className="font-mono-display text-[12px] italic"
@@ -298,12 +298,14 @@ const CaptionPanel = ({
         </span>
       ) : (
         <span
+          ref={textRef}
           className="font-mono-display text-[16px] font-semibold"
           style={{
             color: "hsl(0 0% 90%)",
             whiteSpace: "nowrap",
             letterSpacing: "0.01em",
             display: "inline-block",
+            transformOrigin: "left center",
           }}
         >
           {displayText}
