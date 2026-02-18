@@ -146,14 +146,14 @@ const SelectField = ({ label, value, onChange, options }: {
 const SettingsScreen = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [csvCountry, setCsvCountry] = useState("United States");
+  const [csvCountry, setCsvCountry] = useState("Australia");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [clearFirst, setClearFirst] = useState(false);
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResult, setCsvResult] = useState<ImportResult | null>(null);
 
   const [apiUrl, setApiUrl] = useState("");
-  const [apiCountry, setApiCountry] = useState("United States");
+  const [apiCountry, setApiCountry] = useState("Australia");
   const [apiKey, setApiKey] = useState("");
   const [apiImporting, setApiImporting] = useState(false);
   const [apiResult, setApiResult] = useState<ImportResult | null>(null);
