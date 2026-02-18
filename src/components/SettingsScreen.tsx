@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Upload, Trash2, CheckCircle2, XCircle,
-  Loader2, ChevronDown, ChevronRight, Globe, AlertTriangle, Radio, Save,
+  Loader2, ChevronDown, ChevronRight, Globe, AlertTriangle, Radio, Save, MapPin, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -146,6 +146,32 @@ const SelectField = ({ label, value, onChange, options }: {
   </div>
 );
 
+/* ── Location detection ── */
+type LocationStatus = "idle" | "detecting" | "found" | "unsupported" | "denied" | "error" | "unrecognised";
+
+async function detectCountry(): Promise<{ country: string }> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) { reject(new Error("unsupported")); return; }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          const data = await res.json();
+          resolve({ country: data.countryName ?? "" });
+        } catch { reject(new Error("error")); }
+      },
+      (err) => {
+        if (err.code === 1) reject(new Error("denied"));
+        else reject(new Error("error"));
+      },
+      { timeout: 10000 }
+    );
+  });
+}
+
 /* ── Main component ── */
 const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -162,14 +188,28 @@ const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) =
     setTimeout(() => setCallsignSaved(false), 2500);
   };
 
-  const [csvCountry, setCsvCountry] = useState("Australia");
+  // Location detection
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>(
+    () => (localStorage.getItem("detectedCountry") ? "found" : "idle")
+  );
+  const [detectedCountry, setDetectedCountry] = useState<string>(
+    () => localStorage.getItem("detectedCountry") ?? ""
+  );
+
+  // Initialise dropdowns from stored detection or fallback to "Australia"
+  const storedCountry = localStorage.getItem("detectedCountry");
+  const defaultCountry = storedCountry && COUNTRY_OPTIONS.some(o => o.value === storedCountry)
+    ? storedCountry
+    : "Australia";
+
+  const [csvCountry, setCsvCountry] = useState(defaultCountry);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [clearFirst, setClearFirst] = useState(false);
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResult, setCsvResult] = useState<ImportResult | null>(null);
 
   const [apiUrl, setApiUrl] = useState("");
-  const [apiCountry, setApiCountry] = useState("Australia");
+  const [apiCountry, setApiCountry] = useState(defaultCountry);
   const [apiKey, setApiKey] = useState("");
   const [apiImporting, setApiImporting] = useState(false);
   const [apiResult, setApiResult] = useState<ImportResult | null>(null);
@@ -177,6 +217,40 @@ const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) =
   const [resetting, setResetting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetDone, setResetDone] = useState(false);
+
+  const applyCountry = (raw: string) => {
+    const match = COUNTRY_OPTIONS.find(o => o.value.toLowerCase() === raw.toLowerCase());
+    const resolved = match?.value ?? null;
+    if (resolved) {
+      setCsvCountry(resolved);
+      setApiCountry(resolved);
+      setDetectedCountry(resolved);
+      localStorage.setItem("detectedCountry", resolved);
+      setLocationStatus("found");
+    } else {
+      setDetectedCountry(raw);
+      setLocationStatus("unrecognised");
+    }
+  };
+
+  const handleDetect = async () => {
+    setLocationStatus("detecting");
+    try {
+      const { country } = await detectCountry();
+      applyCountry(country);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "error";
+      setLocationStatus(msg as LocationStatus);
+    }
+  };
+
+  // Auto-detect on first mount if never detected before
+  useEffect(() => {
+    if (!localStorage.getItem("detectedCountry")) {
+      handleDetect();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCsvImport = async () => {
     if (!csvFile) return;
@@ -214,8 +288,6 @@ const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) =
     } catch (e) { console.error(e); }
     finally { setResetting(false); }
   };
-
-  
 
   return (
     <div className="tab-panel flex flex-col w-full h-full animate-fade-in gap-3 overflow-y-auto overscroll-contain px-2 py-2">
@@ -305,6 +377,81 @@ const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) =
               </span>
             </div>
           )}
+        </div>
+      </Section>
+
+      {/* ── Location ── */}
+      <Section title="MY LOCATION">
+        <div className="flex flex-col gap-2.5">
+          {locationStatus === "detecting" && (
+            <div className="flex items-center gap-2 rounded-xl px-2.5 py-2"
+              style={{ background: "hsl(var(--primary) / 0.06)", border: "1px solid hsl(var(--primary) / 0.2)" }}>
+              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" style={{ color: "hsl(var(--primary))" }} />
+              <span className="tab-meta" style={{ color: "hsl(var(--primary))" }}>Detecting your location…</span>
+            </div>
+          )}
+          {locationStatus === "found" && (
+            <div className="flex items-center gap-2 rounded-xl px-2.5 py-2"
+              style={{ background: "hsl(142 70% 50% / 0.08)", border: "1px solid hsl(142 70% 50% / 0.25)" }}>
+              <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(142 70% 50%)" }} />
+              <span className="tab-meta" style={{ color: "hsl(142 70% 60%)" }}>
+                Detected: <strong style={{ color: "hsl(142 70% 72%)" }}>{detectedCountry}</strong> — import dropdowns updated.
+              </span>
+            </div>
+          )}
+          {locationStatus === "unrecognised" && (
+            <div className="flex items-start gap-2 rounded-xl px-2.5 py-2"
+              style={{ background: "hsl(42 90% 55% / 0.08)", border: "1px solid hsl(42 90% 55% / 0.25)" }}>
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "hsl(42 90% 65%)" }} />
+              <span className="tab-meta leading-relaxed" style={{ color: "hsl(42 90% 65%)" }}>
+                Located in <strong>{detectedCountry}</strong> — not in the supported list. Please select your country manually below.
+              </span>
+            </div>
+          )}
+          {locationStatus === "denied" && (
+            <div className="flex items-start gap-2 rounded-xl px-2.5 py-2"
+              style={{ background: "hsl(0 80% 55% / 0.08)", border: "1px solid hsl(0 80% 55% / 0.25)" }}>
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "hsl(0 80% 65%)" }} />
+              <span className="tab-meta leading-relaxed" style={{ color: "hsl(0 80% 65%)" }}>
+                Location access denied. Allow location access in your browser settings, then tap Detect again.
+              </span>
+            </div>
+          )}
+          {(locationStatus === "error" || locationStatus === "unsupported") && (
+            <div className="flex items-start gap-2 rounded-xl px-2.5 py-2"
+              style={{ background: "hsl(0 80% 55% / 0.08)", border: "1px solid hsl(0 80% 55% / 0.25)" }}>
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: "hsl(0 80% 65%)" }} />
+              <span className="tab-meta leading-relaxed" style={{ color: "hsl(0 80% 65%)" }}>
+                {locationStatus === "unsupported"
+                  ? "Geolocation is not supported by this browser."
+                  : "Could not determine location. Please select your country manually below."}
+              </span>
+            </div>
+          )}
+          {locationStatus === "idle" && (
+            <p className="tab-meta leading-relaxed" style={{ color: "hsl(var(--muted-foreground))" }}>
+              Automatically detect your country to pre-fill the import dropdowns.
+            </p>
+          )}
+          <button
+            onClick={handleDetect}
+            disabled={locationStatus === "detecting"}
+            className="flex items-center justify-center gap-1.5 rounded-xl py-2 transition-all disabled:opacity-40"
+            style={{
+              background: "linear-gradient(180deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.08))",
+              border: "1px solid hsl(var(--primary) / 0.25)",
+              color: "hsl(var(--primary))",
+            }}
+          >
+            {locationStatus === "detecting"
+              ? <Loader2 className="h-3 w-3 animate-spin" />
+              : locationStatus === "found"
+              ? <RefreshCw className="h-3 w-3" />
+              : <MapPin className="h-3 w-3" />}
+            <span className="tab-callsign tab-callsign-primary">
+              {locationStatus === "found" ? "RE-DETECT LOCATION" : "DETECT MY LOCATION"}
+            </span>
+          </button>
         </div>
       </Section>
 
