@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      contacts: {
+        Row: {
+          c_tone_freq: number | null
+          callsign: string
+          comment: string | null
+          country: string | null
+          created_at: string
+          dtcs_code: string | null
+          duplex: string | null
+          freq_offset: number | null
+          frequency: number
+          group_tag: string | null
+          id: string
+          location_desc: string | null
+          mode: string | null
+          name: string
+          r_tone_freq: number | null
+          region: string | null
+          source_repeater_id: string | null
+          tone_mode: string | null
+          updated_at: string
+        }
+        Insert: {
+          c_tone_freq?: number | null
+          callsign?: string
+          comment?: string | null
+          country?: string | null
+          created_at?: string
+          dtcs_code?: string | null
+          duplex?: string | null
+          freq_offset?: number | null
+          frequency: number
+          group_tag?: string | null
+          id?: string
+          location_desc?: string | null
+          mode?: string | null
+          name?: string
+          r_tone_freq?: number | null
+          region?: string | null
+          source_repeater_id?: string | null
+          tone_mode?: string | null
+          updated_at?: string
+        }
+        Update: {
+          c_tone_freq?: number | null
+          callsign?: string
+          comment?: string | null
+          country?: string | null
+          created_at?: string
+          dtcs_code?: string | null
+          duplex?: string | null
+          freq_offset?: number | null
+          frequency?: number
+          group_tag?: string | null
+          id?: string
+          location_desc?: string | null
+          mode?: string | null
+          name?: string
+          r_tone_freq?: number | null
+          region?: string | null
+          source_repeater_id?: string | null
+          tone_mode?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       repeaters: {
         Row: {
           c_tone_freq: number | null
