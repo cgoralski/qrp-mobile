@@ -195,7 +195,7 @@ const ChannelBlock = ({
 
       <div className="flex items-center gap-0 pl-5 pr-3">
         <span
-          className={`inline-flex h-[22px] w-[22px] items-center justify-center text-[12px] font-black mr-5 ${badgeColor}`}
+          className={`inline-flex h-[22px] w-[22px] items-center justify-center text-[12px] font-black mr-5 shrink-0 ${badgeColor}`}
           style={{
             boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.18), inset 0 -1px 0 hsl(0 0% 0% / 0.35), inset 1px 0 0 hsl(0 0% 100% / 0.08), inset -1px 0 0 hsl(0 0% 0% / 0.2)",
             transform: "translateY(-3px)",
@@ -204,11 +204,15 @@ const ChannelBlock = ({
           {label}
         </span>
         <span
-          className="font-freq-display text-[42px] leading-none transition-all duration-300"
+          className="font-freq-display text-[42px] leading-none transition-all duration-300 shrink-0"
           style={activeFreqStyle}
         >
           {freq.main}
         </span>
+        {/* RSSI bar — to the right of the frequency */}
+        <div className="flex flex-col justify-end ml-3 pb-[3px]">
+          <RSSIBar level={rssi} label="RSSI" />
+        </div>
       </div>
 
       <div className="flex items-center justify-between mt-0.5 px-3">
@@ -218,10 +222,6 @@ const ChannelBlock = ({
         <span className="font-mono-display text-[11px] font-semibold tracking-wider text-white/40">
           {modeRight}
         </span>
-      </div>
-
-      <div className="px-3">
-        <RSSIBar level={rssi} label="RSSI" />
       </div>
     </div>
   );
