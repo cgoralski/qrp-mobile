@@ -299,7 +299,7 @@ const CaptionPanel = ({
       ) : (
         <span
           ref={textRef}
-          className="font-mono-display text-[16px] font-semibold"
+          className="font-mono-display text-[22px] font-semibold"
           style={{
             color: "hsl(0 0% 90%)",
             whiteSpace: "nowrap",
