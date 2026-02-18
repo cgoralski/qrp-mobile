@@ -419,10 +419,40 @@ const Index = () => {
                         boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.1), 0 4px 12px hsl(220 30% 2% / 0.3)",
                       }}
                     >
-                      <HeaderCaptionPanel
-                        history={captions.captionHistory}
-                        partial={captions.partialText}
-                      />
+                      {/* Listening indicator dot */}
+                      <div className="flex items-center gap-2.5 w-full">
+                        <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: "10px", height: "10px" }}>
+                          {/* Pulse ring — only when actively listening */}
+                          {captions.isListening && (
+                            <span
+                              className="absolute inset-0 rounded-full"
+                              style={{
+                                background: "hsl(140 70% 52% / 0.35)",
+                                animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite",
+                              }}
+                            />
+                          )}
+                          {/* Core dot */}
+                          <span
+                            className="relative rounded-full"
+                            style={{
+                              width: "7px",
+                              height: "7px",
+                              background: captions.isListening
+                                ? "hsl(140 70% 52%)"
+                                : "hsl(140 40% 32%)",
+                              boxShadow: captions.isListening
+                                ? "0 0 6px hsl(140 70% 52% / 0.8)"
+                                : "none",
+                              transition: "background 0.4s ease, box-shadow 0.4s ease",
+                            }}
+                          />
+                        </div>
+                        <HeaderCaptionPanel
+                          history={captions.captionHistory}
+                          partial={captions.partialText}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
