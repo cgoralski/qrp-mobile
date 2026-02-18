@@ -124,7 +124,17 @@ const DPad = ({
 
       {/* Right side buttons: BACK + V/M */}
       <div className="flex flex-col gap-1">
-        {sideBtn("↩", null, onBack)}
+        <button
+          onClick={onBack}
+          className="flex flex-col items-center justify-center rounded-md transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
+          style={{
+            ...navButtonStyle("side"),
+            width: "56px",
+            height: "44px",
+          }}
+        >
+          <CornerDownLeft className="h-4 w-4 text-white/80" />
+        </button>
         {sideBtn("CC", null, onVm)}
       </div>
     </div>
