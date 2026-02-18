@@ -377,16 +377,16 @@ const Index = () => {
             />
           </div>
         ) : activeTab === "scanner" ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground gap-3">
-            <RadioIcon className="h-8 w-8 opacity-30" />
-            <span className="font-mono-display text-xs tracking-wider">SCANNER</span>
-            <span className="text-[11px] text-muted-foreground/60">Coming soon</span>
+          <div className="tab-panel flex flex-1 flex-col items-center justify-center gap-3 w-full">
+            <RadioIcon className="h-8 w-8 opacity-20 text-primary" />
+            <span className="tab-section-title opacity-60">SCANNER</span>
+            <span className="tab-meta opacity-50">Coming soon</span>
           </div>
         ) : activeTab === "map" ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground gap-3">
-            <Map className="h-8 w-8 opacity-30" />
-            <span className="font-mono-display text-xs tracking-wider">MAP</span>
-            <span className="text-[11px] text-muted-foreground/60">Coming soon</span>
+          <div className="tab-panel flex flex-1 flex-col items-center justify-center gap-3 w-full">
+            <Map className="h-8 w-8 opacity-20 text-primary" />
+            <span className="tab-section-title opacity-60">MAP</span>
+            <span className="tab-meta opacity-50">Coming soon</span>
           </div>
         ) : (
           <div className="flex flex-1 flex-col w-full px-1 py-1 min-h-0">

@@ -802,46 +802,36 @@ const ContactsScreen = ({ onTuneChannel, activeChannel }: ContactsScreenProps) =
   const [tab, setTab] = useState<"contacts" | "repeaters">("contacts");
 
   return (
-    <div
-      className="flex flex-col w-full h-full animate-fade-in"
-      style={{
-        background: "linear-gradient(175deg, hsl(220 12% 11%) 0%, hsl(220 10% 8%) 100%)",
-        border: "1px solid hsl(220 10% 18%)",
-        borderRadius: "16px",
-        overflow: "hidden",
-      }}
-    >
+    <div className="tab-panel flex flex-col w-full h-full animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: "1px solid hsl(215 10% 15%)" }}>
+      <div className="tab-header flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2">
-          {/* Tab toggle */}
-          <div className="flex rounded-md overflow-hidden" style={{ border: "1px solid hsl(215 10% 20%)" }}>
+          {/* Sub-tab toggle */}
+          <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid hsl(var(--border) / 0.5)" }}>
             <button
               onClick={() => setTab("contacts")}
-              className="flex items-center gap-1.5 px-2.5 py-1 font-mono-display text-[9px] tracking-wider transition-all"
+              className="flex items-center gap-1.5 px-2.5 py-1 transition-all"
               style={{
-                background: tab === "contacts" ? "hsl(185 70% 25%)" : "hsl(215 14% 14%)",
-                color: tab === "contacts" ? "hsl(185 80% 75%)" : "hsl(215 15% 42%)",
-                borderRight: "1px solid hsl(215 10% 20%)",
+                background: tab === "contacts" ? "hsl(var(--primary) / 0.2)" : "hsl(var(--secondary))",
+                borderRight: "1px solid hsl(var(--border) / 0.5)",
               }}
             >
-              <BookUser className="h-3 w-3" /> MY LIST
+              <BookUser className="h-3 w-3" style={{ color: tab === "contacts" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }} />
+              <span className="tab-callsign" style={{ color: tab === "contacts" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}>MY LIST</span>
             </button>
             <button
               onClick={() => setTab("repeaters")}
-              className="flex items-center gap-1.5 px-2.5 py-1 font-mono-display text-[9px] tracking-wider transition-all"
-              style={{
-                background: tab === "repeaters" ? "hsl(185 70% 25%)" : "hsl(215 14% 14%)",
-                color: tab === "repeaters" ? "hsl(185 80% 75%)" : "hsl(215 15% 42%)",
-              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 transition-all"
+              style={{ background: tab === "repeaters" ? "hsl(var(--primary) / 0.2)" : "hsl(var(--secondary))" }}
             >
-              <Radio className="h-3 w-3" /> REPEATERS
+              <Radio className="h-3 w-3" style={{ color: tab === "repeaters" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }} />
+              <span className="tab-callsign" style={{ color: tab === "repeaters" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}>REPEATERS</span>
             </button>
           </div>
         </div>
         <span
-          className="font-mono-display text-[8px] tracking-wider px-1.5 py-0.5 rounded"
-          style={{ background: "hsl(185 80% 55% / 0.1)", color: "hsl(185 80% 55% / 0.7)", border: "1px solid hsl(185 80% 55% / 0.2)" }}
+          className="tab-meta px-1.5 py-0.5 rounded-md"
+          style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary) / 0.7)", border: "1px solid hsl(var(--primary) / 0.2)" }}
         >
           CH {activeChannel}
         </span>
