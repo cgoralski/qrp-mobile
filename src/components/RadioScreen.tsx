@@ -262,8 +262,9 @@ const CaptionPanel = ({
   const displayText = partial || history[history.length - 1] || "";
   const isEmpty = !displayText;
 
-  // Key the animation so it restarts each time the text changes
-  const animKey = displayText;
+  // Only restart the animation when a sentence COMPLETES (history grows),
+  // NOT on every partial word — so the scroll is smooth as words accumulate.
+  const animKey = history.length;
 
   return (
     <div
@@ -286,19 +287,19 @@ const CaptionPanel = ({
       />
       {/* Left fade mask */}
       <div
-        className="absolute left-0 top-0 bottom-0 w-6 pointer-events-none z-20"
+        className="absolute left-0 top-0 bottom-0 w-8 pointer-events-none z-20"
         style={{ background: "linear-gradient(to right, hsl(220 40% 4%), transparent)" }}
       />
       {/* Right fade mask */}
       <div
-        className="absolute right-0 top-0 bottom-0 w-6 pointer-events-none z-20"
+        className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none z-20"
         style={{ background: "linear-gradient(to left, hsl(220 40% 4%), transparent)" }}
       />
 
-      <div className="relative z-10 h-full flex items-center px-3 overflow-hidden">
+      <div className="relative z-10 h-full flex items-center overflow-hidden">
         {isEmpty ? (
           <span
-            className="font-mono-display text-[15px] italic whitespace-nowrap"
+            className="font-mono-display text-[15px] italic whitespace-nowrap px-3"
             style={{ color: "hsl(140 35% 30%)" }}
           >
             Listening…
@@ -308,12 +309,13 @@ const CaptionPanel = ({
             key={animKey}
             className="font-mono-display text-[17px] font-semibold whitespace-nowrap"
             style={{
-              color: partial ? "hsl(0 0% 88%)" : "hsl(0 0% 60%)",
-              animation: "caption-ticker 12s linear infinite",
+              color: partial ? "hsl(0 0% 92%)" : "hsl(0 0% 60%)",
+              animation: "caption-ticker 14s linear 1",
               display: "inline-block",
+              willChange: "transform",
             }}
           >
-            {displayText}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;{displayText}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           </span>
         )}
       </div>
