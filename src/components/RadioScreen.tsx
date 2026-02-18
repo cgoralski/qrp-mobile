@@ -340,7 +340,7 @@ const RadioScreen = ({
   return (
     /* Outer bezel — textured dark hardware casing */
     <div
-      className="w-full rounded-[18px] p-[6px] relative"
+      className="w-full rounded-[18px] py-[6px] px-0 relative"
       style={{
         background:
           "linear-gradient(160deg, hsl(220 10% 17%) 0%, hsl(220 8% 12%) 50%, hsl(220 8% 9%) 100%)",
