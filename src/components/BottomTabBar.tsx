@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mic, MessageSquare, Settings, BookUser, Radio, Map, Grid2x2, X } from "lucide-react";
+import { Mic, MessageSquare, Settings, BookUser, Radio, Map, ChevronUp, ChevronDown } from "lucide-react";
 
 export type TabId = "voice" | "aprs" | "contacts" | "scanner" | "map" | "settings";
 
@@ -19,9 +19,6 @@ const ALL_TABS = [
 
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const activeTabDef = ALL_TABS.find((t) => t.id === activeTab) ?? ALL_TABS[0];
-  const ActiveIcon = activeTabDef.icon;
 
   const handleSelect = (tab: TabId) => {
     onTabChange(tab);
@@ -95,7 +92,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
 
       {/* Slim persistent bottom bar */}
       <nav
-        className="sticky bottom-0 z-50 flex items-center justify-between px-4"
+        className="sticky bottom-0 z-50 flex items-center justify-center"
         style={{
           height: "48px",
           background: "linear-gradient(180deg, hsl(210 20% 8% / 0.88), hsl(210 20% 6% / 0.96))",
@@ -104,25 +101,17 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
           borderTop: "1px solid hsl(210 15% 18% / 0.4)",
         }}
       >
-        {/* Active tab indicator */}
-        <div className="flex items-center gap-2 text-primary">
-          <ActiveIcon className="h-4 w-4" />
-          <span className="font-mono-display text-[10px] font-semibold tracking-[0.15em]">
-            {activeTabDef.label.toUpperCase()}
-          </span>
-        </div>
-
-        {/* Open/close drawer button */}
+        {/* Toggle drawer button — centered */}
         <button
           onClick={() => setDrawerOpen((v) => !v)}
-          className="flex items-center justify-center rounded-lg transition-colors text-muted-foreground hover:text-primary"
-          style={{ width: "36px", height: "36px" }}
+          className="flex items-center justify-center rounded-full transition-all text-muted-foreground hover:text-primary"
+          style={{ width: "40px", height: "40px" }}
           aria-label="Open navigation"
         >
           {drawerOpen ? (
-            <X className="h-4 w-4" />
+            <ChevronDown className="h-5 w-5 transition-transform duration-300" />
           ) : (
-            <Grid2x2 className="h-4 w-4" />
+            <ChevronUp className="h-5 w-5 transition-transform duration-300" />
           )}
         </button>
       </nav>
