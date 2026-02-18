@@ -98,36 +98,53 @@ const ChannelNameEditor = ({
 };
 
 
-const RSSIBar = ({ level, label }: { level: number; label: string }) => (
-  <div className="flex flex-col gap-[2px]">
-    {/* Row 1: bars only */}
-    <div className="flex items-end gap-[2px]">
-      {Array.from({ length: 10 }).map((_, i) => (
-        <div
-          key={i}
-          className="transition-all duration-100"
-          style={{
-            width: "4px",
-            height: `${4 + i * 1.5}px`,
-            borderRadius: "0.5px",
-            background: i < level
-              ? i < 4
-                ? "hsl(0 0% 75%)"
-                : i < 7
-                ? "hsl(45 80% 60%)"
-                : "hsl(0 70% 55%)"
-              : "hsl(0 0% 20%)",
-          }}
-        />
-      ))}
-    </div>
-    {/* Row 2: label + S-meter scale inline */}
-    <div className="flex items-center gap-[4px]">
-      <span className="font-mono-display text-[7px] text-white/30 leading-none mr-[2px]">{label}</span>
-      {["1", "3", "5", "7", "9"].map((n) => (
-        <span key={n} className="font-mono-display text-[7px] text-white/20 leading-none">{n}</span>
-      ))}
-    </div>
+const S_LABELS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "+60"];
+
+const RSSIBar = ({ level }: { level: number }) => (
+  <div className="flex items-end gap-[3px]">
+    {Array.from({ length: 10 }).map((_, i) => {
+      const isLit = i < level;
+      const barColor = isLit
+        ? i < 4
+          ? "hsl(0 0% 75%)"
+          : i < 7
+          ? "hsl(45 80% 60%)"
+          : "hsl(0 70% 55%)"
+        : "hsl(0 0% 20%)";
+      const labelColor = isLit
+        ? i < 4
+          ? "hsl(0 0% 75% / 0.7)"
+          : i < 7
+          ? "hsl(45 80% 60% / 0.7)"
+          : "hsl(0 70% 55% / 0.7)"
+        : "hsl(0 0% 30%)";
+      const label = S_LABELS[i];
+      const isLast = i === 9;
+
+      return (
+        <div key={i} className="flex flex-col items-center gap-[2px]">
+          <div
+            className="transition-all duration-100"
+            style={{
+              width: isLast ? "6px" : "4px",
+              height: `${5 + i * 1.6}px`,
+              borderRadius: "0.5px",
+              background: barColor,
+            }}
+          />
+          <span
+            className="font-mono-display leading-none transition-all duration-100"
+            style={{
+              fontSize: isLast ? "6px" : "8px",
+              color: labelColor,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {label}
+          </span>
+        </div>
+      );
+    })}
   </div>
 );
 
@@ -215,7 +232,7 @@ const ChannelBlock = ({
         </span>
         {/* RSSI bar — centered in remaining space between freq and right bezel */}
         <div className="flex flex-1 items-end justify-center pb-[3px]">
-          <RSSIBar level={rssi} label="RSSI" />
+          <RSSIBar level={rssi} />
         </div>
       </div>
 
