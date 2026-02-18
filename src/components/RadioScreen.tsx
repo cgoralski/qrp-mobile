@@ -201,7 +201,7 @@ const RadioScreen = ({
       <div
         className="w-full rounded-xl overflow-hidden relative"
         style={{
-          background: "linear-gradient(180deg, hsl(218 55% 22%) 0%, hsl(220 52% 18%) 100%)",
+          background: "linear-gradient(180deg, hsl(218 55% 16%) 0%, hsl(220 52% 13%) 100%)",
           border: "1px solid hsl(218 45% 28%)",
           boxShadow:
             "inset 0 3px 10px hsl(220 60% 5% / 0.7), inset 0 1px 4px hsl(220 50% 5% / 0.5), inset 0 0 40px hsl(218 60% 12% / 0.5)",
