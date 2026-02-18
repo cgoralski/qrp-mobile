@@ -216,7 +216,7 @@ const Index = () => {
         onTouchEnd={handleSwipeTouchEnd}
       >
         {activeTab === "voice" ? (
-          <>
+          <div className="w-full relative animate-fade-in">
           {/* SVG clipPath definition — tapered sides + rounded bottom corners */}
           <svg width="0" height="0" style={{ position: "absolute" }}>
             <defs>
@@ -230,7 +230,7 @@ const Index = () => {
             </defs>
           </svg>
           <div
-            className="w-full flex animate-fade-in relative"
+            className="w-full flex relative"
             style={{
               background:
                 "linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
@@ -243,48 +243,6 @@ const Index = () => {
               clipPath: "url(#chassisClip)",
             }}
           >
-            {/* ── Left rolled-edge sheen (follows clip-path taper) ── */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(to right, " +
-                  "hsl(0 0% 85% / 0.12) 0px, " +
-                  "hsl(0 0% 85% / 0.12) 1px, " +
-                  "hsl(0 0% 10% / 0.18) 2px, " +
-                  "hsl(0 0% 10% / 0.07) 6px, " +
-                  "transparent 14px)",
-                zIndex: 3,
-              }}
-            />
-            {/* ── Right rolled-edge sheen (mirrors left) ── */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(to left, " +
-                  "hsl(0 0% 85% / 0.12) 0px, " +
-                  "hsl(0 0% 85% / 0.12) 1px, " +
-                  "hsl(0 0% 10% / 0.18) 2px, " +
-                  "hsl(0 0% 10% / 0.07) 6px, " +
-                  "transparent 14px)",
-                zIndex: 3,
-              }}
-            />
-            {/* ── Bottom rolled-edge sheen (rounds over at clipped corners) ── */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(to top, " +
-                  "hsl(0 0% 80% / 0.14) 0px, " +
-                  "hsl(0 0% 80% / 0.14) 1px, " +
-                  "hsl(0 0% 8% / 0.22) 2px, " +
-                  "hsl(0 0% 8% / 0.08) 7px, " +
-                  "transparent 16px)",
-                zIndex: 3,
-              }}
-            />
             <div className="flex flex-col items-end" style={{ width: "20px" }}>
               {/* Antenna stub at top-left */}
               <div className="flex justify-center w-full pt-2 pb-1">
@@ -378,8 +336,64 @@ const Index = () => {
               <SideButton label="CH" />
               <SideButton label="PWR" />
             </div>
+            </div>
+            {/* ── Bevel overlay SVG — outside clip-path, draws rolled edges ── */}
+            <svg
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ zIndex: 50 }}
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                {/* Left edge: bright highlight outer → dark shadow → transparent */}
+                <linearGradient id="bevelLeft" x1="0" y1="0" x2="9" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%"   stopColor="hsl(0,0%,80%)" stopOpacity="0.55" />
+                  <stop offset="18%"  stopColor="hsl(0,0%,80%)" stopOpacity="0.20" />
+                  <stop offset="45%"  stopColor="hsl(0,0%,5%)"  stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="hsl(0,0%,5%)"  stopOpacity="0" />
+                </linearGradient>
+                {/* Right edge: mirrors left */}
+                <linearGradient id="bevelRight" x1="100" y1="0" x2="91" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%"   stopColor="hsl(0,0%,80%)" stopOpacity="0.55" />
+                  <stop offset="18%"  stopColor="hsl(0,0%,80%)" stopOpacity="0.20" />
+                  <stop offset="45%"  stopColor="hsl(0,0%,5%)"  stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="hsl(0,0%,5%)"  stopOpacity="0" />
+                </linearGradient>
+                {/* Bottom edge */}
+                <linearGradient id="bevelBottom" x1="0" y1="100" x2="0" y2="93" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%"   stopColor="hsl(0,0%,75%)" stopOpacity="0.45" />
+                  <stop offset="35%"  stopColor="hsl(0,0%,75%)" stopOpacity="0.12" />
+                  <stop offset="100%" stopColor="hsl(0,0%,5%)"  stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {/* Left tapered edge + bottom-left rounded corner */}
+              <path
+                d="M 0,32 L 3,40 L 6,50 L 7,95 Q 7,100 12,100"
+                fill="none"
+                stroke="url(#bevelLeft)"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Right tapered edge + bottom-right rounded corner */}
+              <path
+                d="M 100,32 L 97,40 L 94,50 L 93,95 Q 93,100 88,100"
+                fill="none"
+                stroke="url(#bevelRight)"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Bottom straight edge */}
+              <path
+                d="M 12,100 L 88,100"
+                fill="none"
+                stroke="url(#bevelBottom)"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+            </svg>
           </div>
-          </>
         ) : activeTab === "aprs" ? (
           <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
         ) : activeTab === "contacts" ? (
