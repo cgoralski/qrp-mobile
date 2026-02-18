@@ -14,6 +14,7 @@ interface RadioScreenProps {
   channelBName: string;
   onChannelANameChange: (name: string) => void;
   onChannelBNameChange: (name: string) => void;
+  myCallsign?: string;
 }
 
 const formatFreq = (value: string): { main: string; sub: string } => {
@@ -242,6 +243,7 @@ const RadioScreen = ({
   channelBName,
   onChannelANameChange,
   onChannelBNameChange,
+  myCallsign = "",
 }: RadioScreenProps) => {
   const [animatedRssi, setAnimatedRssi] = useState(rssi);
 
@@ -332,7 +334,24 @@ const RadioScreen = ({
           <span className="font-mono-display text-[10px] font-bold text-white/40">Z</span>
           <Music className="h-3 w-3 text-white/30" />
           <Bluetooth className="h-3 w-3 text-white/30" />
-          <div className="flex-1" />
+          {/* Callsign — centered in the status bar */}
+          <div className="flex-1 flex justify-center">
+            {myCallsign ? (
+              <span
+                className="font-mono-display text-[10px] font-black tracking-[0.18em]"
+                style={{
+                  color: "hsl(140 70% 52%)",
+                  textShadow: "0 0 6px hsl(140 70% 52% / 0.7), 0 0 14px hsl(140 70% 52% / 0.3)",
+                }}
+              >
+                {myCallsign}
+              </span>
+            ) : (
+              <span className="font-mono-display text-[9px] tracking-wider text-white/15">
+                NO CALL
+              </span>
+            )}
+          </div>
           {/* RX indicator */}
           <span
             className="font-mono-display text-[10px] font-black tracking-widest transition-all duration-100"

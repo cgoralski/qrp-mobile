@@ -336,6 +336,7 @@ const Index = () => {
                   channelBName={channelBName}
                   onChannelANameChange={setChannelAName}
                   onChannelBNameChange={setChannelBName}
+                  myCallsign={myCallsign}
                 />
               </div>
 
