@@ -299,7 +299,7 @@ const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) =
       </div>
 
       {/* ── Callsign ── */}
-      <Section title="MY CALLSIGN">
+      <Section title="MY CALLSIGN" defaultOpen={false}>
         <div className="flex flex-col gap-2.5">
           <div className="flex flex-col gap-1">
             <label className="tab-meta">CALLSIGN</label>
@@ -381,7 +381,7 @@ const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) =
       </Section>
 
       {/* ── Location ── */}
-      <Section title="MY LOCATION">
+      <Section title="MY LOCATION" defaultOpen={false}>
         <div className="flex flex-col gap-2.5">
           {locationStatus === "detecting" && (
             <div className="flex items-center gap-2 rounded-xl px-2.5 py-2"
@@ -456,7 +456,7 @@ const SettingsScreen = ({ myCallsign, onCallsignChange }: SettingsScreenProps) =
       </Section>
 
       {/* ── CSV Upload ── */}
-      <Section title="IMPORT CSV (CHIRP FORMAT)">
+      <Section title="IMPORT CSV (CHIRP FORMAT)" defaultOpen={false}>
         <div className="flex flex-col gap-2.5">
           <SelectField label="COUNTRY / REGION" value={csvCountry} onChange={setCsvCountry} options={COUNTRY_OPTIONS} />
           <div className="flex flex-col gap-1">
