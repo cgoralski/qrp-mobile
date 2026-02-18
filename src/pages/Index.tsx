@@ -256,7 +256,7 @@ const Index = () => {
             <Radio className="h-4 w-4 text-primary" />
           </div>
           <span className="font-mono-display text-sm font-semibold tracking-wider text-foreground">
-            RADIO<span className="text-primary text-glow">LINK</span>
+            QRP<span className="text-primary text-glow">MOBILE</span>
           </span>
         </div>
 
