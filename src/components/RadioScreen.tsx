@@ -68,7 +68,7 @@ const ChannelNameEditor = ({
             if (e.key === "Escape") setEditing(false);
           }}
           autoFocus
-          className="font-mono-display text-[16px] font-semibold tracking-wider bg-transparent border-b outline-none w-full"
+          className="font-mono-display text-[18px] font-semibold tracking-wider bg-transparent border-b outline-none w-full"
           style={{ color: tintColor, borderColor: `${tintColor}66` }}
         />
         <button onClick={commit} className="shrink-0" style={{ color: tintColor }}>
@@ -84,7 +84,7 @@ const ChannelNameEditor = ({
       className="flex items-center gap-1 px-3 pt-1 pb-0 group"
     >
       <span
-        className="font-mono-display text-[16px] font-semibold tracking-wider"
+        className="font-mono-display text-[18px] font-semibold tracking-wider"
         style={{ color: `${tintColor}99` }}
       >
         {name}
