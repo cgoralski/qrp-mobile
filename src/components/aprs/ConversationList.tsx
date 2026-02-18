@@ -32,27 +32,32 @@ const ConversationList = ({
 
   return (
     <div className="tab-panel flex flex-1 flex-col w-full max-w-lg mx-auto animate-fade-in">
-      {/* Header */}
-      <div className="tab-header flex items-center justify-between px-3 py-2.5">
+      {/* Callsign — centred title row */}
+      <div className="flex items-center justify-center px-3 pt-2.5 pb-1">
+        {callsignValid ? (
+          <span
+            className="font-mono-display font-black tracking-[0.18em]"
+            style={{
+              fontSize: "13px",
+              color: "hsl(0 0% 98%)",
+              textShadow:
+                "0 0 4px hsl(200 80% 90% / 0.5), 0 0 12px hsl(200 70% 80% / 0.25)",
+            }}
+          >
+            {myCallsign}
+          </span>
+        ) : (
+          <span className="tab-meta" style={{ color: "hsl(0 75% 60%)" }}>
+            NO CALL — SET IN SETTINGS
+          </span>
+        )}
+      </div>
+
+      {/* Toolbar row — label + new-chat button */}
+      <div className="tab-header flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
-          {callsignValid ? (
-            <span
-              className="font-mono-display font-black tracking-[0.18em]"
-              style={{
-                fontSize: "13px",
-                color: "hsl(0 0% 98%)",
-                textShadow:
-                  "0 0 4px hsl(200 80% 90% / 0.5), 0 0 12px hsl(200 70% 80% / 0.25)",
-              }}
-            >
-              {myCallsign}
-            </span>
-          ) : (
-            <>
-              <MessageSquare className="h-4 w-4 text-primary" />
-              <span className="tab-section-title">APRS MSG</span>
-            </>
-          )}
+          <MessageSquare className="h-4 w-4 text-primary" />
+          <span className="tab-section-title">APRS</span>
         </div>
         <button
           onClick={onNewChat}
