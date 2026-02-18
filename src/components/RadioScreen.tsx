@@ -250,6 +250,21 @@ const RadioScreen = ({
           <Music className="h-3 w-3 text-white/30" />
           <Bluetooth className="h-3 w-3 text-white/30" />
           <div className="flex-1" />
+          {/* TX indicator */}
+          <span
+            className="font-mono-display text-[10px] font-black tracking-widest transition-all duration-100"
+            style={
+              isTransmitting
+                ? {
+                    color: "hsl(var(--transmit))",
+                    textShadow:
+                      "0 0 6px hsl(var(--transmit) / 0.9), 0 0 14px hsl(var(--transmit) / 0.5)",
+                  }
+                : { color: "hsl(0 0% 20%)" }
+            }
+          >
+            TX
+          </span>
           <Battery className="h-3 w-3 text-signal" />
         </div>
 
