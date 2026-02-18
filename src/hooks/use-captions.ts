@@ -75,7 +75,7 @@ export function useCaptions(): UseCaptionsReturn {
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = localStorage.getItem("captionsLang") ?? "en-US";
-    recognition.maxAlternatives = 3;
+    recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -86,28 +86,19 @@ export function useCaptions(): UseCaptionsReturn {
       let partial = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
-
-        // Pick the alternative with the highest confidence score
-        let bestTranscript = result[0].transcript.trim();
-        let bestConfidence = result[0].confidence ?? 0;
-        for (let a = 1; a < result.length; a++) {
-          const alt = result[a];
-          if ((alt.confidence ?? 0) > bestConfidence) {
-            bestConfidence = alt.confidence ?? 0;
-            bestTranscript = alt.transcript.trim();
-          }
-        }
+        // Always use the browser's top-ranked alternative — it is consistently
+        // more accurate than confidence-based selection across alternatives.
+        const transcript = result[0].transcript.trim();
 
         if (result.isFinal) {
-          // Skip commits with very low confidence (below ~40%)
-          if (bestTranscript && (bestConfidence === 0 || bestConfidence >= 0.4)) {
+          if (transcript) {
             setCaptionHistory((prev) => {
-              const next = [...prev, bestTranscript];
+              const next = [...prev, transcript];
               return next.slice(-MAX_HISTORY);
             });
           }
         } else {
-          partial = bestTranscript;
+          partial = transcript;
         }
       }
       setPartialText(partial);
