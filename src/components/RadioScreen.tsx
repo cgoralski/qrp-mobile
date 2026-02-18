@@ -295,16 +295,16 @@ const CaptionPanel = ({
     <div className="flex items-center overflow-hidden">
       {isEmpty ? (
         <span
-          className="font-mono-display text-[11px] italic"
+          className="font-mono-display text-[12px] italic"
           style={{ color: "hsl(140 35% 25%)" }}
         >
           Listening…
         </span>
       ) : (
         <span
-          className="font-mono-display text-[13px] font-semibold"
+          className="font-mono-display text-[16px] font-semibold"
           style={{
-            color: "hsl(0 0% 85%)",
+            color: "hsl(0 0% 90%)",
             whiteSpace: "nowrap",
             letterSpacing: "0.01em",
           }}
@@ -536,10 +536,21 @@ const RadioScreen = ({
           onClick={() => onActiveChannelChange("B")}
         />
 
+        {/* Caption row — sits between CH Mode row and the VOX/APRS bar */}
+        {captionsEnabled && (
+          <div
+            className="flex items-center px-3 py-1"
+            style={{ borderTop: "1px solid hsl(0 0% 100% / 0.06)" }}
+          >
+            <div className="flex-1 overflow-hidden">
+              <CaptionPanel history={captionHistory} partial={partialCaption} />
+            </div>
+          </div>
+        )}
 
         {/* Bottom bar */}
         <div className="flex items-center px-3 py-1.5 border-t border-white/[0.06]">
-          {!captionsEnabled && ["VOX", "APRS", "MO", "TW"].map((tag, i) => (
+          {["VOX", "APRS", "MO", "TW"].map((tag, i) => (
             <span
               key={tag}
               className={`font-mono-display text-[11px] font-bold tracking-[0.12em] mr-4 ${
@@ -549,13 +560,7 @@ const RadioScreen = ({
               {tag}
             </span>
           ))}
-          {/* Caption text — fills the bar when CC is active */}
-          {captionsEnabled && (
-            <div className="flex-1 mr-2 overflow-hidden">
-              <CaptionPanel history={captionHistory} partial={partialCaption} />
-            </div>
-          )}
-          {!captionsEnabled && <div className="flex-1" />}
+          <div className="flex-1" />
           {/* CC toggle button — prominent, labelled */}
           {captionsSupported && (
             <button
