@@ -349,7 +349,7 @@ const Index = () => {
                     captionsSupported={captions.isSupported}
                   />
                 </div>
-                <DPad />
+                <DPad onVm={captions.toggle} />
                 <div className="px-10">
                   <NumPad
                     onDigit={handleDigit}
