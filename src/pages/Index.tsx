@@ -243,18 +243,20 @@ const Index = () => {
 
       {/* ── Radio body shell ── */}
       <main
-        className="flex flex-1 flex-col items-center justify-start px-0 py-1 max-w-[480px] mx-auto w-full overflow-hidden"
+        className="flex flex-1 flex-col max-w-[480px] mx-auto w-full"
         onTouchStart={handleSwipeTouchStart}
         onTouchMove={handleSwipeTouchMove}
         onTouchEnd={handleSwipeTouchEnd}
         style={{ touchAction: "pan-y" }}
       >
-        {/* Sliding strip — all tabs side by side, translated to show active */}
+        {/* Overflow clip wrapper — strips must NOT overflow this */}
+        <div className="flex-1 overflow-hidden relative min-h-0">
+        {/* Sliding strip — all tabs laid out horizontally */}
         <div
-          className="flex w-full flex-1 min-h-0"
+          className="flex h-full"
           style={{
             width: `${TAB_ORDER.length * 100}%`,
-            transform: `translateX(calc(${-TAB_ORDER.indexOf(activeTab) * (100 / TAB_ORDER.length)}% + ${swipeDelta / TAB_ORDER.length}px))`,
+            transform: `translateX(calc(${-TAB_ORDER.indexOf(activeTab) * (100 / TAB_ORDER.length)}% + ${swipeDelta}px))`,
             transition: isSwiping ? "none" : "transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
             willChange: "transform",
           }}
@@ -432,6 +434,7 @@ const Index = () => {
           <div className="flex flex-col flex-1 min-h-0 px-1 py-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
             <SettingsScreen myCallsign={myCallsign} onCallsignChange={handleCallsignChange} />
           </div>
+        </div>
         </div>
       </main>
 
