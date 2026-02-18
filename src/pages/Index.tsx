@@ -268,7 +268,7 @@ const Index = () => {
 
       {/* ── Radio body shell ── */}
       <main
-        className="flex flex-1 flex-col items-center justify-start px-0 py-1 w-full overflow-hidden"
+        className="flex flex-1 flex-col items-center justify-start px-0 py-1 max-w-[480px] mx-auto w-full overflow-hidden"
         onTouchStart={handleSwipeTouchStart}
         onTouchEnd={handleSwipeTouchEnd}
       >
