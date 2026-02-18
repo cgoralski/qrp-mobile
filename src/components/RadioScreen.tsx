@@ -258,11 +258,8 @@ const CaptionPanel = ({
   history: string[];
   partial: string;
 }) => {
-  const CHARS_PER_ROW = 34;
-  // The "target" is the full string we want to display
   const targetText = [...history, partial].filter(Boolean).join(" ").trim();
 
-  // displayText animates toward targetText one character at a time
   const [displayText, setDisplayText] = useState("");
   const targetRef = useRef(targetText);
   targetRef.current = targetText;
@@ -276,23 +273,22 @@ const CaptionPanel = ({
 
     if (displayText === targetText) return;
 
-    // Type the next character after a short delay
     const timer = setTimeout(() => {
       setDisplayText(targetRef.current.slice(0, displayText.length + 1));
-    }, 28); // ~36 chars/sec — fast but clearly animated
+    }, 28);
 
     return () => clearTimeout(timer);
   }, [displayText, targetText]);
 
-  // Show only the last CHARS_PER_ROW characters
-  const display = displayText.length > CHARS_PER_ROW
-    ? displayText.slice(displayText.length - CHARS_PER_ROW)
-    : displayText;
-
   const isEmpty = !displayText;
 
   return (
-    <div className="flex items-center justify-end overflow-hidden w-full">
+    // overflow:hidden + text-align:right means text grows leftward from the right edge.
+    // Once it fills the row, the left side clips naturally — no character counting needed.
+    <div
+      className="w-full overflow-hidden"
+      style={{ textAlign: "right" }}
+    >
       {isEmpty ? (
         <span
           className="font-mono-display text-[12px] italic"
@@ -307,9 +303,10 @@ const CaptionPanel = ({
             color: "hsl(0 0% 90%)",
             whiteSpace: "nowrap",
             letterSpacing: "0.01em",
+            display: "inline-block",
           }}
         >
-          {display}
+          {displayText}
         </span>
       )}
     </div>
