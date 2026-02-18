@@ -20,14 +20,56 @@ async function importCsvToDb(csvText: string, country: string, clearFirst = fals
 }
 
 const COUNTRY_OPTIONS = [
-  { value: "United States",  label: "🇺🇸 United States" },
-  { value: "United Kingdom", label: "🇬🇧 United Kingdom" },
-  { value: "Australia",      label: "🇦🇺 Australia" },
-  { value: "Canada",         label: "🇨🇦 Canada" },
-  { value: "Germany",        label: "🇩🇪 Germany" },
-  { value: "Japan",          label: "🇯🇵 Japan" },
-  { value: "New Zealand",    label: "🇳🇿 New Zealand" },
-  { value: "Other",          label: "🌍 Other" },
+  // North America
+  { value: "United States",        label: "🇺🇸 United States" },
+  { value: "Canada",               label: "🇨🇦 Canada" },
+  { value: "Mexico",               label: "🇲🇽 Mexico" },
+  // Europe
+  { value: "United Kingdom",       label: "🇬🇧 United Kingdom" },
+  { value: "Germany",              label: "🇩🇪 Germany" },
+  { value: "France",               label: "🇫🇷 France" },
+  { value: "Italy",                label: "🇮🇹 Italy" },
+  { value: "Spain",                label: "🇪🇸 Spain" },
+  { value: "Netherlands",          label: "🇳🇱 Netherlands" },
+  { value: "Belgium",              label: "🇧🇪 Belgium" },
+  { value: "Switzerland",          label: "🇨🇭 Switzerland" },
+  { value: "Austria",              label: "🇦🇹 Austria" },
+  { value: "Sweden",               label: "🇸🇪 Sweden" },
+  { value: "Norway",               label: "🇳🇴 Norway" },
+  { value: "Denmark",              label: "🇩🇰 Denmark" },
+  { value: "Finland",              label: "🇫🇮 Finland" },
+  { value: "Poland",               label: "🇵🇱 Poland" },
+  { value: "Czech Republic",       label: "🇨🇿 Czech Republic" },
+  { value: "Portugal",             label: "🇵🇹 Portugal" },
+  { value: "Greece",               label: "🇬🇷 Greece" },
+  { value: "Hungary",              label: "🇭🇺 Hungary" },
+  { value: "Romania",              label: "🇷🇴 Romania" },
+  { value: "Ireland",              label: "🇮🇪 Ireland" },
+  // Asia-Pacific
+  { value: "Australia",            label: "🇦🇺 Australia" },
+  { value: "New Zealand",          label: "🇳🇿 New Zealand" },
+  { value: "Japan",                label: "🇯🇵 Japan" },
+  { value: "South Korea",          label: "🇰🇷 South Korea" },
+  { value: "China",                label: "🇨🇳 China" },
+  { value: "India",                label: "🇮🇳 India" },
+  { value: "Singapore",            label: "🇸🇬 Singapore" },
+  { value: "Malaysia",             label: "🇲🇾 Malaysia" },
+  { value: "Philippines",          label: "🇵🇭 Philippines" },
+  { value: "Indonesia",            label: "🇮🇩 Indonesia" },
+  { value: "Thailand",             label: "🇹🇭 Thailand" },
+  { value: "Taiwan",               label: "🇹🇼 Taiwan" },
+  { value: "Hong Kong",            label: "🇭🇰 Hong Kong" },
+  // Middle East & Africa
+  { value: "Israel",               label: "🇮🇱 Israel" },
+  { value: "South Africa",         label: "🇿🇦 South Africa" },
+  { value: "United Arab Emirates", label: "🇦🇪 United Arab Emirates" },
+  // South America
+  { value: "Brazil",               label: "🇧🇷 Brazil" },
+  { value: "Argentina",            label: "🇦🇷 Argentina" },
+  { value: "Chile",                label: "🇨🇱 Chile" },
+  { value: "Colombia",             label: "🇨🇴 Colombia" },
+  // Other
+  { value: "Other",                label: "🌍 Other" },
 ];
 
 /* ── Collapsible section ── */
