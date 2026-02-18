@@ -271,9 +271,9 @@ const RadioScreen = ({
             style={
               isTransmitting
                 ? {
-                    color: "hsl(var(--transmit))",
+                    color: "hsl(0 100% 70%)",
                     textShadow:
-                      "0 0 6px hsl(var(--transmit) / 0.9), 0 0 14px hsl(var(--transmit) / 0.5)",
+                      "0 0 8px hsl(0 100% 65% / 1), 0 0 20px hsl(0 100% 55% / 0.8), 0 0 40px hsl(0 100% 50% / 0.4)",
                   }
                 : { color: "hsl(0 0% 20%)" }
             }
