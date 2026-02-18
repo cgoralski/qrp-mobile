@@ -46,7 +46,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
           WebkitBackdropFilter: "blur(20px) saturate(1.5)",
           borderTop: "1px solid hsl(210 15% 20% / 0.5)",
           borderRadius: "16px 16px 0 0",
-          boxShadow: "0 -8px 32px hsl(210 30% 2% / 0.6)",
+          boxShadow: "0 -12px 40px hsl(210 30% 2% / 0.8), 0 -2px 8px hsl(185 80% 55% / 0.08), inset 0 1px 0 hsl(210 15% 30% / 0.3)",
         }}
       >
         {/* Drag handle */}
