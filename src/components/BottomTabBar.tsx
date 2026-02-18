@@ -54,7 +54,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         style={{
-          bottom: "48px", // sit just above the bar
+          bottom: "64px", // sit just above the bar
           transform: drawerOpen ? "translateY(0)" : "translateY(110%)",
           background: "linear-gradient(180deg, hsl(210 20% 9% / 0.97), hsl(210 20% 7% / 0.99))",
           backdropFilter: "blur(20px) saturate(1.5)",
@@ -111,7 +111,8 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         style={{
-          height: "48px",
+          height: "64px",
+          paddingBottom: "env(safe-area-inset-bottom, 8px)",
           background: "linear-gradient(180deg, hsl(210 20% 8% / 0.88), hsl(210 20% 6% / 0.96))",
           backdropFilter: "blur(16px) saturate(1.4)",
           WebkitBackdropFilter: "blur(16px) saturate(1.4)",

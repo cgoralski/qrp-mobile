@@ -69,11 +69,11 @@ const ChannelNameEditor = ({
             if (e.key === "Escape") setEditing(false);
           }}
           autoFocus
-          className="font-mono-display text-[10px] font-semibold tracking-wider bg-transparent border-b outline-none w-full"
+          className="font-mono-display text-[13px] font-semibold tracking-wider bg-transparent border-b outline-none w-full"
           style={{ color: tintColor, borderColor: `${tintColor}66` }}
         />
         <button onClick={commit} className="shrink-0" style={{ color: tintColor }}>
-          <Check className="h-3 w-3" />
+          <Check className="h-4 w-4" />
         </button>
       </div>
     );
@@ -85,13 +85,13 @@ const ChannelNameEditor = ({
       className="flex items-center gap-1 px-3 pt-1 pb-0 group"
     >
       <span
-        className="font-mono-display text-[10px] font-semibold tracking-wider"
+        className="font-mono-display text-[13px] font-semibold tracking-wider"
         style={{ color: `${tintColor}99` }}
       >
         {name}
       </span>
       <Pencil
-        className="h-2.5 w-2.5 opacity-0 group-hover:opacity-60 transition-opacity"
+        className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity"
         style={{ color: tintColor }}
       />
     </button>
@@ -100,15 +100,15 @@ const ChannelNameEditor = ({
 
 
 const RSSIBar = ({ level, label }: { level: number; label: string }) => (
-  <div className="flex items-end gap-[1.5px] mt-1">
-    <span className="font-mono-display text-[7px] text-white/30 mr-1 mb-[1px]">{label}</span>
+  <div className="flex items-end gap-[2px] mt-1">
+    <span className="font-mono-display text-[9px] text-white/30 mr-1 mb-[1px]">{label}</span>
     {Array.from({ length: 10 }).map((_, i) => (
       <div
         key={i}
         className="transition-all duration-100"
         style={{
-          width: "3px",
-          height: `${3 + i * 1.2}px`,
+          width: "4px",
+          height: `${4 + i * 1.5}px`,
           borderRadius: "0.5px",
           background: i < level
             ? i < 4
@@ -120,9 +120,9 @@ const RSSIBar = ({ level, label }: { level: number; label: string }) => (
         }}
       />
     ))}
-    <div className="flex items-end ml-1 gap-[6px]">
+    <div className="flex items-end ml-1 gap-[8px]">
       {["1", "3", "5", "7", "9"].map((n) => (
-        <span key={n} className="font-mono-display text-[5px] text-white/20 leading-none">{n}</span>
+        <span key={n} className="font-mono-display text-[7px] text-white/20 leading-none">{n}</span>
       ))}
     </div>
   </div>
@@ -190,7 +190,7 @@ const ChannelBlock = ({
           {tags.map((tag) => (
             <span
               key={tag}
-              className="font-mono-display text-[8px] font-semibold tracking-wider text-white/40"
+              className="font-mono-display text-[11px] font-semibold tracking-wider text-white/40"
             >
               {tag}
             </span>
@@ -200,18 +200,18 @@ const ChannelBlock = ({
 
       <div className="flex items-baseline gap-0 px-3">
         <span
-          className={`inline-flex h-[20px] w-[20px] items-center justify-center rounded-sm text-[11px] font-black mr-2 ${badgeColor}`}
+          className={`inline-flex h-[26px] w-[26px] items-center justify-center rounded-sm text-[14px] font-black mr-2 ${badgeColor}`}
         >
           {label}
         </span>
         <span
-          className="font-freq-display text-[34px] leading-none transition-all duration-300 sm:text-[40px]"
+          className="font-freq-display text-[42px] leading-none transition-all duration-300"
           style={activeFreqStyle}
         >
           {freq.main}
         </span>
         <span
-          className="font-freq-display text-[17px] ml-0.5 transition-all duration-300 sm:text-[20px]"
+          className="font-freq-display text-[21px] ml-0.5 transition-all duration-300"
           style={activeSubStyle}
         >
           {freq.sub}
@@ -219,10 +219,10 @@ const ChannelBlock = ({
       </div>
 
       <div className="flex items-center justify-between mt-0.5 px-3">
-        <span className="font-mono-display text-[9px] font-semibold tracking-wider text-white/40">
+        <span className="font-mono-display text-[11px] font-semibold tracking-wider text-white/40">
           {modeLeft}
         </span>
-        <span className="font-mono-display text-[9px] font-semibold tracking-wider text-white/40">
+        <span className="font-mono-display text-[11px] font-semibold tracking-wider text-white/40">
           {modeRight}
         </span>
       </div>
@@ -409,16 +409,16 @@ const RadioScreen = ({
           }}
         />
         {/* Top status icons */}
-        <div className="flex items-center gap-3 px-3 py-1 border-b border-white/[0.06]">
-          <Zap className="h-3 w-3 text-red-400/70" />
-          <span className="font-mono-display text-[10px] font-bold text-white/40">Z</span>
-          <Music className="h-3 w-3 text-white/30" />
-          <Bluetooth className="h-3 w-3 text-white/30" />
+        <div className="flex items-center gap-3 px-3 py-1.5 border-b border-white/[0.06]">
+          <Zap className="h-4 w-4 text-red-400/70" />
+          <span className="font-mono-display text-[12px] font-bold text-white/40">Z</span>
+          <Music className="h-4 w-4 text-white/30" />
+          <Bluetooth className="h-4 w-4 text-white/30" />
           {/* Callsign — centered in the status bar */}
           <div className="flex-1 flex justify-center">
             {myCallsign ? (
               <span
-                className="font-mono-display text-[13px] font-black tracking-[0.18em]"
+                className="font-mono-display text-[16px] font-black tracking-[0.18em]"
                 style={{
                   color: "hsl(0 0% 98%)",
                   textShadow:
@@ -428,14 +428,14 @@ const RadioScreen = ({
                 {myCallsign}
               </span>
             ) : (
-              <span className="font-mono-display text-[9px] tracking-wider text-white/15">
+              <span className="font-mono-display text-[11px] tracking-wider text-white/15">
                 NO CALL
               </span>
             )}
           </div>
           {/* RX indicator */}
           <span
-            className="font-mono-display text-[10px] font-black tracking-widest transition-all duration-100"
+            className="font-mono-display text-[13px] font-black tracking-widest transition-all duration-100"
             style={
               !isTransmitting && animatedRssi > 3
                 ? {
@@ -450,7 +450,7 @@ const RadioScreen = ({
           </span>
           {/* TX indicator */}
           <span
-            className="font-mono-display text-[10px] font-black tracking-widest transition-all duration-100"
+            className="font-mono-display text-[13px] font-black tracking-widest transition-all duration-100"
             style={
               isTransmitting
                 ? {
@@ -463,7 +463,7 @@ const RadioScreen = ({
           >
             TX
           </span>
-          <Battery className="h-3 w-3 text-signal" />
+          <Battery className="h-4 w-4 text-signal" />
         </div>
 
         {/* Channel A */}
@@ -511,11 +511,11 @@ const RadioScreen = ({
         )}
 
         {/* Bottom bar */}
-        <div className="flex items-center px-3 py-1 border-t border-white/[0.06]">
+        <div className="flex items-center px-3 py-1.5 border-t border-white/[0.06]">
           {["VOX", "APRS", "MO", "TW"].map((tag, i) => (
             <span
               key={tag}
-              className={`font-mono-display text-[9px] font-bold tracking-[0.12em] mr-4 ${
+              className={`font-mono-display text-[11px] font-bold tracking-[0.12em] mr-4 ${
                 i === 0 ? "text-white/60" : "text-white/25"
               }`}
             >
@@ -532,7 +532,7 @@ const RadioScreen = ({
               aria-label="Toggle closed captions"
             >
               <Captions
-                className="h-3 w-3"
+                className="h-4 w-4"
                 style={
                   captionsEnabled
                     ? {
@@ -544,7 +544,7 @@ const RadioScreen = ({
               />
               {captionsEnabled && (
                 <span
-                  className="font-mono-display text-[7px] font-black"
+                  className="font-mono-display text-[9px] font-black"
                   style={{
                     color: "hsl(140 70% 52%)",
                     textShadow: "0 0 4px hsl(140 70% 52% / 0.8)",
@@ -555,7 +555,7 @@ const RadioScreen = ({
               )}
             </button>
           )}
-          <span className="font-mono-display text-[9px] text-white/25">🔒</span>
+          <span className="font-mono-display text-[11px] text-white/25">🔒</span>
         </div>
       </div>
     </div>

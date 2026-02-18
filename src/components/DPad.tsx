@@ -41,13 +41,13 @@ const DPad = ({
       className="flex flex-col items-center justify-center rounded-md transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
       style={{
         ...navButtonStyle("side"),
-        width: "40px",
-        height: "32px",
+        width: "48px",
+        height: "38px",
       }}
     >
-      <span className="font-mono-display text-[10px] font-bold text-white/80 leading-none">{label}</span>
+      <span className="font-mono-display text-[12px] font-bold text-white/80 leading-none">{label}</span>
       {sub && (
-        <span className="font-mono-display text-[7px] text-blue-400/60 leading-none mt-0.5">{sub}</span>
+        <span className="font-mono-display text-[9px] text-blue-400/60 leading-none mt-0.5">{sub}</span>
       )}
     </button>
   );
@@ -62,8 +62,8 @@ const DPad = ({
       className="flex items-center justify-center rounded-sm transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
       style={{
         ...navButtonStyle("side"),
-        width: "30px",
-        height: "24px",
+        width: "38px",
+        height: "30px",
         ...extraStyle,
       }}
     >
@@ -100,11 +100,11 @@ const DPad = ({
             className="flex items-center justify-center rounded-md transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
             style={{
               ...navButtonStyle("center"),
-              width: "34px",
-              height: "28px",
+              width: "42px",
+              height: "34px",
             }}
           >
-            <span className="font-mono-display text-[10px] font-black text-blue-300/90 tracking-wider">OK</span>
+            <span className="font-mono-display text-[13px] font-black text-blue-300/90 tracking-wider">OK</span>
           </button>
           {arrowBtn(
             <ChevronRight className="h-4 w-4 text-white/70" />,
