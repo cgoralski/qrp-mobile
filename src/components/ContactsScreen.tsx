@@ -529,10 +529,6 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
         )}
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-center gap-1.5 py-1.5 border-t border-border/40">
-        <span className="font-mono-display text-[8px] tracking-wider text-muted-foreground/50">← SWIPE LEFT TO REVEAL DELETE</span>
-      </div>
     </div>
   );
 };
