@@ -271,6 +271,20 @@ const Index = () => {
                 zIndex: 3,
               }}
             />
+            {/* ── Bottom rolled-edge sheen (rounds over at clipped corners) ── */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(to top, " +
+                  "hsl(0 0% 80% / 0.14) 0px, " +
+                  "hsl(0 0% 80% / 0.14) 1px, " +
+                  "hsl(0 0% 8% / 0.22) 2px, " +
+                  "hsl(0 0% 8% / 0.08) 7px, " +
+                  "transparent 16px)",
+                zIndex: 3,
+              }}
+            />
             <div className="flex flex-col items-end" style={{ width: "20px" }}>
               {/* Antenna stub at top-left */}
               <div className="flex justify-center w-full pt-2 pb-1">
