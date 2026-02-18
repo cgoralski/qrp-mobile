@@ -35,8 +35,24 @@ const ConversationList = ({
       {/* Header */}
       <div className="tab-header flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-primary" />
-          <span className="tab-section-title">APRS MSG</span>
+          {callsignValid ? (
+            <span
+              className="font-mono-display font-black tracking-[0.18em]"
+              style={{
+                fontSize: "13px",
+                color: "hsl(0 0% 98%)",
+                textShadow:
+                  "0 0 4px hsl(200 80% 90% / 0.5), 0 0 12px hsl(200 70% 80% / 0.25)",
+              }}
+            >
+              {myCallsign}
+            </span>
+          ) : (
+            <>
+              <MessageSquare className="h-4 w-4 text-primary" />
+              <span className="tab-section-title">APRS MSG</span>
+            </>
+          )}
         </div>
         <button
           onClick={onNewChat}
@@ -50,32 +66,6 @@ const ConversationList = ({
         >
           <Plus className="h-4 w-4 text-primary" />
         </button>
-      </div>
-
-      {/* Identity strip */}
-      <div
-        className="mx-2 mb-1 flex items-center gap-2 rounded-xl px-3 py-2"
-        style={{
-          background: callsignValid ? "hsl(var(--primary) / 0.07)" : "hsl(0 0% 50% / 0.06)",
-          border: `1px solid ${callsignValid ? "hsl(var(--primary) / 0.18)" : "hsl(0 0% 40% / 0.15)"}`,
-        }}
-      >
-        <span className="tab-meta">MY CALL</span>
-        <span
-          className="font-mono-display font-black tracking-widest"
-          style={{
-            fontSize: "13px",
-            color: callsignValid ? "hsl(var(--primary))" : "hsl(0 0% 40%)",
-            textShadow: callsignValid ? "0 0 8px hsl(var(--primary) / 0.45)" : "none",
-          }}
-        >
-          {myCallsign || "NO CALL"}
-        </span>
-        {!callsignValid && (
-          <span className="tab-meta ml-auto" style={{ color: "hsl(0 75% 60%)" }}>
-            Set in Settings
-          </span>
-        )}
       </div>
 
       {/* List */}
