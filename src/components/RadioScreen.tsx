@@ -136,7 +136,7 @@ const RSSIBar = ({ level }: { level: number }) => (
           <span
             className="font-mono-display leading-none transition-all duration-100"
             style={{
-              fontSize: isLast ? "7px" : "10px",
+              fontSize: "10px",
               color: label ? labelColor : "transparent",
               whiteSpace: "nowrap",
             }}
