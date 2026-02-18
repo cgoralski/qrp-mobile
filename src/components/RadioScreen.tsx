@@ -207,14 +207,6 @@ const RadioScreen = ({
             "inset 0 3px 10px hsl(220 30% 2% / 0.9), inset 0 1px 4px hsl(220 20% 2% / 0.6), inset 0 0 40px hsl(210 40% 8% / 0.6)",
         }}
       >
-        {/* CRT scanline overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none z-10 rounded-xl"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(0 0% 0% / 0.13) 2px, hsl(0 0% 0% / 0.13) 4px)",
-          }}
-        />
         {/* Vignette / inner glow */}
         <div
           className="absolute inset-0 pointer-events-none z-10 rounded-xl"
