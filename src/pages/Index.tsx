@@ -222,10 +222,10 @@ const Index = () => {
             <defs>
               <clipPath id="chassisClip" clipPathUnits="objectBoundingBox">
                 {/*
-                  Tapered shape: full-width at top, bends inward just below LCD screen (~44–58%),
-                  then rounded bottom corners (Q bezier, radius ≈ 0.05).
+                  Tapered shape: full-width at top, gentle inward bend just below LCD (~44–58%),
+                  only ~3% narrowing each side, then rounded bottom corners.
                 */}
-                <path d="M 0,0 L 1,0 L 1,0.44 L 0.97,0.52 L 0.94,0.58 L 0.93,0.95 Q 0.93,1 0.88,1 L 0.12,1 Q 0.07,1 0.07,0.95 L 0.06,0.58 L 0.03,0.52 L 0,0.44 Z" />
+                <path d="M 0,0 L 1,0 L 1,0.44 L 0.985,0.52 L 0.97,0.58 L 0.965,0.95 Q 0.965,1 0.915,1 L 0.085,1 Q 0.035,1 0.035,0.95 L 0.03,0.58 L 0.015,0.52 L 0,0.44 Z" />
               </clipPath>
             </defs>
           </svg>
