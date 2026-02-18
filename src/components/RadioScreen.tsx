@@ -193,7 +193,7 @@ const ChannelBlock = ({
         </div>
       )}
 
-      <div className="flex items-center gap-0 px-3">
+      <div className="flex items-center gap-0 pl-5 pr-3">
         <span
           className={`inline-flex h-[22px] w-[22px] items-center justify-center text-[12px] font-black mr-5 ${badgeColor}`}
           style={{
