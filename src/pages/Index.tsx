@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Radio, Settings } from "lucide-react";
+import { Radio, Settings, BookUser } from "lucide-react";
 import RadioScreen from "@/components/RadioScreen";
 import NumPad from "@/components/NumPad";
 import DPad from "@/components/DPad";
@@ -173,8 +173,10 @@ const Index = () => {
   const [channelB, setChannelB] = useState("435.00000");
   const [activeChannel, setActiveChannel] = useState<"A" | "B">("A");
   const [inputBuffer, setInputBuffer] = useState("");
-  const [activeTab, setActiveTab] = useState<"voice" | "aprs" | "settings">("voice");
+  const [activeTab, setActiveTab] = useState<"voice" | "aprs" | "contacts" | "settings">("voice");
   const [isTransmitting, setIsTransmitting] = useState(false);
+  const [channelAName, setChannelAName] = useState("REPEATER 1");
+  const [channelBName, setChannelBName] = useState("CALLING CH");
 
   const setActiveFreq = activeChannel === "A" ? setChannelA : setChannelB;
 
@@ -278,7 +280,7 @@ const Index = () => {
 
               {/* Radio screen */}
               <div className="pt-1">
-                <RadioScreen
+              <RadioScreen
                   channelA={channelA}
                   channelB={channelB}
                   onChannelAChange={setChannelA}
@@ -287,6 +289,10 @@ const Index = () => {
                   onActiveChannelChange={setActiveChannel}
                   rssi={5}
                   isTransmitting={isTransmitting}
+                  channelAName={channelAName}
+                  channelBName={channelBName}
+                  onChannelANameChange={setChannelAName}
+                  onChannelBNameChange={setChannelBName}
                 />
               </div>
 
@@ -326,6 +332,12 @@ const Index = () => {
           </div>
         ) : activeTab === "aprs" ? (
           <APRSMessaging />
+        ) : activeTab === "contacts" ? (
+          <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground gap-3">
+            <BookUser className="h-8 w-8 opacity-30" />
+            <span className="font-mono-display text-xs tracking-wider">CONTACTS</span>
+            <span className="text-[11px] text-muted-foreground/60">Coming soon</span>
+          </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground gap-3">
             <Settings className="h-8 w-8 opacity-30" />

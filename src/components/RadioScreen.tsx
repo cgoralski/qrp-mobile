@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Battery, Bluetooth, Zap, Music } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Battery, Bluetooth, Zap, Music, Pencil, Check } from "lucide-react";
 
 interface RadioScreenProps {
   channelA: string;
@@ -10,6 +10,10 @@ interface RadioScreenProps {
   onActiveChannelChange: (channel: "A" | "B") => void;
   rssi: number;
   isTransmitting?: boolean;
+  channelAName: string;
+  channelBName: string;
+  onChannelANameChange: (name: string) => void;
+  onChannelBNameChange: (name: string) => void;
 }
 
 const formatFreq = (value: string): { main: string; sub: string } => {
@@ -20,6 +24,74 @@ const formatFreq = (value: string): { main: string; sub: string } => {
   const sub = (parts[1] || "").slice(3, 5).padEnd(2, "0");
   return { main: `${integer}.${decimal}`, sub };
 };
+
+const ChannelNameEditor = ({
+  name,
+  onSave,
+  tint,
+}: {
+  name: string;
+  onSave: (v: string) => void;
+  tint: "amber" | "green";
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const tintColor = tint === "amber" ? "hsl(42 90% 58%)" : "hsl(140 70% 52%)";
+
+  const open = () => {
+    setDraft(name);
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 30);
+  };
+
+  const commit = () => {
+    onSave(draft.trim() || name);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1 px-3 pt-1 pb-0">
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value.toUpperCase().slice(0, 16))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") setEditing(false);
+          }}
+          autoFocus
+          className="font-mono-display text-[10px] font-semibold tracking-wider bg-transparent border-b outline-none w-full"
+          style={{ color: tintColor, borderColor: `${tintColor}66` }}
+        />
+        <button onClick={commit} className="shrink-0" style={{ color: tintColor }}>
+          <Check className="h-3 w-3" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={open}
+      className="flex items-center gap-1 px-3 pt-1 pb-0 group"
+    >
+      <span
+        className="font-mono-display text-[10px] font-semibold tracking-wider"
+        style={{ color: `${tintColor}99` }}
+      >
+        {name}
+      </span>
+      <Pencil
+        className="h-2.5 w-2.5 opacity-0 group-hover:opacity-60 transition-opacity"
+        style={{ color: tintColor }}
+      />
+    </button>
+  );
+};
+
 
 const RSSIBar = ({ level, label }: { level: number; label: string }) => (
   <div className="flex items-end gap-[1.5px] mt-1">
@@ -60,6 +132,8 @@ const ChannelBlock = ({
   tags,
   rssi,
   tint,
+  channelName,
+  onChannelNameChange,
   onClick,
 }: {
   label: string;
@@ -71,6 +145,8 @@ const ChannelBlock = ({
   tags?: string[];
   rssi: number;
   tint: "amber" | "green";
+  channelName: string;
+  onChannelNameChange: (name: string) => void;
   onClick: () => void;
 }) => {
   const freq = formatFreq(frequency);
@@ -95,13 +171,16 @@ const ChannelBlock = ({
 
   return (
     <div
-      className={`flex flex-col px-3 py-1 cursor-pointer transition-all ${
-        isActive ? "" : "opacity-60"
-      }`}
+      className={`flex flex-col py-1 transition-all ${isActive ? "" : "opacity-60"}`}
       onClick={onClick}
     >
+      {/* Channel memory name — tappable to edit */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <ChannelNameEditor name={channelName} onSave={onChannelNameChange} tint={tint} />
+      </div>
+
       {tags && tags.length > 0 && (
-        <div className="flex items-center gap-3 mb-0.5">
+        <div className="flex items-center gap-3 mb-0.5 px-3">
           {tags.map((tag) => (
             <span
               key={tag}
@@ -113,7 +192,7 @@ const ChannelBlock = ({
         </div>
       )}
 
-      <div className="flex items-baseline gap-0">
+      <div className="flex items-baseline gap-0 px-3">
         <span
           className={`inline-flex h-[20px] w-[20px] items-center justify-center rounded-sm text-[11px] font-black mr-2 ${badgeColor}`}
         >
@@ -133,7 +212,7 @@ const ChannelBlock = ({
         </span>
       </div>
 
-      <div className="flex items-center justify-between mt-0.5">
+      <div className="flex items-center justify-between mt-0.5 px-3">
         <span className="font-mono-display text-[9px] font-semibold tracking-wider text-white/40">
           {modeLeft}
         </span>
@@ -142,10 +221,13 @@ const ChannelBlock = ({
         </span>
       </div>
 
-      <RSSIBar level={rssi} label="RSSI" />
+      <div className="px-3">
+        <RSSIBar level={rssi} label="RSSI" />
+      </div>
     </div>
   );
 };
+
 
 const RadioScreen = ({
   channelA,
@@ -156,6 +238,10 @@ const RadioScreen = ({
   onActiveChannelChange,
   rssi,
   isTransmitting = false,
+  channelAName,
+  channelBName,
+  onChannelANameChange,
+  onChannelBNameChange,
 }: RadioScreenProps) => {
   const [animatedRssi, setAnimatedRssi] = useState(rssi);
 
@@ -291,6 +377,8 @@ const RadioScreen = ({
           tags={["H", "R 🔴"]}
           rssi={activeChannel === "A" ? animatedRssi : 2}
           tint="green"
+          channelName={channelAName}
+          onChannelNameChange={onChannelANameChange}
           onClick={() => onActiveChannelChange("A")}
         />
 
@@ -311,6 +399,8 @@ const RadioScreen = ({
           tags={["DCS", "W —", "AM"]}
           rssi={activeChannel === "B" ? animatedRssi : 3}
           tint="amber"
+          channelName={channelBName}
+          onChannelNameChange={onChannelBNameChange}
           onClick={() => onActiveChannelChange("B")}
         />
 
