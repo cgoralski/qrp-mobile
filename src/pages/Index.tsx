@@ -232,7 +232,34 @@ const Index = () => {
               clipPath: "polygon(0% 0%, 100% 0%, 100% 32%, 97% 40%, 94% 50%, 93% 100%, 7% 100%, 6% 50%, 3% 40%, 0% 32%)",
             }}
           >
-            {/* ── Left side buttons ── */}
+            {/* ── Left rolled-edge sheen (follows clip-path taper) ── */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(to right, " +
+                  "hsl(0 0% 85% / 0.22) 0px, " +
+                  "hsl(0 0% 85% / 0.22) 1px, " +
+                  "hsl(0 0% 10% / 0.25) 2px, " +
+                  "hsl(0 0% 10% / 0.1) 6px, " +
+                  "transparent 14px)",
+                zIndex: 3,
+              }}
+            />
+            {/* ── Right rolled-edge sheen (mirrors left) ── */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(to left, " +
+                  "hsl(0 0% 85% / 0.22) 0px, " +
+                  "hsl(0 0% 85% / 0.22) 1px, " +
+                  "hsl(0 0% 10% / 0.25) 2px, " +
+                  "hsl(0 0% 10% / 0.1) 6px, " +
+                  "transparent 14px)",
+                zIndex: 3,
+              }}
+            />
             <div className="flex flex-col items-end" style={{ width: "20px" }}>
               {/* Antenna stub at top-left */}
               <div className="flex justify-center w-full pt-2 pb-1">
