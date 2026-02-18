@@ -362,10 +362,23 @@ const RadioScreen = ({
       <div
         className="w-full rounded-xl overflow-hidden relative"
         style={{
-          background: "linear-gradient(180deg, hsl(218 55% 12%) 0%, hsl(220 52% 9%) 100%)",
-          border: "1px solid hsl(218 45% 28%)",
+          background: "linear-gradient(180deg, hsl(218 55% 10%) 0%, hsl(220 52% 8%) 100%)",
+          /* Simulate sunken recess: dark top/side borders, light bottom border */
+          borderTop: "1.5px solid hsl(220 15% 8%)",
+          borderLeft: "1.5px solid hsl(220 15% 9%)",
+          borderRight: "1.5px solid hsl(220 12% 14%)",
+          borderBottom: "1.5px solid hsl(220 12% 22%)",
           boxShadow:
-            "inset 0 3px 10px hsl(220 60% 5% / 0.7), inset 0 1px 4px hsl(220 50% 5% / 0.5), inset 0 0 40px hsl(218 60% 12% / 0.5)",
+            /* Deep inset shadows from top and sides — the chassis walls casting shadow down into the pit */
+            "inset 0 6px 18px hsl(220 60% 2% / 0.95), " +
+            "inset 0 3px 8px hsl(220 50% 3% / 0.8), " +
+            "inset 4px 0 10px hsl(220 50% 2% / 0.5), " +
+            "inset -4px 0 10px hsl(220 50% 2% / 0.5), " +
+            /* Faint ambient fill across the screen */
+            "inset 0 0 40px hsl(218 60% 10% / 0.4), " +
+            /* Outer shadow — chassis edge above LCD casts a hard dark lip */
+            "0 -2px 4px hsl(220 20% 2% / 0.9), " +
+            "0 2px 3px hsl(220 10% 28% / 0.15)",
         }}
       >
         {/* Vignette / inner glow */}
