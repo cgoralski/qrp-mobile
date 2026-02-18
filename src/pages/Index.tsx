@@ -62,8 +62,15 @@ const SideButton = ({
 );
 
 /* ── PTT side button (large left-side, like real radio) ── */
-const PttSideButton = () => {
-  const [isPressed, setIsPressed] = useState(false);
+const PttSideButton = ({
+  isPressed,
+  onPressStart,
+  onPressEnd,
+}: {
+  isPressed: boolean;
+  onPressStart: () => void;
+  onPressEnd: () => void;
+}) => {
   return (
     <div className="flex flex-col items-center w-full mt-1 mb-1">
       {/* TX LED */}
@@ -81,12 +88,12 @@ const PttSideButton = () => {
       />
       {/* PTT button body */}
       <button
-        onMouseDown={() => setIsPressed(true)}
-        onMouseUp={() => setIsPressed(false)}
-        onMouseLeave={() => setIsPressed(false)}
-        onTouchStart={() => setIsPressed(true)}
-        onTouchEnd={() => setIsPressed(false)}
-        onTouchCancel={() => setIsPressed(false)}
+        onMouseDown={onPressStart}
+        onMouseUp={onPressEnd}
+        onMouseLeave={onPressEnd}
+        onTouchStart={onPressStart}
+        onTouchEnd={onPressEnd}
+        onTouchCancel={onPressEnd}
         aria-label="Push to talk"
         className="select-none transition-all duration-100"
         style={{
@@ -167,6 +174,7 @@ const Index = () => {
   const [activeChannel, setActiveChannel] = useState<"A" | "B">("A");
   const [inputBuffer, setInputBuffer] = useState("");
   const [activeTab, setActiveTab] = useState<"voice" | "aprs" | "settings">("voice");
+  const [isTransmitting, setIsTransmitting] = useState(false);
 
   const setActiveFreq = activeChannel === "A" ? setChannelA : setChannelB;
 
@@ -248,7 +256,7 @@ const Index = () => {
               </div>
 
               {/* PTT button — large prominent left-side button */}
-              <PttSideButton />
+              <PttSideButton isPressed={isTransmitting} onPressStart={() => setIsTransmitting(true)} onPressEnd={() => setIsTransmitting(false)} />
 
               {/* Lower side buttons */}
               <div className="flex flex-col gap-1.5 pt-1">
@@ -278,6 +286,7 @@ const Index = () => {
                   activeChannel={activeChannel}
                   onActiveChannelChange={setActiveChannel}
                   rssi={5}
+                  isTransmitting={isTransmitting}
                 />
               </div>
 
