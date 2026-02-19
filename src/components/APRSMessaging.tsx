@@ -119,7 +119,7 @@ const APRSMessaging = ({ myCallsign, onNavigateToSettings }: APRSMessagingProps)
   return (
     <>
       {/* Sliding views */}
-      <div className="flex flex-1 flex-col w-full overflow-hidden relative">
+      <div className="flex flex-col w-full overflow-hidden" style={{ flex: 1, minHeight: 0 }}>
         {activeConv ? (
           <ChatView
             key={activeConv.id}

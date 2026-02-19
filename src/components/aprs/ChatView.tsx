@@ -42,8 +42,8 @@ const ChatView = ({
 
   return (
     <div
-      className="tab-panel flex flex-1 flex-col w-full max-w-lg mx-auto"
-      style={{ animation: "slideInRight 0.25s cubic-bezier(0.32,0.72,0,1) both" }}
+      className="tab-panel flex flex-col w-full max-w-lg mx-auto overflow-hidden"
+      style={{ animation: "slideInRight 0.25s cubic-bezier(0.32,0.72,0,1) both", height: "100%" }}
     >
       {/* Header */}
       <div className="tab-header flex items-center gap-2 px-2 py-2.5">
@@ -94,7 +94,6 @@ const ChatView = ({
       {/* Messages */}
       <div
         className="flex-1 overflow-y-auto px-2 py-2 space-y-2 min-h-0"
-        style={{ maxHeight: "calc(100dvh - 240px)" }}
       >
         {conversation.messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
