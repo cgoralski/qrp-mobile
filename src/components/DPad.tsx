@@ -74,7 +74,7 @@ const DPad = ({
   );
 
   return (
-    <div className="w-full flex items-center gap-1.5 px-8">
+    <div className="w-full flex items-center gap-1.5 px-8 py-3">
       {/* Left side buttons: MENU + A/B */}
       <div className="flex flex-col gap-1">
         {sideBtn("MENU", null, onMenu)}
