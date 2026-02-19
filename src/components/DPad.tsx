@@ -122,8 +122,9 @@ const DPad = ({
         </div>
       </div>
 
-      {/* Right side buttons: BACK + V/M */}
+      {/* Right side buttons: CC + BACK */}
       <div className="flex flex-col gap-1">
+        {sideBtn("CC", null, onVm)}
         <button
           onClick={onBack}
           className="flex flex-col items-center justify-center rounded-md transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
@@ -135,7 +136,6 @@ const DPad = ({
         >
           <CornerDownLeft className="h-5 w-5 text-white/80" />
         </button>
-        {sideBtn("CC", null, onVm)}
       </div>
     </div>
   );
