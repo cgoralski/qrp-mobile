@@ -4,27 +4,30 @@ import { Trash2 } from "lucide-react";
 /**
  * SwipeToDelete
  *
- * A generic wrapper that implements iOS-style swipe-to-delete behaviour:
- *   • Tap   → fires onTap (select / open)
- *   • Swipe left → reveals an inline red DELETE button; tap it → fires onDelete
+ * Swipe left to reveal action buttons behind the row.
+ * Supports an optional secondary action (e.g. a green Tune button)
+ * rendered to the left of the red Delete button.
  *
- * Usage:
- *   <SwipeToDelete onTap={() => open(item)} onDelete={() => remove(item)}>
- *     <YourRowContent />
- *   </SwipeToDelete>
- *
- * The component handles its own animation for the deletion collapse
- * (opacity fade + height collapse) so the parent list doesn't need to.
+ *   • Tap   → fires onTap (when row is closed)
+ *   • Swipe left → reveals buttons; tap them to fire their action
  */
 
-const REVEAL_PX = 80;          // how many px of the delete button are revealed
-const SNAP_THRESHOLD = 36;     // swipe past this to snap-open; otherwise snap-closed
+const DELETE_W = 72;   // width of red delete button
+const ACTION_W = 72;   // width of optional secondary action button
+const SNAP_THRESHOLD = 36;
 
 interface SwipeToDeleteProps {
   children: React.ReactNode;
   onTap?: () => void;
   onDelete: () => void;
-  /** Extra class names for the outer wrapper */
+  /** Optional second action revealed alongside Delete */
+  secondaryAction?: {
+    label: string;
+    icon: React.ReactNode;
+    color: string;       // hsl string for background gradient
+    borderColor: string; // hsl string for border
+    onClick: () => void;
+  };
   className?: string;
 }
 
@@ -32,15 +35,18 @@ export const SwipeToDelete = ({
   children,
   onTap,
   onDelete,
+  secondaryAction,
   className = "",
 }: SwipeToDeleteProps) => {
+  const REVEAL_PX = secondaryAction ? DELETE_W + ACTION_W : DELETE_W;
+
   const [offsetX, setOffsetX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
-  const axis = useRef<"h" | "v" | null>(null);   // determined after first movement
+  const axis = useRef<"h" | "v" | null>(null);
   const snappedOpen = useRef(false);
 
   /* ── touch handlers ─────────────────────────── */
@@ -57,13 +63,11 @@ export const SwipeToDelete = ({
     const dx = e.touches[0].clientX - startX.current;
     const dy = e.touches[0].clientY - startY.current;
 
-    // Determine axis on first significant movement
     if (axis.current === null && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
       axis.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
     }
     if (axis.current !== "h") return;
 
-    // Allow swiping left (negative dx).  If already snapped open, allow right-swipe to close.
     const base = snappedOpen.current ? -REVEAL_PX : 0;
     const raw = base + dx;
     const clamped = Math.max(-REVEAL_PX, Math.min(0, raw));
@@ -85,11 +89,10 @@ export const SwipeToDelete = ({
     }
   };
 
-  /* ── click / tap handler ─────────────────────── */
+  /* ── tap handler ─────────────────────────────── */
 
   const handleTap = () => {
     if (snappedOpen.current || offsetX < -8) {
-      // Close the swipe without triggering the item tap
       setOffsetX(0);
       snappedOpen.current = false;
       return;
@@ -105,6 +108,16 @@ export const SwipeToDelete = ({
     setTimeout(() => onDelete(), 260);
   };
 
+  const handleSecondary = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    secondaryAction?.onClick();
+    // Close the swipe after action
+    setOffsetX(0);
+    snappedOpen.current = false;
+  };
+
+  const buttonsVisible = offsetX < -SNAP_THRESHOLD;
+
   return (
     <div
       className={`relative ${className}`}
@@ -117,19 +130,42 @@ export const SwipeToDelete = ({
           : "none",
       }}
     >
-      {/* ── Delete button (sits behind the row) ── */}
+      {/* ── Action buttons (sit behind the row) ── */}
       <div
         aria-hidden
-        className="absolute inset-y-0 right-0 flex items-center justify-center"
-        style={{
-          width: REVEAL_PX,
-          background: "linear-gradient(135deg, hsl(0 72% 40%), hsl(0 80% 28%))",
-          pointerEvents: offsetX < -SNAP_THRESHOLD ? "auto" : "none",
-        }}
+        className="absolute inset-y-0 right-0 flex items-stretch"
+        style={{ width: REVEAL_PX, pointerEvents: buttonsVisible ? "auto" : "none" }}
       >
+        {/* Secondary action (e.g. green Tune) */}
+        {secondaryAction && (
+          <button
+            onClick={handleSecondary}
+            className="flex flex-col items-center justify-center gap-0.5 active:opacity-70 transition-opacity"
+            style={{
+              width: ACTION_W,
+              background: `linear-gradient(135deg, ${secondaryAction.color}, ${secondaryAction.color.replace("/ 0.9", "/ 0.7")})`,
+              borderRight: `1px solid ${secondaryAction.borderColor}`,
+            }}
+            aria-label={secondaryAction.label}
+          >
+            {secondaryAction.icon}
+            <span
+              className="font-mono-display font-bold tracking-widest"
+              style={{ fontSize: "7px", color: "hsl(0 0% 90%)" }}
+            >
+              {secondaryAction.label.toUpperCase()}
+            </span>
+          </button>
+        )}
+
+        {/* Red Delete button */}
         <button
           onClick={handleDelete}
-          className="flex flex-col items-center justify-center gap-0.5 w-full h-full active:opacity-70 transition-opacity"
+          className="flex flex-col items-center justify-center gap-0.5 active:opacity-70 transition-opacity"
+          style={{
+            width: DELETE_W,
+            background: "linear-gradient(135deg, hsl(0 72% 40%), hsl(0 80% 28%))",
+          }}
           aria-label="Delete"
         >
           <Trash2 className="h-4 w-4" style={{ color: "hsl(0 0% 95%)" }} />
