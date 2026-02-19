@@ -468,6 +468,14 @@ const Index = () => {
                 <DPad
                   onUp={() => stepFrequency(1)}
                   onDown={() => stepFrequency(-1)}
+                  onLeft={() => {
+                    const i = TAB_ORDER.indexOf(activeTab);
+                    if (i > 0) setActiveTab(TAB_ORDER[i - 1]);
+                  }}
+                  onRight={() => {
+                    const i = TAB_ORDER.indexOf(activeTab);
+                    if (i < TAB_ORDER.length - 1) setActiveTab(TAB_ORDER[i + 1]);
+                  }}
                   onVm={captions.toggle}
                   onAb={() => setActiveChannel((ch) => ch === "A" ? "B" : "A")}
                   onBack={handleEnter}
