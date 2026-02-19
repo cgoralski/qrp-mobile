@@ -814,7 +814,7 @@ const ContactsScreen = ({ onTuneChannel, activeChannel, boardBand }: ContactsScr
   const bandCfg = boardBand && boardBand !== "DUAL" ? BAND_CONFIGS[boardBand] : null;
 
   return (
-    <div className="tab-panel flex flex-col w-full h-full animate-fade-in" data-no-swipe>
+    <div className="tab-panel flex flex-col w-full h-full animate-fade-in overflow-hidden" data-no-swipe>
       {/* Header */}
       <div className="tab-header flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2">

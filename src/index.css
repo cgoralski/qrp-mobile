@@ -140,7 +140,6 @@
     background: linear-gradient(175deg, hsl(210 18% 12%) 0%, hsl(210 18% 8%) 100%);
     border: 1px solid hsl(var(--border) / 0.5);
     border-radius: 16px;
-    overflow: hidden;
   }
 
   /* Section / card within a tab (mirrors APRS message bubble) */
