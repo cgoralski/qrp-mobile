@@ -22,12 +22,15 @@ interface RadioScreenProps {
   captionsSupported?: boolean;
 }
 
-const formatFreq = (value: string): { main: string } => {
-  if (!value) return { main: "000.0000" };
+const formatFreq = (value: string): { main: string; sub: string } => {
+  if (!value) return { main: "000.000", sub: "00" };
   const parts = value.split(".");
   const integer = parts[0].padStart(3, "0");
   const decimal = (parts[1] || "").padEnd(4, "0").slice(0, 4);
-  return { main: `${integer}.${decimal}` };
+  return {
+    main: `${integer}.${decimal.slice(0, 3)}`,
+    sub: decimal.slice(3, 5).padEnd(2, "0"),
+  };
 };
 
 const ChannelNameEditor = ({
@@ -225,11 +228,19 @@ const ChannelBlock = ({
         >
           {label}
         </span>
-        <span
-          className="font-freq-display text-[42px] leading-none transition-all duration-300 shrink-0"
-          style={activeFreqStyle}
-        >
-          {freq.main}
+        <span className="flex items-start leading-none shrink-0">
+          <span
+            className="font-freq-display text-[42px] leading-none transition-all duration-300"
+            style={activeFreqStyle}
+          >
+            {freq.main}
+          </span>
+          <span
+            className="font-freq-display text-[24px] leading-none transition-all duration-300 mt-[3px]"
+            style={activeFreqStyle}
+          >
+            {freq.sub}
+          </span>
         </span>
         {/* RSSI bar — centered in remaining space between freq and right bezel */}
         <div className="flex flex-1 items-end justify-center pb-[3px]">
