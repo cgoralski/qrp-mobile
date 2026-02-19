@@ -531,7 +531,7 @@ const Index = () => {
           </div>
 
           {/* ── Scanner tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+          <div className="flex flex-col flex-1 min-h-0 px-1 pt-8 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
             <div className="tab-panel flex flex-1 flex-col w-full">
               <div className="tab-header flex items-center justify-between px-3 py-2.5">
                 <div className="flex items-center gap-2">
@@ -551,7 +551,7 @@ const Index = () => {
           </div>
 
           {/* ── Map tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+          <div className="flex flex-col flex-1 min-h-0 px-1 pt-8 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
             <div className="tab-panel flex flex-1 flex-col w-full">
               <div className="tab-header flex items-center justify-between px-3 py-2.5">
                 <div className="flex items-center gap-2">
@@ -571,7 +571,7 @@ const Index = () => {
           </div>
 
           {/* ── Settings tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+          <div className="flex flex-col flex-1 min-h-0 px-1 pt-8 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
             <SettingsScreen myCallsign={myCallsign} onCallsignChange={handleCallsignChange} captionsLang={captions.lang} onCaptionsLangChange={captions.setLang} />
           </div>
         </div>
