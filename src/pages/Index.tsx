@@ -241,24 +241,25 @@ const Index = () => {
   const handleDigit = useCallback(
     (digit: string) => {
       if (digit === "*" || digit === "#") return;
-      // Strip existing decimal for counting raw digits
-      const rawDigits = inputBuffer.replace(".", "");
-      const hasDot = inputBuffer.includes(".");
-      const intPart = hasDot ? inputBuffer.split(".")[0] : inputBuffer;
-      const decPart = hasDot ? inputBuffer.split(".")[1] ?? "" : null;
 
-      // Allow up to 3 integer digits, then up to 4 decimal digits
-      if (!hasDot && rawDigits.length >= 3) return; // integer full, need decimal first
-      if (hasDot && (decPart?.length ?? 0) >= 4) return; // decimal full
+      const hasDot = inputBuffer.includes(".");
+      const decPart = hasDot ? inputBuffer.split(".")[1] ?? "" : "";
+      const intPart = hasDot ? inputBuffer.split(".")[0] : inputBuffer;
+
+      // Decimal digits cap at 4
+      if (hasDot && decPart.length >= 4) return;
+      // Integer digits cap at 3 — but instead of blocking, auto-insert the dot
+      if (!hasDot && intPart.length >= 3) {
+        // Auto-insert decimal and start decimal part with this digit
+        const withDot = intPart + "." + digit;
+        setInputBuffer(withDot);
+        setActiveFreq(withDot);
+        return;
+      }
 
       const next = inputBuffer + digit;
       setInputBuffer(next);
-      // Format: insert dot after 3 integer digits
-      const stripped = next.replace(".", "");
-      const raw = stripped.length > 3
-        ? stripped.slice(0, 3) + "." + stripped.slice(3)
-        : stripped;
-      setActiveFreq(raw);
+      setActiveFreq(next);
     },
     [inputBuffer, setActiveFreq]
   );
