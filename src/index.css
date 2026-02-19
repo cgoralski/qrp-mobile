@@ -160,7 +160,7 @@
   /* Input / compose field (mirrors APRS compose bar) */
   .tab-input {
     font-family: Arial, sans-serif;
-    font-size: 0.875rem; /* text-sm */
+    font-size: 1rem; /* text-base */
     color: hsl(var(--foreground));
     background: linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%));
     border: 1px solid hsl(210 15% 20% / 0.5);
@@ -177,7 +177,7 @@
   /* Callsign / sender label (cyan = primary, amber = received/secondary) */
   .tab-callsign {
     font-family: Arial, sans-serif;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.1em;
     color: hsl(38 92% 50%); /* amber-400 equivalent */
@@ -190,7 +190,7 @@
   /* Body text — mirrors APRS message text-sm text-foreground */
   .tab-body {
     font-family: Arial, sans-serif;
-    font-size: 1rem;
+    font-size: 1.0625rem;
     word-spacing: -0.1em;
     letter-spacing: -0.01em;
     color: hsl(var(--foreground));
@@ -200,7 +200,7 @@
   /* Sub-label / timestamp / metadata line */
   .tab-meta {
     font-family: Arial, sans-serif;
-    font-size: 10px;
+    font-size: 12px;
     color: hsl(var(--muted-foreground));
     letter-spacing: 0.08em;
   }
@@ -208,7 +208,7 @@
   /* Section title */
   .tab-section-title {
     font-family: Arial, sans-serif;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.18em;
     color: hsl(var(--primary));
