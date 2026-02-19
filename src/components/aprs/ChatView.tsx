@@ -62,10 +62,7 @@ const ChatView = ({
 
         {/* Callsign badge */}
         <div className="flex-1 flex flex-col">
-          <span
-            className="font-mono-display font-black tracking-widest"
-            style={{ fontSize: "16px", color: "hsl(var(--primary))", textShadow: "0 0 8px hsl(var(--primary) / 0.4)" }}
-          >
+          <span className="tab-callsign tab-callsign-primary text-glow" style={{ fontSize: "16px" }}>
             {conversation.callsign}
           </span>
           <span className="tab-meta" style={{ lineHeight: 1 }}>
@@ -126,11 +123,8 @@ const ChatView = ({
             >
               <div className="flex items-center gap-2 mb-0.5">
                 <span
-                  className="font-mono-display font-bold tracking-wider"
-                  style={{
-                    fontSize: "12px",
-                    color: msg.direction === "sent" ? "hsl(var(--primary))" : "hsl(0 0% 55%)",
-                  }}
+                  className={`tab-callsign ${msg.direction === "sent" ? "tab-callsign-primary" : ""}`}
+                  style={msg.direction !== "sent" ? { color: "hsl(0 0% 55%)" } : undefined}
                 >
                   {msg.from}
                 </span>

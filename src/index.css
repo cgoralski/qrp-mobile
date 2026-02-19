@@ -205,6 +205,24 @@
     letter-spacing: 0.08em;
   }
 
+  /* Tiny monospaced label — toolbar counts, chip text, badge text (8-9px) */
+  .tab-label {
+    font-family: Arial, sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Avatar / short callsign inside avatar circles */
+  .tab-avatar-text {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    color: hsl(var(--primary));
+  }
+
   /* Section title */
   .tab-section-title {
     font-family: Arial, sans-serif;

@@ -87,10 +87,7 @@ const ConversationList = ({
                       border: "1px solid hsl(var(--primary) / 0.2)",
                     }}
                   >
-                    <span
-                      className="font-mono-display font-black"
-                      style={{ fontSize: "12px", color: "hsl(var(--primary))", letterSpacing: "0.05em" }}
-                    >
+                    <span className="tab-avatar-text">
                       {conv.callsign.slice(0, 4)}
                     </span>
                   </div>
@@ -98,10 +95,7 @@ const ConversationList = ({
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span
-                        className="font-mono-display font-black tracking-wider"
-                        style={{ fontSize: "14px", color: "hsl(var(--primary))" }}
-                      >
+                      <span className="tab-callsign tab-callsign-primary">
                         {conv.callsign}
                       </span>
                       <span className="tab-meta">{formatTime(conv.updatedAt)}</span>

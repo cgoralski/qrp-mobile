@@ -112,21 +112,17 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
         />
 
         <div className="flex-1 min-w-0">
-          {/* Callsign row */}
           <div className="flex items-center gap-2 mb-0.5">
-            <span
-              className={`font-mono-display text-[9px] font-bold tracking-wider ${isTuned ? "text-primary" : "text-amber-400"}`}
-            >
+            <span className={`tab-callsign ${isTuned ? "tab-callsign-primary" : ""}`}
+              style={!isTuned ? { color: "hsl(38 92% 50%)" } : undefined}>
               {contact.callsign || contact.name}
             </span>
             {contact.callsign && (
-              <span className="font-mono-display text-[8px] text-muted-foreground truncate">
-                {contact.name}
-              </span>
+              <span className="tab-meta truncate">{contact.name}</span>
             )}
             {contact.mode && (
               <span
-                className="font-mono-display text-[8px] px-1 rounded shrink-0"
+                className="tab-label px-1 rounded shrink-0"
                 style={{
                   color: MODE_COLORS[contact.mode] ?? "hsl(var(--muted-foreground))",
                   background: `${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}1a`,
@@ -138,11 +134,11 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
             )}
           </div>
           {/* Frequency */}
-          <p className="text-sm text-foreground leading-snug font-mono-display">
+          <p className="tab-body leading-snug">
             {formatFreq(contact.frequency)}{" "}
-            <span className="text-muted-foreground text-xs">MHz</span>
+            <span className="tab-meta">MHz</span>
             {contact.location_desc ? (
-              <span className="text-muted-foreground text-xs ml-2">{contact.location_desc}</span>
+              <span className="tab-meta ml-2">{contact.location_desc}</span>
             ) : null}
           </p>
         </div>
@@ -191,31 +187,29 @@ const RepeaterRow = ({ repeater, onTune, onAddToContacts, isAdded }: RepeaterRow
       }}
     >
       <div className="flex-1 min-w-0">
-        {/* Callsign — APRS sender style */}
+        {/* Callsign row */}
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="font-mono-display text-[9px] font-bold tracking-wider text-amber-400">
+          <span className="tab-callsign" style={{ color: "hsl(38 92% 50%)" }}>
             {repeater.callsign || repeater.name}
           </span>
           {repeater.callsign && (
-            <span className="font-mono-display text-[8px] text-muted-foreground truncate">
-              {repeater.name}
-            </span>
+            <span className="tab-meta truncate">{repeater.name}</span>
           )}
           {repeater.mode && (
-            <span className="font-mono-display text-[8px] px-1 rounded shrink-0"
+            <span className="tab-label px-1 rounded shrink-0"
               style={{ color: modeColor, background: `${modeColor}1a`, border: `1px solid ${modeColor}33` }}>
               {repeater.mode}
             </span>
           )}
         </div>
-        {/* Body — APRS message body style */}
-        <p className="text-sm text-foreground leading-snug font-mono-display">
-          {formatFreq(repeater.frequency)} <span className="text-muted-foreground text-xs">MHz</span>
+        {/* Body */}
+        <p className="tab-body leading-snug">
+          {formatFreq(repeater.frequency)} <span className="tab-meta">MHz</span>
           {repeater.tone_mode && repeater.tone_mode !== "" && (
-            <span className="text-muted-foreground text-xs ml-2">{repeater.tone_mode}{repeater.r_tone_freq ? ` ${repeater.r_tone_freq}Hz` : ""}</span>
+            <span className="tab-meta ml-2">{repeater.tone_mode}{repeater.r_tone_freq ? ` ${repeater.r_tone_freq}Hz` : ""}</span>
           )}
           {repeater.location_desc && (
-            <span className="text-muted-foreground text-xs ml-2 truncate"> · {repeater.location_desc}</span>
+            <span className="tab-meta ml-2 truncate"> · {repeater.location_desc}</span>
           )}
         </p>
       </div>
@@ -396,20 +390,18 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
     <div className="flex flex-col flex-1 min-h-0">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
-        <span className="font-mono-display text-[9px] tracking-wider text-muted-foreground">
-          {contacts.length} CONTACTS
-        </span>
+        <span className="tab-label">{contacts.length} CONTACTS</span>
         <div className="flex items-center gap-1">
           <button
             onClick={handleExport}
-            className="flex items-center gap-1 rounded-md px-2 py-1 font-mono-display text-[8px] tracking-wider transition-all bg-secondary border border-border text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-1 rounded-md px-2 py-1 tab-label transition-all bg-secondary border border-border hover:text-foreground"
             title="Export contacts as CSV"
           >
             <Download className="h-3 w-3" /> EXP
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 rounded-md px-2 py-1 font-mono-display text-[8px] tracking-wider transition-all bg-secondary border border-border text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-1 rounded-md px-2 py-1 tab-label transition-all bg-secondary border border-border hover:text-foreground"
             title="Import contacts from CSV"
           >
             <Upload className="h-3 w-3" /> IMP
@@ -435,49 +427,46 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
           <div className="grid grid-cols-2 gap-1.5">
             <input type="text" placeholder="CALLSIGN" value={newContact.callsign}
               onChange={(e) => setNewContact((p) => ({ ...p, callsign: e.target.value.toUpperCase() }))}
-              className="font-mono-display text-sm rounded-xl px-3 py-2 outline-none text-primary placeholder:text-muted-foreground/50"
-              style={{ background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))", border: "1px solid hsl(210 15% 20% / 0.5)" }}
+              className="tab-input text-primary"
             />
             <input type="text" placeholder="FREQUENCY" value={newContact.frequency}
               onChange={(e) => setNewContact((p) => ({ ...p, frequency: e.target.value }))}
-              className="font-mono-display text-sm rounded-xl px-3 py-2 outline-none text-foreground placeholder:text-muted-foreground/50"
-              style={{ background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))", border: "1px solid hsl(210 15% 20% / 0.5)" }}
+              className="tab-input"
             />
           </div>
           <input type="text" placeholder="Name / Description" value={newContact.name}
             onChange={(e) => setNewContact((p) => ({ ...p, name: e.target.value }))}
-            className="font-mono-display text-sm rounded-xl px-3 py-2 outline-none text-foreground placeholder:text-muted-foreground/50"
-            style={{ background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))", border: "1px solid hsl(210 15% 20% / 0.5)" }}
+            className="tab-input"
           />
           <div className="flex gap-1 flex-wrap">
             {GROUPS.map((g) => (
               <button key={g} onClick={() => setNewContact((p) => ({ ...p, group_tag: g }))}
-                className="font-mono-display text-[8px] tracking-wider px-1.5 py-0.5 rounded-full transition-all"
-                style={{
-                  background: newContact.group_tag === g ? `${GROUP_COLORS[g]}22` : "hsl(var(--secondary))",
-                  border: `1px solid ${newContact.group_tag === g ? GROUP_COLORS[g] : "hsl(var(--border))"}`,
-                  color: newContact.group_tag === g ? GROUP_COLORS[g] : "hsl(var(--muted-foreground))",
-                }}
+                className={`tab-chip ${newContact.group_tag === g ? "tab-chip-active" : ""} transition-all`}
+                style={newContact.group_tag === g ? {
+                  background: `${GROUP_COLORS[g]}22`,
+                  borderColor: GROUP_COLORS[g],
+                  color: GROUP_COLORS[g],
+                } : undefined}
               >{g}</button>
             ))}
           </div>
           <button onClick={handleAdd}
-            className="flex items-center justify-center gap-1.5 rounded-xl py-2 font-mono-display text-[10px] font-bold tracking-wider transition-all"
-            style={{ background: "linear-gradient(180deg, hsl(185 80% 55% / 0.2), hsl(185 80% 55% / 0.08))", border: "1px solid hsl(185 80% 55% / 0.25)", color: "hsl(var(--primary))" }}
+            className="flex items-center justify-center gap-1.5 rounded-xl py-2 tab-section-title transition-all"
+            style={{ background: "linear-gradient(180deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.08))", border: "1px solid hsl(var(--primary) / 0.25)" }}
           >
             <Check className="h-3 w-3" /> SAVE CONTACT
           </button>
         </div>
       )}
 
-      {/* Search — mirrors APRS compose input style */}
+      {/* Search */}
       <div className="px-3 py-2 border-b border-border/40">
         <div className="flex items-center gap-2 rounded-xl px-3 py-2"
           style={{ background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))", border: "1px solid hsl(210 15% 20% / 0.5)" }}>
           <Search className="h-3 w-3 shrink-0 text-muted-foreground" />
           <input type="text" placeholder="Search callsign, name, freq…" value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="font-mono-display text-sm bg-transparent outline-none flex-1 min-w-0 text-foreground placeholder:text-muted-foreground"
+            className="tab-body bg-transparent outline-none flex-1 min-w-0"
           />
           {query && <button onClick={() => setQuery("")}><X className="h-3 w-3 text-muted-foreground" /></button>}
         </div>
@@ -486,13 +475,16 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
       {/* Group chips */}
       <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none border-b border-border/40">
         <button onClick={() => setSelectedGroup(null)}
-          className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-          style={{ background: !selectedGroup ? "hsl(var(--primary) / 0.15)" : "hsl(var(--secondary))", border: `1px solid ${!selectedGroup ? "hsl(var(--primary) / 0.4)" : "hsl(var(--border))"}`, color: !selectedGroup ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}
+          className={`tab-chip shrink-0 transition-all ${!selectedGroup ? "tab-chip-active" : ""}`}
         >ALL</button>
         {groups.map((g) => (
           <button key={g} onClick={() => setSelectedGroup(selectedGroup === g ? null : g)}
-            className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-            style={{ background: selectedGroup === g ? `${GROUP_COLORS[g] ?? "hsl(var(--primary))"}22` : "hsl(var(--secondary))", border: `1px solid ${selectedGroup === g ? (GROUP_COLORS[g] ?? "hsl(var(--primary))") : "hsl(var(--border))"}`, color: selectedGroup === g ? (GROUP_COLORS[g] ?? "hsl(var(--primary))") : "hsl(var(--muted-foreground))" }}
+            className="tab-chip shrink-0 transition-all"
+            style={selectedGroup === g ? {
+              background: `${GROUP_COLORS[g] ?? "hsl(var(--primary))"}22`,
+              borderColor: GROUP_COLORS[g] ?? "hsl(var(--primary))",
+              color: GROUP_COLORS[g] ?? "hsl(var(--primary))",
+            } : undefined}
           >{g}</button>
         ))}
       </div>
@@ -501,16 +493,16 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
       <div className="flex-1 overflow-y-auto overscroll-contain px-1 py-1 space-y-0.5">
         {loading ? (
           <div className="flex items-center justify-center py-10">
-            <span className="font-mono-display text-xs tracking-wider text-muted-foreground">LOADING…</span>
+            <span className="tab-meta">LOADING…</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-10">
             <BookUser className="h-6 w-6 opacity-20 text-muted-foreground" />
-            <span className="font-mono-display text-xs tracking-wider text-muted-foreground opacity-40">
+            <span className="tab-meta opacity-40">
               {contacts.length === 0 ? "NO CONTACTS YET" : "NO MATCH"}
             </span>
             {contacts.length === 0 && (
-              <span className="font-mono-display text-[9px] text-center px-6 text-muted-foreground/50">
+              <span className="tab-label text-center px-6 opacity-50">
                 Add manually or browse the repeater directory →
               </span>
             )}
@@ -628,14 +620,14 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Search — APRS compose style */}
+      {/* Search */}
       <div className="px-3 py-2 border-b border-border/40">
         <div className="flex items-center gap-2 rounded-xl px-3 py-2"
           style={{ background: "linear-gradient(180deg, hsl(210 18% 12%), hsl(210 18% 9%))", border: "1px solid hsl(210 15% 20% / 0.5)" }}>
           <Search className="h-3 w-3 shrink-0 text-muted-foreground" />
           <input type="text" placeholder="Callsign, name, location…" value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="font-mono-display text-sm bg-transparent outline-none flex-1 min-w-0 text-foreground placeholder:text-muted-foreground"
+            className="tab-body bg-transparent outline-none flex-1 min-w-0"
           />
           {query && <button onClick={() => setQuery("")}><X className="h-3 w-3 text-muted-foreground" /></button>}
         </div>
@@ -645,13 +637,11 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
       <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none border-b border-border/40">
         <Filter className="h-3 w-3 shrink-0 self-center text-muted-foreground/40" />
         <button onClick={() => setSelectedCountry(null)}
-          className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-          style={{ background: !selectedCountry ? "hsl(var(--primary) / 0.15)" : "hsl(var(--secondary))", border: `1px solid ${!selectedCountry ? "hsl(var(--primary) / 0.4)" : "hsl(var(--border))"}`, color: !selectedCountry ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}
+          className={`tab-chip shrink-0 transition-all ${!selectedCountry ? "tab-chip-active" : ""}`}
         >ALL</button>
         {countries.map((c) => (
           <button key={c} onClick={() => setSelectedCountry(selectedCountry === c ? null : c)}
-            className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-            style={{ background: selectedCountry === c ? "hsl(var(--primary) / 0.15)" : "hsl(var(--secondary))", border: `1px solid ${selectedCountry === c ? "hsl(var(--primary) / 0.4)" : "hsl(var(--border))"}`, color: selectedCountry === c ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}
+            className={`tab-chip shrink-0 transition-all ${selectedCountry === c ? "tab-chip-active" : ""}`}
           >{c}</button>
         ))}
       </div>
@@ -659,15 +649,14 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
       {/* Mode filter chips */}
       <div className="flex gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-none border-b border-border/40">
         <button onClick={() => setSelectedMode(null)}
-          className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-          style={{ background: !selectedMode ? "hsl(var(--secondary))" : "hsl(var(--secondary))", border: `1px solid ${!selectedMode ? "hsl(var(--primary) / 0.3)" : "hsl(var(--border))"}`, color: !selectedMode ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}
+          className={`tab-chip shrink-0 transition-all ${!selectedMode ? "tab-chip-active" : ""}`}
         >ANY MODE</button>
         {modes.map((m) => {
           const mc = MODE_COLORS[m] ?? "hsl(var(--primary))";
           return (
             <button key={m} onClick={() => setSelectedMode(selectedMode === m ? null : m)}
-              className="font-mono-display text-[8px] tracking-wider px-2 py-0.5 rounded-full shrink-0 transition-all"
-              style={{ background: selectedMode === m ? `${mc}22` : "hsl(var(--secondary))", border: `1px solid ${selectedMode === m ? mc : "hsl(var(--border))"}`, color: selectedMode === m ? mc : "hsl(var(--muted-foreground))" }}
+              className="tab-chip shrink-0 transition-all"
+              style={selectedMode === m ? { background: `${mc}22`, borderColor: mc, color: mc } : undefined}
             >{m}</button>
           );
         })}
@@ -677,13 +666,13 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
       <div className="flex-1 overflow-y-auto overscroll-contain px-1 py-1 space-y-0.5">
         {loading && repeaters.length === 0 ? (
           <div className="flex items-center justify-center py-10">
-            <span className="font-mono-display text-xs tracking-wider text-muted-foreground">SCANNING DATABASE…</span>
+            <span className="tab-meta">SCANNING DATABASE…</span>
           </div>
         ) : repeaters.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-10">
             <Radio className="h-6 w-6 opacity-20 text-muted-foreground" />
-            <span className="font-mono-display text-xs tracking-wider text-muted-foreground opacity-40">NO REPEATERS FOUND</span>
-            <span className="font-mono-display text-[9px] text-center px-6 text-muted-foreground/50">
+            <span className="tab-meta opacity-40">NO REPEATERS FOUND</span>
+            <span className="tab-label text-center px-6 opacity-50">
               Import data from the Settings tab first
             </span>
           </div>
@@ -702,7 +691,7 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
               <button
                 onClick={loadMore}
                 disabled={loading}
-                className="w-full font-mono-display text-[9px] tracking-wider py-3 transition-all text-primary/60 hover:text-primary"
+                className="w-full tab-label py-3 transition-all text-primary/60 hover:text-primary"
               >
                 {loading ? "LOADING…" : "LOAD MORE"}
               </button>
