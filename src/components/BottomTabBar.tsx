@@ -9,7 +9,7 @@ interface BottomTabBarProps {
 }
 
 const ALL_TABS = [
-  { id: "voice" as TabId,    label: "Voice",    icon: Mic },
+  { id: "voice" as TabId,    label: "Radio",    icon: Mic },
   { id: "aprs" as TabId,     label: "APRS",     icon: MessageSquare },
   { id: "contacts" as TabId, label: "Contacts", icon: BookUser },
   { id: "scanner" as TabId,  label: "Scanner",  icon: Radio },
