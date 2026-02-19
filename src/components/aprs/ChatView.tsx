@@ -43,7 +43,7 @@ const ChatView = ({
   return (
     <div
       className="tab-panel flex flex-col w-full max-w-lg mx-auto overflow-hidden"
-      style={{ animation: "slideInRight 0.25s cubic-bezier(0.32,0.72,0,1) both", height: "100%" }}
+      style={{ animation: "slideInRight 0.25s cubic-bezier(0.32,0.72,0,1) both", height: "100%", marginTop: 0 }}
     >
       {/* Header */}
       <div className="tab-header flex items-center gap-2 px-2 py-2.5">
