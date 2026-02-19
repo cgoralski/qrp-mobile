@@ -209,6 +209,8 @@ const Index = () => {
   const swipeLockedAxis = useRef<"h" | "v" | null>(null);
 
   const handleSwipeTouchStart = (e: React.TouchEvent) => {
+    // Don't capture swipes that start inside components that handle their own touch
+    if ((e.target as Element).closest("[data-no-swipe]")) return;
     swipeTouchStartX.current = e.touches[0].clientX;
     swipeTouchStartY.current = e.touches[0].clientY;
     swipeLockedAxis.current = null;
