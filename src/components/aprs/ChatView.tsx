@@ -55,7 +55,7 @@ const ChatView = ({
         <div className="flex-1 flex flex-col">
           <span
             className="font-mono-display font-black tracking-widest"
-            style={{ fontSize: "14px", color: "hsl(var(--primary))", textShadow: "0 0 8px hsl(var(--primary) / 0.4)" }}
+            style={{ fontSize: "16px", color: "hsl(var(--primary))", textShadow: "0 0 8px hsl(var(--primary) / 0.4)" }}
           >
             {conversation.callsign}
           </span>
@@ -120,7 +120,7 @@ const ChatView = ({
                 <span
                   className="font-mono-display font-bold tracking-wider"
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     color: msg.direction === "sent" ? "hsl(var(--primary))" : "hsl(0 0% 55%)",
                   }}
                 >

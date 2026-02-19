@@ -89,7 +89,7 @@ const ConversationList = ({
                   >
                     <span
                       className="font-mono-display font-black"
-                      style={{ fontSize: "10px", color: "hsl(var(--primary))", letterSpacing: "0.05em" }}
+                      style={{ fontSize: "12px", color: "hsl(var(--primary))", letterSpacing: "0.05em" }}
                     >
                       {conv.callsign.slice(0, 4)}
                     </span>
@@ -100,7 +100,7 @@ const ConversationList = ({
                     <div className="flex items-center justify-between mb-0.5">
                       <span
                         className="font-mono-display font-black tracking-wider"
-                        style={{ fontSize: "12px", color: "hsl(var(--primary))" }}
+                        style={{ fontSize: "14px", color: "hsl(var(--primary))" }}
                       >
                         {conv.callsign}
                       </span>
