@@ -754,12 +754,6 @@ const ContactsScreen = ({ onTuneChannel, activeChannel }: ContactsScreenProps) =
             </button>
           </div>
         </div>
-        <span
-          className="tab-meta px-1.5 py-0.5 rounded-md"
-          style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary) / 0.7)", border: "1px solid hsl(var(--primary) / 0.2)" }}
-        >
-          CH {activeChannel}
-        </span>
       </div>
 
       {/* Tab content */}
