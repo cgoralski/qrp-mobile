@@ -292,10 +292,10 @@ const SettingsScreen = ({ myCallsign, onCallsignChange, captionsLang, onCaptions
   };
 
   return (
-    <div className="tab-panel flex flex-col w-full h-full animate-fade-in gap-3 overflow-y-auto overscroll-contain px-2 py-2">
+    <div className="tab-panel flex flex-col w-full h-full animate-fade-in gap-3 overflow-y-auto overscroll-contain px-2 pt-0 pb-2">
 
       {/* Header */}
-      <div className="tab-header flex items-center justify-between px-3 py-2.5 rounded-xl">
+      <div className="tab-header flex items-center justify-between px-3 py-2.5">
         <span className="tab-section-title">SETTINGS</span>
         <span className="tab-meta">REPEATER DATABASE</span>
       </div>
