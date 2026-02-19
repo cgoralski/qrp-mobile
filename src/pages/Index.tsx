@@ -515,12 +515,12 @@ const Index = () => {
           </div>
 
           {/* ── APRS tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+          <div className="flex flex-col flex-1 min-h-0 px-1 pt-8 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
             <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
           </div>
 
           {/* ── Contacts tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+          <div className="flex flex-col flex-1 min-h-0 px-1 pt-8 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
             <ContactsScreen
               onTuneChannel={(freq) => {
                 if (activeChannel === "A") setChannelA(freq);
