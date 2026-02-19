@@ -95,7 +95,17 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
   const groupColor = GROUP_COLORS[contact.group_tag ?? ""] ?? "hsl(215 15% 42%)";
 
   return (
-    <SwipeToDelete onTap={onTune} onDelete={onDelete} className="mb-0.5">
+    <SwipeToDelete
+      onDelete={onDelete}
+      className="mb-0.5"
+      secondaryAction={{
+        label: "Tune",
+        icon: <Radio className="h-4 w-4" style={{ color: "hsl(0 0% 95%)" }} />,
+        color: "hsl(142 65% 32% / 0.9)",
+        borderColor: "hsl(142 65% 25%)",
+        onClick: onTune,
+      }}
+    >
       <div
         className="flex items-center gap-3 px-3 py-2.5"
         style={{
@@ -148,12 +158,12 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
             <div
               className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
               style={{
-                background: "hsl(var(--primary) / 0.15)",
-                border: "1px solid hsl(var(--primary) / 0.35)",
+                background: "hsl(142 65% 32% / 0.15)",
+                border: "1px solid hsl(142 65% 32% / 0.35)",
               }}
             >
-              <Check className="h-3 w-3 text-primary" />
-              <span className="font-mono-display text-[8px] font-bold tracking-wider text-primary">TUNED</span>
+              <Check className="h-3 w-3" style={{ color: "hsl(142 65% 55%)" }} />
+              <span className="font-mono-display text-[8px] font-bold tracking-wider" style={{ color: "hsl(142 65% 55%)" }}>TUNED</span>
             </div>
           ) : (
             <ChevronRight className="h-3.5 w-3.5 text-border" />
