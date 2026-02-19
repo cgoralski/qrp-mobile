@@ -102,11 +102,11 @@ const DPad = ({
             className="flex items-center justify-center rounded-md transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
             style={{
               ...navButtonStyle("center"),
-              width: "50px",
-              height: "40px",
+              width: "66px",
+              height: "54px",
             }}
           >
-            <span className="font-mono-display text-[13px] font-black text-blue-300/90 tracking-wider">OK</span>
+            <span className="font-mono-display text-[13px] font-black text-blue-300/90 tracking-wider">PTT</span>
           </button>
           {arrowBtn(
             <ChevronRight className="h-4 w-4 text-white/70" />,
