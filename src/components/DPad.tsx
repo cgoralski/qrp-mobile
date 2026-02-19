@@ -102,8 +102,8 @@ const DPad = ({
             className="flex items-center justify-center rounded-md transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
             style={{
               ...navButtonStyle("center"),
-              width: "66px",
-              height: "54px",
+              width: "78px",
+              height: "64px",
             }}
           >
             <span className="font-mono-display text-[13px] font-black text-blue-300/90 tracking-wider">PTT</span>
