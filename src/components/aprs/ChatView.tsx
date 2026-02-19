@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { Send, ArrowLeft, AlertTriangle } from "lucide-react";
 import type { Conversation } from "./types";
 
+
 interface ChatViewProps {
   conversation: Conversation;
   myCallsign: string;
@@ -25,11 +26,19 @@ const ChatView = ({
   onNavigateToSettings,
 }: ChatViewProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const callsignValid = myCallsign.trim().length >= 3;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation.messages]);
+
+  // Focus input without scrolling the page
+  useEffect(() => {
+    if (callsignValid) {
+      inputRef.current?.focus({ preventScroll: true });
+    }
+  }, [callsignValid]);
 
   return (
     <div
@@ -138,6 +147,7 @@ const ChatView = ({
       {/* Compose */}
       <div className="flex items-center gap-2 px-2 py-2 border-t border-border/40">
         <input
+          ref={inputRef}
           value={draft}
           onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && onSend()}
@@ -145,7 +155,6 @@ const ChatView = ({
           disabled={!callsignValid}
           className="tab-input flex-1 disabled:opacity-40"
           maxLength={67}
-          autoFocus
         />
         <button
           onClick={onSend}
