@@ -10,6 +10,8 @@ import APRSMessaging from "@/components/APRSMessaging";
 import ContactsScreen from "@/components/ContactsScreen";
 import SettingsScreen from "@/components/SettingsScreen";
 import { useCaptions } from "@/hooks/use-captions";
+import type { BandId } from "@/lib/hardware";
+
 
 /* ── Header Caption Panel — inline live CC text for the top bar ── */
 const HeaderCaptionPanel = ({
@@ -165,6 +167,26 @@ const Index = () => {
   const [swipeDelta, setSwipeDelta] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
 
+  /**
+   * boardBand — the frequency band reported by the connected hardware board.
+   *
+   * Set this state whenever the board replies to the identify/config command
+   * via the USB-C serial connection. Use resolveBoardType(rawReply) from
+   * src/lib/hardware.ts to convert the raw reply string to a BandId.
+   *
+   * Example (once USB serial is implemented):
+   *   const band = resolveBoardType(serialReply);
+   *   setBoardBand(band);
+   *
+   * null  = no board connected or board type not recognised (no filtering)
+   * "VHF" = 144–148 MHz filter applied
+   * "UHF" = 430–440 MHz filter applied
+   * "DUAL"= dual-band board — no frequency filtering applied
+   */
+  const [boardBand, setBoardBand] = useState<BandId>(null);
+  // Suppress unused-var warning until USB serial is wired up:
+  void setBoardBand;
+
   const captions = useCaptions();
 
   // Reset any browser-induced scroll offset whenever the tab changes.
@@ -315,7 +337,7 @@ const Index = () => {
           </span>
         </div>
 
-        <ConnectionStatus connected={false} />
+        <ConnectionStatus connected={false} boardBand={boardBand} />
       </header>
 
 
@@ -527,6 +549,7 @@ const Index = () => {
                 else setChannelB(freq);
               }}
               activeChannel={activeChannel}
+              boardBand={boardBand}
             />
           </div>
 

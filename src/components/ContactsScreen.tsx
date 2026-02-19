@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import { supabase } from "@/integrations/supabase/client";
+import type { BandId } from "@/lib/hardware";
+import { frequencyMatchesBand, BAND_CONFIGS } from "@/lib/hardware";
 
 // ─────────────────────────────────────────────
 // Types
@@ -332,9 +334,10 @@ const RepeaterRow = ({ repeater, onTune, onAddToContacts, isAdded }: RepeaterRow
 interface MyContactsTabProps {
   onTuneChannel: (freq: string) => void;
   activeChannel: "A" | "B";
+  boardBand: BandId;
 }
 
-const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => {
+const MyContactsTab = ({ onTuneChannel, activeChannel, boardBand }: MyContactsTabProps) => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -361,9 +364,10 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
     return contacts.filter((c) => {
       const matchesQuery = !q || c.callsign.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || String(c.frequency).includes(q);
       const matchesGroup = !selectedGroup || c.group_tag === selectedGroup;
-      return matchesQuery && matchesGroup;
+      const matchesBand = frequencyMatchesBand(c.frequency, boardBand);
+      return matchesQuery && matchesGroup && matchesBand;
     });
-  }, [contacts, query, selectedGroup]);
+  }, [contacts, query, selectedGroup, boardBand]);
 
   const handleTune = (contact: Contact) => {
     onTuneChannel(formatFreq(contact.frequency));
@@ -614,9 +618,10 @@ const MyContactsTab = ({ onTuneChannel, activeChannel }: MyContactsTabProps) => 
 interface RepeaterBrowserTabProps {
   onTuneChannel: (freq: string) => void;
   activeChannel: "A" | "B";
+  boardBand: BandId;
 }
 
-const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
+const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProps) => {
   const [repeaters, setRepeaters] = useState<Repeater[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
@@ -637,7 +642,7 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
     });
   }, []);
 
-  // Debounced search
+  // Debounced search — re-runs when boardBand changes too
   useEffect(() => {
     const timer = setTimeout(() => {
       setPage(0);
@@ -645,7 +650,7 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
     }, 350);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, selectedCountry, selectedMode]);
+  }, [query, selectedCountry, selectedMode, boardBand]);
 
   const fetchRepeaters = async (pageNum: number) => {
     setLoading(true);
@@ -659,6 +664,12 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
     if (selectedMode) q = q.eq("mode", selectedMode);
     if (query.trim()) {
       q = q.or(`callsign.ilike.%${query}%,name.ilike.%${query}%,location_desc.ilike.%${query}%`);
+    }
+
+    // Band filter — applied at the DB query level for efficiency
+    if (boardBand && boardBand !== "DUAL") {
+      const cfg = BAND_CONFIGS[boardBand];
+      q = q.gte("frequency", cfg.minMHz).lte("frequency", cfg.maxMHz);
     }
 
     const { data } = await q;
@@ -793,10 +804,14 @@ const RepeaterBrowserTab = ({ onTuneChannel }: RepeaterBrowserTabProps) => {
 interface ContactsScreenProps {
   onTuneChannel: (frequency: string) => void;
   activeChannel: "A" | "B";
+  /** Band locked by the connected hardware board. Null = no filtering. */
+  boardBand: BandId;
 }
 
-const ContactsScreen = ({ onTuneChannel, activeChannel }: ContactsScreenProps) => {
+const ContactsScreen = ({ onTuneChannel, activeChannel, boardBand }: ContactsScreenProps) => {
   const [tab, setTab] = useState<"contacts" | "repeaters">("contacts");
+
+  const bandCfg = boardBand && boardBand !== "DUAL" ? BAND_CONFIGS[boardBand] : null;
 
   return (
     <div className="tab-panel flex flex-col w-full h-full animate-fade-in">
@@ -826,13 +841,34 @@ const ContactsScreen = ({ onTuneChannel, activeChannel }: ContactsScreenProps) =
             </button>
           </div>
         </div>
+
+        {/* Band lock badge — shown when hardware board imposes a band filter */}
+        {bandCfg && (
+          <span
+            className="tab-label px-2 py-0.5 rounded-full"
+            style={{
+              color: bandCfg.color,
+              background: `${bandCfg.color.replace(")", " / 0.12)")}`,
+              border: `1px solid ${bandCfg.color.replace(")", " / 0.3)")}`,
+              letterSpacing: "0.12em",
+            }}
+          >
+            {bandCfg.badge} ONLY
+          </span>
+        )}
+        {boardBand === "DUAL" && (
+          <span className="tab-label px-2 py-0.5 rounded-full"
+            style={{ color: "hsl(var(--primary))", background: "hsl(var(--primary) / 0.12)", border: "1px solid hsl(var(--primary) / 0.3)" }}>
+            DUAL
+          </span>
+        )}
       </div>
 
       {/* Tab content */}
       {tab === "contacts" ? (
-        <MyContactsTab onTuneChannel={onTuneChannel} activeChannel={activeChannel} />
+        <MyContactsTab onTuneChannel={onTuneChannel} activeChannel={activeChannel} boardBand={boardBand} />
       ) : (
-        <RepeaterBrowserTab onTuneChannel={onTuneChannel} activeChannel={activeChannel} />
+        <RepeaterBrowserTab onTuneChannel={onTuneChannel} activeChannel={activeChannel} boardBand={boardBand} />
       )}
     </div>
   );
