@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
-  Search, Radio, UserPlus, X, Check, ChevronRight,
+  Search, Radio, UserPlus, X, Check, ChevronRight, Trash2,
   Download, Upload, BookUser, Plus, Filter,
 } from "lucide-react";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
@@ -93,84 +93,157 @@ interface ContactRowProps {
 
 const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => {
   const groupColor = GROUP_COLORS[contact.group_tag ?? ""] ?? "hsl(215 15% 42%)";
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  const handleRowTap = () => setActionsOpen((v) => !v);
+
+  const handleTune = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onTune();
+    setActionsOpen(false);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCollapsed(true);
+    setTimeout(() => onDelete(), 260);
+  };
+
+  const ACTIONS_W = 144; // 72px tune + 72px delete
 
   return (
-    <SwipeToDelete
-      onDelete={onDelete}
-      className="mb-0.5"
-      secondaryAction={{
-        label: "Tune",
-        icon: <Radio className="h-4 w-4" style={{ color: "hsl(0 0% 95%)" }} />,
-        color: "hsl(142 65% 32% / 0.9)",
-        borderColor: "hsl(142 65% 25%)",
-        onClick: onTune,
+    <div
+      className="relative mb-0.5 rounded-xl"
+      style={{
+        maxHeight: collapsed ? 0 : undefined,
+        opacity: collapsed ? 0 : 1,
+        overflow: "hidden",
+        transition: collapsed ? "max-height 0.26s ease, opacity 0.22s ease" : "none",
       }}
     >
+      {/* Action buttons revealed behind the row */}
       <div
-        className="flex items-center gap-3 px-3 py-2.5"
+        className="absolute inset-y-0 right-0 flex items-stretch"
         style={{
-          background: isTuned
-            ? "linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.04))"
-            : "linear-gradient(135deg, hsl(210 18% 14%), hsl(210 18% 10%))",
-          border: `1px solid ${isTuned ? "hsl(var(--primary) / 0.2)" : "hsl(210 15% 22% / 0.5)"}`,
+          width: ACTIONS_W,
+          pointerEvents: actionsOpen ? "auto" : "none",
+          opacity: actionsOpen ? 1 : 0,
+          transition: "opacity 0.18s ease",
         }}
       >
-        {/* Group colour dot */}
-        <div
-          className="shrink-0 rounded-full"
-          style={{ width: 6, height: 6, background: groupColor, boxShadow: `0 0 6px ${groupColor}` }}
-        />
+        {/* Green TUNE */}
+        <button
+          onClick={handleTune}
+          className="flex flex-col items-center justify-center gap-0.5 active:opacity-70 transition-opacity"
+          style={{
+            width: 72,
+            background: "linear-gradient(135deg, hsl(142 60% 28%), hsl(142 65% 20%))",
+            borderRight: "1px solid hsl(142 60% 18%)",
+          }}
+          aria-label="Tune"
+        >
+          <Radio className="h-4 w-4" style={{ color: "hsl(0 0% 92%)" }} />
+          <span className="font-mono-display font-bold tracking-widest" style={{ fontSize: "7px", color: "hsl(0 0% 85%)" }}>
+            TUNE
+          </span>
+        </button>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className={`tab-callsign ${isTuned ? "tab-callsign-primary" : ""}`}
-              style={!isTuned ? { color: "hsl(38 92% 50%)" } : undefined}>
-              {contact.callsign || contact.name}
-            </span>
-            {contact.callsign && (
-              <span className="tab-meta truncate">{contact.name}</span>
-            )}
-            {contact.mode && (
-              <span
-                className="tab-label px-1 rounded shrink-0"
+        {/* Red DELETE */}
+        <button
+          onClick={handleDelete}
+          className="flex flex-col items-center justify-center gap-0.5 active:opacity-70 transition-opacity"
+          style={{
+            width: 72,
+            background: "linear-gradient(135deg, hsl(0 72% 40%), hsl(0 80% 28%))",
+          }}
+          aria-label="Delete"
+        >
+          <Trash2 className="h-4 w-4" style={{ color: "hsl(0 0% 95%)" }} />
+          <span className="font-mono-display font-bold tracking-widest" style={{ fontSize: "7px", color: "hsl(0 0% 85%)" }}>
+            DELETE
+          </span>
+        </button>
+      </div>
+
+      {/* Row — slides left when actions open */}
+      <div
+        onClick={handleRowTap}
+        style={{
+          transform: actionsOpen ? `translateX(-${ACTIONS_W}px)` : "translateX(0)",
+          transition: "transform 0.22s cubic-bezier(0.32,0.72,0,1)",
+          position: "relative",
+          zIndex: 1,
+          cursor: "pointer",
+        }}
+      >
+        <div
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+          style={{
+            background: isTuned
+              ? "linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.04))"
+              : "linear-gradient(135deg, hsl(210 18% 14%), hsl(210 18% 10%))",
+            border: `1px solid ${isTuned ? "hsl(var(--primary) / 0.2)" : "hsl(210 15% 22% / 0.5)"}`,
+          }}
+        >
+          {/* Group colour dot */}
+          <div
+            className="shrink-0 rounded-full"
+            style={{ width: 6, height: 6, background: groupColor, boxShadow: `0 0 6px ${groupColor}` }}
+          />
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className={`tab-callsign ${isTuned ? "tab-callsign-primary" : ""}`}
+                style={!isTuned ? { color: "hsl(38 92% 50%)" } : undefined}>
+                {contact.callsign || contact.name}
+              </span>
+              {contact.callsign && (
+                <span className="tab-meta truncate">{contact.name}</span>
+              )}
+              {contact.mode && (
+                <span
+                  className="tab-label px-1 rounded shrink-0"
+                  style={{
+                    color: MODE_COLORS[contact.mode] ?? "hsl(var(--muted-foreground))",
+                    background: `${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}1a`,
+                    border: `1px solid ${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}33`,
+                  }}
+                >
+                  {contact.mode}
+                </span>
+              )}
+            </div>
+            <p className="tab-body leading-snug">
+              {formatFreq(contact.frequency)}{" "}
+              <span className="tab-meta">MHz</span>
+              {contact.location_desc ? (
+                <span className="tab-meta ml-2">{contact.location_desc}</span>
+              ) : null}
+            </p>
+          </div>
+
+          <div className="shrink-0">
+            {actionsOpen ? (
+              <X className="h-3.5 w-3.5" style={{ color: "hsl(var(--muted-foreground))" }} />
+            ) : isTuned ? (
+              <div
+                className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
                 style={{
-                  color: MODE_COLORS[contact.mode] ?? "hsl(var(--muted-foreground))",
-                  background: `${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}1a`,
-                  border: `1px solid ${MODE_COLORS[contact.mode] ?? "hsl(215 15% 50%)"}33`,
+                  background: "hsl(142 65% 32% / 0.15)",
+                  border: "1px solid hsl(142 65% 32% / 0.35)",
                 }}
               >
-                {contact.mode}
-              </span>
+                <Check className="h-3 w-3" style={{ color: "hsl(142 65% 55%)" }} />
+                <span className="font-mono-display text-[8px] font-bold tracking-wider" style={{ color: "hsl(142 65% 55%)" }}>TUNED</span>
+              </div>
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 text-border" />
             )}
           </div>
-          {/* Frequency */}
-          <p className="tab-body leading-snug">
-            {formatFreq(contact.frequency)}{" "}
-            <span className="tab-meta">MHz</span>
-            {contact.location_desc ? (
-              <span className="tab-meta ml-2">{contact.location_desc}</span>
-            ) : null}
-          </p>
-        </div>
-
-        <div className="shrink-0">
-          {isTuned ? (
-            <div
-              className="flex items-center gap-1 rounded-md px-1.5 py-0.5"
-              style={{
-                background: "hsl(142 65% 32% / 0.15)",
-                border: "1px solid hsl(142 65% 32% / 0.35)",
-              }}
-            >
-              <Check className="h-3 w-3" style={{ color: "hsl(142 65% 55%)" }} />
-              <span className="font-mono-display text-[8px] font-bold tracking-wider" style={{ color: "hsl(142 65% 55%)" }}>TUNED</span>
-            </div>
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-border" />
-          )}
         </div>
       </div>
-    </SwipeToDelete>
+    </div>
   );
 };
 
