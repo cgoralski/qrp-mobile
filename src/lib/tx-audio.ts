@@ -102,11 +102,15 @@ export async function startTxAudio(
     active = false;
     try {
       stream.getTracks().forEach((t) => t.stop());
-    } catch {}
+    } catch {
+      /* tracks may already be stopped */
+    }
     try {
       scriptNode.disconnect();
       source.disconnect();
-    } catch {}
+    } catch {
+      /* nodes may already be disconnected */
+    }
     encoder.close();
     ctx.close();
   }

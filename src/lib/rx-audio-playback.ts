@@ -112,7 +112,9 @@ export async function createRxPlayback(initialVolume?: number): Promise<RxPlayba
     destroyed = true;
     try {
       decoder.free();
-    } catch {}
+    } catch {
+      /* decoder may already be freed */
+    }
     ctx.close();
   }
 

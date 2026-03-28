@@ -63,7 +63,7 @@ function MapCenterToPosition({ position }: { position: { lat: number; lng: numbe
   const map = useMap();
   useEffect(() => {
     if (position) map.setView([position.lat, position.lng], map.getZoom(), { animate: true });
-  }, [map, position?.lat, position?.lng]);
+  }, [map, position]);
   return null;
 }
 

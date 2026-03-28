@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 interface FilterControlProps {
   label: string;
   value: number;
@@ -47,7 +49,7 @@ const FilterControl = ({ label, value, onChange }: FilterControlProps) => {
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
           className="absolute h-full w-full cursor-pointer opacity-0"
-          style={{ writingMode: "vertical-lr" as any, direction: "rtl" }}
+          style={{ writingMode: "vertical-lr", direction: "rtl" } satisfies CSSProperties}
           aria-label={`${label} filter`}
         />
       </div>

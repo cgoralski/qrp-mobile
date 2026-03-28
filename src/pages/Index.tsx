@@ -6,7 +6,6 @@ import NumPad from "@/components/NumPad";
 import DPad from "@/components/DPad";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import WifiProvisioningModal from "@/components/WifiProvisioningModal";
-import BottomTabBar from "@/components/BottomTabBar";
 import { getSavedWifiHost, getSavedWifiPort } from "@/lib/wifi-storage";
 import { getPersistedRadioState, setPersistedRadioState, setPersistedVolume } from "@/lib/radio-storage";
 import APRSMessaging from "@/components/APRSMessaging";
@@ -908,9 +907,6 @@ const Index = () => {
         </div>
         </div>
       </main>
-
-      {/* Bottom drawer hidden for now */}
-      {false && <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />}
     </div>
   );
 };

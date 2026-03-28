@@ -50,4 +50,22 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Main app chunk is large (maps, APRS, audio); split vendors until route-based lazy loading.
+    chunkSizeWarningLimit: 950,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("react-dom") || id.includes("/react/")) return "react-vendor";
+          if (id.includes("@radix-ui")) return "radix-ui";
+          if (id.includes("leaflet") || id.includes("react-leaflet")) return "leaflet";
+          if (id.includes("recharts")) return "recharts";
+          if (id.includes("@supabase")) return "supabase";
+          if (id.includes("@tanstack/react-query")) return "tanstack-query";
+          return "vendor";
+        },
+      },
+    },
+  },
 }));
