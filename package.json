@@ -11,9 +11,10 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ios:sync": "npm run build && npx cap sync ios",
+    "ios:sync": "npm run build:capacitor && npx cap sync ios",
     "ios:open": "npx cap open ios",
-    "postinstall": "bash scripts/apply-npm-patches.sh"
+    "postinstall": "bash scripts/apply-npm-patches.sh",
+    "build:capacitor": "vite build --mode capacitor"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",

@@ -79,11 +79,11 @@ Ensure a **`.env`** file exists with the required `VITE_*` variables. See [`docs
 ## 4. Build the web app, then sync into iOS
 
 ```bash
-npm run build
+npm run build:capacitor
 npx cap sync ios
 ```
 
-- **`npm run build`** produces the production bundle in **`dist/`**.
+- **`npm run build:capacitor`** (no PWA/service worker — avoids blank WKWebView) produces the production bundle in **`dist/`**.
 - **`npx cap sync ios`** copies `dist/` into the native project, updates native dependencies, and registers Capacitor plugins (including `@miaz/capacitor-websocket`).
 
 **Whenever you change web code or add/upgrade Capacitor plugins**, repeat **build → `cap sync ios`** before rebuilding in Xcode.
@@ -141,7 +141,7 @@ This repo may have mixed `@capacitor` package versions in `package.json`. If `np
 
 ```bash
 npm install @capacitor/cli@^8 @capacitor/core@^8 @capacitor/ios@^8 @capacitor/android@^8
-npm run build
+npm run build:capacitor
 npx cap sync ios
 cd ios/App && pod install && cd ../..
 ```
@@ -163,7 +163,7 @@ To connect to the ESP32 at **`ws://192.168.4.1:8765`** (or similar), the app nee
 ## Quick reference (typical iteration after web changes)
 
 ```bash
-npm run build
+npm run build:capacitor
 npx cap sync ios
 cd ios/App && pod install && cd ../..
 open ios/App/App.xcworkspace

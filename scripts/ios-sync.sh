@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sync web build into the Capacitor iOS project:
-#   npm install (optional) → apply-npm-patches → npm run build → npx cap sync ios → pod install
+#   npm install (optional) → apply-npm-patches → npm run build:capacitor → npx cap sync ios → pod install
 #
 # Run from anywhere: symlink into your PATH, e.g.
 #   chmod +x scripts/ios-sync.sh
@@ -107,8 +107,8 @@ bash "$REPO_ROOT/scripts/apply-npm-patches.sh"
 
 verify_websocket_patch
 
-echo "==> npm run build"
-npm run build
+echo "==> npm run build:capacitor (no PWA for native)"
+npm run build:capacitor
 
 echo "==> npx cap sync ios"
 npx cap sync ios

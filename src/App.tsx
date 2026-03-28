@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import { DeviceConnectionProvider } from "@/contexts/DeviceConnectionContext";
 import { SerialLogProvider } from "@/contexts/SerialLogContext";
 import { Kv4pProvider } from "@/contexts/Kv4pContext";
@@ -11,12 +12,15 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+/** BrowserRouter can fail with capacitor://; HashRouter is reliable in WKWebView. */
+const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter;
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <Router>
         <SerialLogProvider>
           <DeviceConnectionProvider>
             <Kv4pProvider>
@@ -28,7 +32,7 @@ const App = () => (
             </Kv4pProvider>
           </DeviceConnectionProvider>
         </SerialLogProvider>
-      </BrowserRouter>
+      </Router>
     </TooltipProvider>
   </QueryClientProvider>
 );
