@@ -1,0 +1,23 @@
+diff --git a/node_modules/@miaz/capacitor-websocket/ios/Plugin/CapacitorWebsocketPlugin.swift b/node_modules/@miaz/capacitor-websocket/ios/Plugin/CapacitorWebsocketPlugin.swift
+index 5c86a48..9ff6f79 100644
+--- a/node_modules/@miaz/capacitor-websocket/ios/Plugin/CapacitorWebsocketPlugin.swift
++++ b/node_modules/@miaz/capacitor-websocket/ios/Plugin/CapacitorWebsocketPlugin.swift
+@@ -1,6 +1,5 @@
+ import Foundation
+ import Capacitor
+-import Network
+ import Starscream
+ @objc(CapacitorWebsocketPlugin)
+ public class CapacitorWebsocketPlugin: CAPPlugin {
+diff --git a/node_modules/@miaz/capacitor-websocket/ios/Plugin/WebsocketConnection.swift b/node_modules/@miaz/capacitor-websocket/ios/Plugin/WebsocketConnection.swift
+index 1a93cb3..62e40c0 100644
+--- a/node_modules/@miaz/capacitor-websocket/ios/Plugin/WebsocketConnection.swift
++++ b/node_modules/@miaz/capacitor-websocket/ios/Plugin/WebsocketConnection.swift
+@@ -6,7 +6,6 @@
+ //
+ 
+ import Foundation
+-import Network
+ import Capacitor
+ import Starscream
+ 
