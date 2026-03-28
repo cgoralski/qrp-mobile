@@ -151,6 +151,8 @@ async function connectNative(url: string): Promise<void> {
     (async () => {
       try {
         await CapacitorWebsocket.build({ name: PLUGIN_SOCKET_NAME, url });
+        // iOS native: Starscream callbacks are only registered when applyListeners runs (see plugin Swift).
+        await CapacitorWebsocket.applyListeners({ name: PLUGIN_SOCKET_NAME });
 
         const hMessage = await CapacitorWebsocket.addListener(
           `${PLUGIN_SOCKET_NAME}:message`,
@@ -180,11 +182,20 @@ async function connectNative(url: string): Promise<void> {
         );
         pluginListeners.push(hDisconnected);
 
-        const hError = await CapacitorWebsocket.addListener(
+        const hConnectError = await CapacitorWebsocket.addListener(
           `${PLUGIN_SOCKET_NAME}:connecterror`,
           onConnectError
         );
-        pluginListeners.push(hError);
+        pluginListeners.push(hConnectError);
+
+        // Starscream reports failures via ":error" (Swift), not ":connecterror".
+        const hStarscreamError = await CapacitorWebsocket.addListener(
+          `${PLUGIN_SOCKET_NAME}:error`,
+          (event: { cause?: string }) => {
+            onConnectError({ exception: event?.cause ?? "WebSocket error" });
+          }
+        );
+        pluginListeners.push(hStarscreamError);
 
         await CapacitorWebsocket.connect({ name: PLUGIN_SOCKET_NAME });
       } catch (e) {
