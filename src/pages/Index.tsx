@@ -494,7 +494,7 @@ const Index = () => {
     <div className="flex h-[100dvh] flex-col bg-mesh overflow-hidden">
       {/* App header — chassis look on Voice tab, glass elsewhere */}
       <header
-        className={`sticky top-0 z-50 flex items-center justify-between px-4 py-2 ${activeTab !== "voice" ? "glass-header" : "rounded-t-2xl"}`}
+        className={`sticky top-0 z-50 flex items-center justify-between px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top,0px))] ${activeTab !== "voice" ? "glass-header" : "rounded-t-2xl"}`}
         style={activeTab === "voice" ? {
           background:
             "linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
