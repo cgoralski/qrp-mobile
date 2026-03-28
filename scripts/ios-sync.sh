@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sync web build into the Capacitor iOS project:
-#   npm install (optional) → npm run build → npx cap sync ios → pod install
+#   npm install (optional) → patch-package → npm run build → npx cap sync ios → pod install
 #
 # Run from anywhere: symlink into your PATH, e.g.
 #   chmod +x scripts/ios-sync.sh
@@ -48,6 +48,21 @@ resolve_repo_root() {
   cd "$script_dir/.." && pwd -P
 }
 
+verify_websocket_patch() {
+  local f="$REPO_ROOT/node_modules/@miaz/capacitor-websocket/ios/Plugin/WebsocketConnection.swift"
+  if [[ ! -f "$f" ]]; then
+    echo "error: missing $f — run npm install without --ignore-scripts" >&2
+    exit 1
+  fi
+  if ! grep -q 'Starscream\.WebSocket' "$f"; then
+    echo "error: iOS WebSocket plugin is not patched (still shows unqualified WebSocket)." >&2
+    echo "  Run: npx patch-package" >&2
+    echo "  Do not use: npm install --ignore-scripts (skips postinstall patches)." >&2
+    echo "  Ensure git has patches/@miaz+capacitor-websocket+0.6.0.patch and you ran git pull." >&2
+    exit 1
+  fi
+}
+
 SKIP_INSTALL=0
 OPEN_XCODE=0
 CLEAN_PODS=0
@@ -86,6 +101,11 @@ if [[ "$SKIP_INSTALL" -eq 0 ]]; then
 else
   echo "==> skipping npm install"
 fi
+
+echo "==> patch-package (apply patches; fixes npm ci --ignore-scripts if used earlier)"
+npx patch-package
+
+verify_websocket_patch
 
 echo "==> npm run build"
 npm run build
