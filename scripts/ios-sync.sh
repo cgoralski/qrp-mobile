@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Sync web build into the Capacitor iOS project (npm install → build → cap sync → pod install).
+# Run from anywhere: symlink into your PATH, e.g.
+#   chmod +x scripts/ios-sync.sh
+#   ln -sf "$(pwd)/scripts/ios-sync.sh" "$HOME/bin/qrp-ios-sync"
+#
+# Override repo root: export QRP_MOBILE_ROOT=/path/to/qrp-mobile
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: $(basename "$0") [options]"
+  echo "  --skip-install   Skip npm install"
+  echo "  --open           Open App.xcworkspace in Xcode after sync"
+  echo "  -h, --help       Show this help"
+}
+
+resolve_repo_root() {
+  if [[ -n "${QRP_MOBILE_ROOT:-}" ]]; then
+    cd "$(cd "$QRP_MOBILE_ROOT" && pwd -P)"
+    pwd -P
+    return
+  fi
+
+  local src="${BASH_SOURCE[0]}"
+  while [[ -L "$src" ]]; do
+    local dir
+    dir="$(cd -P "$(dirname "$src")" && pwd)"
+    local target
+    target="$(readlink "$src")"
+    [[ "$target" != /* ]] && target="$dir/$target"
+    src="$target"
+  done
+  local script_dir
+  script_dir="$(cd -P "$(dirname "$src")" && pwd)"
+  # This file lives in scripts/ — repo root is one level up
+  cd "$script_dir/.." && pwd -P
+}
+
+SKIP_INSTALL=0
+OPEN_XCODE=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-install) SKIP_INSTALL=1 ;;
+    --open) OPEN_XCODE=1 ;;
+    -h|--help) usage; exit 0 ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+REPO_ROOT="$(resolve_repo_root)"
+cd "$REPO_ROOT"
+
+if [[ ! -f package.json ]] || [[ ! -f capacitor.config.ts ]]; then
+  echo "error: $REPO_ROOT does not look like the QRP Mobile repo (missing package.json or capacitor.config.ts)" >&2
+  echo "Set QRP_MOBILE_ROOT to your clone path, or run this script from the repo’s scripts/ directory (or a symlink to it)." >&2
+  exit 1
+fi
+
+command -v node >/dev/null 2>&1 || { echo "error: node not found in PATH" >&2; exit 1; }
+command -v npm >/dev/null 2>&1 || { echo "error: npm not found in PATH" >&2; exit 1; }
+
+echo "==> Repo: $REPO_ROOT"
+
+if [[ "$SKIP_INSTALL" -eq 0 ]]; then
+  echo "==> npm install"
+  npm install
+else
+  echo "==> skipping npm install"
+fi
+
+echo "==> npm run build"
+npm run build
+
+echo "==> npx cap sync ios"
+npx cap sync ios
+
+echo "==> pod install (ios/App)"
+cd ios/App
+command -v pod >/dev/null 2>&1 || { echo "error: pod (CocoaPods) not found. Install: brew install cocoapods" >&2; exit 1; }
+pod install
+cd "$REPO_ROOT"
+
+echo "==> Done."
+if [[ "$OPEN_XCODE" -eq 1 ]]; then
+  echo "==> Opening Xcode…"
+  open ios/App/App.xcworkspace
+else
+  echo "Open the workspace with:"
+  echo "  open \"$REPO_ROOT/ios/App/App.xcworkspace\""
+fi
