@@ -80,6 +80,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_locations: {
+        Row: {
+          callsign: string
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          updated_at: string
+        }
+        Insert: {
+          callsign: string
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          updated_at?: string
+        }
+        Update: {
+          callsign?: string
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       repeaters: {
         Row: {
           c_tone_freq: number | null
@@ -94,6 +121,8 @@ export type Database = {
           freq_offset: number | null
           frequency: number
           id: string
+          lat: number | null
+          lng: number | null
           location_desc: string | null
           location_index: number | null
           mode: string | null
@@ -121,6 +150,8 @@ export type Database = {
           freq_offset?: number | null
           frequency: number
           id?: string
+          lat?: number | null
+          lng?: number | null
           location_desc?: string | null
           location_index?: number | null
           mode?: string | null
@@ -148,6 +179,8 @@ export type Database = {
           freq_offset?: number | null
           frequency?: number
           id?: string
+          lat?: number | null
+          lng?: number | null
           location_desc?: string | null
           location_index?: number | null
           mode?: string | null

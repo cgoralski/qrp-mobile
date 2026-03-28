@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">QRP Mobile</string>
+    <string name="title_activity_main">QRP Mobile</string>
+    <string name="package_name">com.vk4cgo.qrpmobile</string>
+    <string name="custom_url_scheme">com.vk4cgo.qrpmobile</string>
+</resources>

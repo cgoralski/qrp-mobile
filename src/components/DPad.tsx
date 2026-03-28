@@ -1,4 +1,5 @@
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, CornerDownLeft } from "lucide-react";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight, CornerDownLeft } from "lucide-react";
 
 const navButtonStyle = (position: "center" | "side") => ({
   background:
@@ -20,6 +21,8 @@ interface DPadProps {
   onLeft?: () => void;
   onRight?: () => void;
   onOk?: () => void;
+  onPttDown?: () => void;
+  onPttUp?: () => void;
   onMenu?: () => void;
   onBack?: () => void;
   onVm?: () => void;
@@ -32,11 +35,15 @@ const DPad = ({
   onLeft,
   onRight,
   onOk,
+  onPttDown,
+  onPttUp,
   onMenu,
   onBack,
   onVm,
   onAb,
 }: DPadProps) => {
+  const [isPttPressed, setIsPttPressed] = useState(false);
+
   const sideBtn = (label: string, sub: string | null, onClick?: () => void) => (
     <button
       onClick={onClick}
@@ -61,11 +68,11 @@ const DPad = ({
   ) => (
     <button
       onClick={onClick}
-      className="flex items-center justify-center rounded-sm transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
+      className="flex items-center justify-center rounded-md transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
       style={{
         ...navButtonStyle("side"),
-        width: "44px",
-        height: "36px",
+        width: "52px",
+        height: "44px",
         ...extraStyle,
       }}
     >
@@ -74,56 +81,69 @@ const DPad = ({
   );
 
   return (
-    <div className="w-full flex items-center gap-1.5 px-8 py-3">
+    <div className="w-full flex justify-center py-3">
+      <div className="flex items-center gap-1.5 px-8">
       {/* Left side buttons: MENU + A/B */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-3 shrink-0">
         {sideBtn("MENU", null, onMenu)}
         {sideBtn("A/B", null, onAb)}
       </div>
 
       {/* D-pad cross */}
-      <div className="flex-1 flex flex-col items-center gap-0.5">
-        {/* Up */}
+      <div className="flex flex-col items-center gap-0.5 shrink-0">
+        {/* Up — V+ (volume up) */}
         <div className="flex justify-center">
           {arrowBtn(
-            <ChevronUp className="h-4 w-4 text-white/70" />,
+            <span className="font-mono-display text-[13px] font-bold text-white/80">V+</span>,
             onUp
           )}
         </div>
         {/* Middle row: Left + OK + Right */}
         <div className="flex items-center gap-0.5">
           {arrowBtn(
-            <ChevronLeft className="h-4 w-4 text-white/70" />,
-            onLeft
+            <ChevronLeft className="h-5 w-5 text-white/70" />,
+            onLeft,
+            { marginLeft: "8px" }
           )}
-          {/* OK center button */}
+          {/* OK center button — PTT (enlarged as primary action); press = TX red bloom, release = RX; lighter when pressed */}
           <button
             onClick={onOk}
-            className="flex items-center justify-center rounded-md transition-all duration-75 active:scale-[0.95] active:brightness-125 select-none"
+            onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setIsPttPressed(true); onPttDown?.(); }}
+            onPointerUp={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); setIsPttPressed(false); onPttUp?.(); }}
+            onPointerLeave={() => { setIsPttPressed(false); onPttUp?.(); }}
+            onPointerCancel={() => { setIsPttPressed(false); onPttUp?.(); }}
+            className="flex items-center justify-center rounded-lg transition-all duration-150 active:scale-[0.98] select-none p-12 touch-none"
             style={{
               ...navButtonStyle("center"),
-              width: "78px",
-              height: "64px",
+              ...(isPttPressed && {
+                background: "linear-gradient(145deg, hsl(215 55% 38%), hsl(215 50% 28%))",
+                boxShadow: "inset 0 2px 0 hsl(0 0% 100% / 0.2), inset 0 -1px 0 hsl(0 0% 0% / 0.2), 0 2px 6px hsl(220 20% 4% / 0.7)",
+              }),
+              width: "92px",
+              height: "80px",
+              marginLeft: "10px",
+              marginRight: "10px",
             }}
           >
-            <span className="font-mono-display text-[13px] font-black text-blue-300/90 tracking-wider">PTT</span>
+            <span className="font-mono-display text-[15px] font-black text-blue-300/90 tracking-wider">PTT</span>
           </button>
           {arrowBtn(
-            <ChevronRight className="h-4 w-4 text-white/70" />,
-            onRight
+            <ChevronRight className="h-5 w-5 text-white/70" />,
+            onRight,
+            { marginRight: "8px" }
           )}
         </div>
-        {/* Down */}
+        {/* Down — V- (volume down) */}
         <div className="flex justify-center">
           {arrowBtn(
-            <ChevronDown className="h-4 w-4 text-white/70" />,
+            <span className="font-mono-display text-[13px] font-bold text-white/80">V−</span>,
             onDown
           )}
         </div>
       </div>
 
       {/* Right side buttons: CC + BACK */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-3 shrink-0">
         {sideBtn("CC", null, onVm)}
         <button
           onClick={onBack}
@@ -136,6 +156,7 @@ const DPad = ({
         >
           <CornerDownLeft className="h-5 w-5 text-white/80" />
         </button>
+      </div>
       </div>
     </div>
   );

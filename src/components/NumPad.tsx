@@ -4,7 +4,8 @@ interface NumPadProps {
   onDigit: (digit: string) => void;
   onDecimal: () => void;
   onBackspace: () => void;
-  onEnter: () => void;
+  /** Opens squelch slider (replaces Enter on this row; Enter remains on D-pad). */
+  onSq: () => void;
 }
 
 const digitRows = [
@@ -41,7 +42,7 @@ const actionBase = {
   boxShadow: "inset 0 1px 0 hsl(0 0% 100% / 0.06), 0 2px 4px hsl(220 20% 4% / 0.5)",
 } as const;
 
-const NumPad = ({ onDigit, onDecimal, onBackspace, onEnter }: NumPadProps) => {
+const NumPad = ({ onDigit, onDecimal, onBackspace, onSq }: NumPadProps) => {
   return (
     <div className="w-full flex flex-col gap-0.5">
       {digitRows.map((row, rowIdx) => (
@@ -105,7 +106,7 @@ const NumPad = ({ onDigit, onDecimal, onBackspace, onEnter }: NumPadProps) => {
         </button>
       </div>
 
-      {/* DEL / ENT row */}
+      {/* DEL / SQ row */}
       <div className="grid grid-cols-2 gap-1 mt-0.5">
         <button
           onClick={onBackspace}
@@ -117,12 +118,12 @@ const NumPad = ({ onDigit, onDecimal, onBackspace, onEnter }: NumPadProps) => {
           <span className="font-mono-display text-[13px] font-bold tracking-wider text-white/50">DEL</span>
         </button>
         <button
-          onClick={onEnter}
+          onClick={onSq}
           className="flex items-center justify-center gap-2 rounded-md px-3 py-3.5 transition-all duration-75 active:scale-[0.96] select-none"
           style={actionBase}
-          aria-label="Enter frequency"
+          aria-label="Squelch"
         >
-          <span className="font-mono-display text-[13px] font-bold tracking-wider text-blue-400/80">ENT</span>
+          <span className="font-mono-display text-[13px] font-bold tracking-wider text-blue-400/80">SQ</span>
         </button>
       </div>
     </div>

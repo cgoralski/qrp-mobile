@@ -10,6 +10,8 @@ interface RadioScreenProps {
   onActiveChannelChange: (channel: "A" | "B") => void;
   rssi: number;
   isTransmitting?: boolean;
+  /** Transmit power for display: "high" | "low". */
+  txPower?: "high" | "low";
   channelAName: string;
   channelBName: string;
   onChannelANameChange: (name: string) => void;
@@ -22,15 +24,12 @@ interface RadioScreenProps {
   captionsSupported?: boolean;
 }
 
-const formatFreq = (value: string): { main: string; sub: string } => {
-  if (!value) return { main: "000.000", sub: "00" };
+const formatFreq = (value: string): string => {
+  if (!value) return "000.0000";
   const parts = value.split(".");
   const integer = parts[0].padStart(3, "0");
   const decimal = (parts[1] || "").padEnd(4, "0").slice(0, 4);
-  return {
-    main: `${integer}.${decimal.slice(0, 3)}`,
-    sub: decimal.slice(3, 5).padEnd(2, "0"),
-  };
+  return `${integer}.${decimal}`;
 };
 
 const ChannelNameEditor = ({
@@ -179,7 +178,7 @@ const ChannelBlock = ({
   onChannelNameChange: (name: string) => void;
   onClick: () => void;
 }) => {
-  const freq = formatFreq(frequency);
+  const freqDisplay = formatFreq(frequency);
 
   const tintColor = tint === "amber"
     ? "hsl(42 90% 58%)"
@@ -228,23 +227,15 @@ const ChannelBlock = ({
         >
           {label}
         </span>
-        <span className="flex items-start leading-none shrink-0">
-          <span
-            className="font-freq-display text-[42px] leading-none transition-all duration-300"
-            style={activeFreqStyle}
-          >
-            {freq.main}
-          </span>
-          <span
-            className="font-freq-display text-[24px] leading-none transition-all duration-300 mt-[3px]"
-            style={activeFreqStyle}
-          >
-            {freq.sub}
-          </span>
+        <span
+          className="font-freq-display text-[42px] leading-none transition-all duration-300 shrink-0"
+          style={activeFreqStyle}
+        >
+          {freqDisplay}
         </span>
-        {/* RSSI bar — centered in remaining space between freq and right bezel */}
+        {/* RSSI bar — only on active channel; placeholder keeps layout when inactive */}
         <div className="flex flex-1 items-end justify-center pb-[3px]">
-          <RSSIBar level={rssi} />
+          {isActive ? <RSSIBar level={rssi} /> : <div className="flex items-end gap-[3px]" aria-hidden />}
         </div>
       </div>
 
@@ -271,6 +262,7 @@ const RadioScreen = ({
   onActiveChannelChange,
   rssi,
   isTransmitting = false,
+  txPower = "low",
   channelAName,
   channelBName,
   onChannelANameChange,
@@ -282,25 +274,6 @@ const RadioScreen = ({
   captionHistory = [],
   captionsSupported = true,
 }: RadioScreenProps) => {
-  const [animatedRssi, setAnimatedRssi] = useState(rssi);
-
-  useEffect(() => {
-    // Smoothly drift the animated value toward the real rssi
-    setAnimatedRssi(rssi);
-  }, [rssi]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAnimatedRssi((prev) => {
-        // Small random walk ±1 around the base rssi, clamped 1–10
-        const delta = Math.random() < 0.5 ? -1 : 1;
-        const next = prev + delta;
-        return Math.max(1, Math.min(10, next));
-      });
-    }, 600);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     /* Outer bezel — textured dark hardware casing */
     <div
@@ -361,31 +334,6 @@ const RadioScreen = ({
               "radial-gradient(ellipse at 50% 50%, transparent 55%, hsl(220 30% 2% / 0.45) 100%)",
           }}
         />
-        {/* RX green bloom — glows when receiving */}
-        <div
-          className="absolute inset-0 pointer-events-none z-10 rounded-xl transition-opacity duration-300"
-          style={{
-            opacity: !isTransmitting && animatedRssi > 3 ? 1 : 0,
-            background:
-              "radial-gradient(ellipse at 50% 40%, hsl(140 70% 45% / 0.05) 0%, hsl(140 60% 40% / 0.02) 50%, transparent 70%)",
-            boxShadow:
-              !isTransmitting && animatedRssi > 3
-                ? "inset 0 0 16px hsl(140 70% 45% / 0.03)"
-                : "none",
-          }}
-        />
-        {/* TX red bloom — glows when transmitting */}
-        <div
-          className="absolute inset-0 pointer-events-none z-10 rounded-xl transition-opacity duration-150"
-          style={{
-            opacity: isTransmitting ? 1 : 0,
-            background:
-              "radial-gradient(ellipse at 50% 40%, hsl(var(--transmit) / 0.05) 0%, hsl(var(--transmit) / 0.02) 50%, transparent 70%)",
-            boxShadow: isTransmitting
-              ? "inset 0 0 16px hsl(var(--transmit) / 0.03)"
-              : "none",
-          }}
-        />
         {/* Top status icons */}
         <div className="flex items-center gap-3 px-3 py-1.5 border-b border-white/[0.06]">
           <Zap className="h-4 w-4 text-red-400/70" />
@@ -411,22 +359,24 @@ const RadioScreen = ({
               </span>
             )}
           </div>
-          {/* RX indicator */}
+          {/* RX indicator: lit only when receiving signal (rssi > 0) and not transmitting */}
           <span
             className="font-mono-display text-[13px] font-black tracking-widest transition-all duration-100"
             style={
-              !isTransmitting && animatedRssi > 3
+              !isTransmitting && rssi > 0
                 ? {
-                    color: "hsl(140 70% 52%)",
+                    color: rssi > 3 ? "hsl(140 70% 52%)" : "hsl(140 50% 42%)",
                     textShadow:
-                      "0 0 6px hsl(140 70% 52% / 0.9), 0 0 14px hsl(140 70% 52% / 0.5)",
+                      rssi > 3
+                        ? "0 0 6px hsl(140 70% 52% / 0.9), 0 0 14px hsl(140 70% 52% / 0.5)"
+                        : "0 0 4px hsl(140 50% 42% / 0.6)",
                   }
                 : { color: "hsl(0 0% 20%)" }
             }
           >
             RX
           </span>
-          {/* TX indicator */}
+          {/* TX icon: lit red only when PTT down (transmitting). Off when receiving or idle. Never on with RX. */}
           <span
             className="font-mono-display text-[13px] font-black tracking-widest transition-all duration-100"
             style={
@@ -441,24 +391,60 @@ const RadioScreen = ({
           >
             TX
           </span>
+          <span
+            className="font-mono-display text-[10px] font-bold tracking-wider"
+            style={{ color: "hsl(0 0% 45%)" }}
+            title="Transmit power"
+          >
+            PWR: {txPower === "high" ? "HIGH" : "LOW"}
+          </span>
           <Battery className="h-4 w-4 text-signal" />
         </div>
 
-        {/* Channel A */}
-        <ChannelBlock
-          label="A"
-          badgeColor="bg-emerald-600 text-white"
-          frequency={channelA}
-          isActive={activeChannel === "A"}
-          modeLeft="VFO Mode"
-          modeRight="VFO"
-          tags={["H", "R 🔴"]}
-          rssi={activeChannel === "A" ? animatedRssi : 2}
-          tint="green"
-          channelName={channelAName}
-          onChannelNameChange={onChannelANameChange}
-          onClick={() => onActiveChannelChange("A")}
-        />
+        {/* Channel A — blooms only when A is active */}
+        <div className="relative">
+          {activeChannel === "A" && (
+            <>
+              <div
+                className="absolute inset-0 pointer-events-none z-10 rounded-lg transition-opacity duration-300"
+                style={{
+                  opacity: !isTransmitting && rssi > 3 ? 1 : 0,
+                  background:
+                    "radial-gradient(ellipse at 50% 40%, hsl(140 70% 50% / 0.18) 0%, hsl(140 65% 45% / 0.08) 40%, transparent 55%)",
+                  boxShadow:
+                    !isTransmitting && rssi > 3
+                      ? "inset 0 0 28px hsl(140 70% 50% / 0.12), inset 0 0 14px hsl(140 70% 45% / 0.08)"
+                      : "none",
+                }}
+              />
+              <div
+                className="absolute inset-0 pointer-events-none z-10 rounded-lg transition-opacity duration-150"
+                style={{
+                  opacity: isTransmitting ? 1 : 0,
+                  background:
+                    "radial-gradient(ellipse at 50% 40%, hsl(var(--transmit) / 0.18) 0%, hsl(var(--transmit) / 0.08) 40%, transparent 55%)",
+                  boxShadow: isTransmitting
+                    ? "inset 0 0 28px hsl(var(--transmit) / 0.12), inset 0 0 14px hsl(var(--transmit) / 0.08)"
+                    : "none",
+                }}
+              />
+            </>
+          )}
+          <ChannelBlock
+            label="A"
+            badgeColor="bg-emerald-600 text-white"
+            frequency={channelA}
+            isActive={activeChannel === "A"}
+            modeLeft="VFO Mode"
+            modeRight="VFO"
+            tags={["H", "R 🔴"]}
+            rssi={rssi}
+            tint="green"
+            channelName={channelAName}
+            onChannelNameChange={onChannelANameChange}
+            onClick={() => onActiveChannelChange("A")}
+          />
+        </div>
 
         {/* Divider */}
         <div
@@ -466,21 +452,50 @@ const RadioScreen = ({
           style={{ background: "linear-gradient(90deg, transparent, hsl(0 0% 30% / 0.4), transparent)" }}
         />
 
-        {/* Channel B */}
-        <ChannelBlock
-          label="B"
-          badgeColor="bg-amber-600 text-white"
-          frequency={channelB}
-          isActive={activeChannel === "B"}
-          modeLeft="CH Mode"
-          modeRight="Zone1 DD1"
-          tags={["DCS", "W —", "AM"]}
-          rssi={activeChannel === "B" ? animatedRssi : 3}
-          tint="amber"
-          channelName={channelBName}
-          onChannelNameChange={onChannelBNameChange}
-          onClick={() => onActiveChannelChange("B")}
-        />
+        {/* Channel B — blooms only when B is active */}
+        <div className="relative">
+          {activeChannel === "B" && (
+            <>
+              <div
+                className="absolute inset-0 pointer-events-none z-10 rounded-lg transition-opacity duration-300"
+                style={{
+                  opacity: !isTransmitting && rssi > 3 ? 1 : 0,
+                  background:
+                    "radial-gradient(ellipse at 50% 40%, hsl(140 70% 50% / 0.18) 0%, hsl(140 65% 45% / 0.08) 40%, transparent 55%)",
+                  boxShadow:
+                    !isTransmitting && rssi > 3
+                      ? "inset 0 0 28px hsl(140 70% 50% / 0.12), inset 0 0 14px hsl(140 70% 45% / 0.08)"
+                      : "none",
+                }}
+              />
+              <div
+                className="absolute inset-0 pointer-events-none z-10 rounded-lg transition-opacity duration-150"
+                style={{
+                  opacity: isTransmitting ? 1 : 0,
+                  background:
+                    "radial-gradient(ellipse at 50% 40%, hsl(var(--transmit) / 0.18) 0%, hsl(var(--transmit) / 0.08) 40%, transparent 55%)",
+                  boxShadow: isTransmitting
+                    ? "inset 0 0 28px hsl(var(--transmit) / 0.12), inset 0 0 14px hsl(var(--transmit) / 0.08)"
+                    : "none",
+                }}
+              />
+            </>
+          )}
+          <ChannelBlock
+            label="B"
+            badgeColor="bg-amber-600 text-white"
+            frequency={channelB}
+            isActive={activeChannel === "B"}
+            modeLeft="CH Mode"
+            modeRight="Zone1 DD1"
+            tags={["DCS", "W —", "AM"]}
+            rssi={rssi}
+            tint="amber"
+            channelName={channelBName}
+            onChannelNameChange={onChannelBNameChange}
+            onClick={() => onActiveChannelChange("B")}
+          />
+        </div>
 
 
         {/* Bottom bar */}

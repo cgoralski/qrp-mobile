@@ -7,6 +7,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Bun — this project uses npm only (package-lock.json). Do not commit Bun lockfiles.
+bun.lockb
+bunfig.toml
+
 node_modules
 dist
 dist-ssr
@@ -22,3 +26,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets — copy to .env locally (never commit .env)
+.env
+!.env.example
+
+# Local TLS / cert material
+ssl/
+
+# Supabase CLI local cache
+supabase/.temp/
+
+# Server-local one-off log
+setup-log.txt

@@ -70,11 +70,19 @@ const APRSMessaging = ({ myCallsign, onNavigateToSettings }: APRSMessagingProps)
   const handleSelect = (id: string) => {
     setDraft("");
     setActiveConvId(id);
+    // Keep document at top so chat view does not sit under the app header (mobile)
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   };
 
   const handleBack = () => {
     setActiveConvId(null);
     setDraft("");
+    // Restore document scroll so content is not stuck under the header (mobile web app)
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   };
 
   const handleSend = () => {
@@ -129,6 +137,14 @@ const APRSMessaging = ({ myCallsign, onNavigateToSettings }: APRSMessagingProps)
             onDraftChange={setDraft}
             onSend={handleSend}
             onBack={handleBack}
+            onDelete={() => {
+              setConversations((prev) => prev.filter((c) => c.id !== activeConv.id));
+              setActiveConvId(null);
+              setDraft("");
+              window.scrollTo(0, 0);
+              document.documentElement.scrollTop = 0;
+              document.body.scrollTop = 0;
+            }}
             onNavigateToSettings={onNavigateToSettings}
           />
         ) : (

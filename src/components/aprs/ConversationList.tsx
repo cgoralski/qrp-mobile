@@ -1,5 +1,4 @@
 import { MessageSquare, ChevronRight, Plus } from "lucide-react";
-import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import type { Conversation } from "./types";
 
 interface ConversationListProps {
@@ -21,6 +20,66 @@ const formatTime = (date: Date) => {
   return date.toLocaleDateString([], { day: "numeric", month: "short" });
 };
 
+/** Tap row to open conversation. */
+function ConversationRow({
+  conversation: conv,
+  onSelect,
+  formatTime,
+}: {
+  conversation: Conversation;
+  onSelect: () => void;
+  onDelete: () => void;
+  formatTime: (d: Date) => string;
+}) {
+  const last = conv.messages[conv.messages.length - 1];
+
+  return (
+    <div
+      className="rounded-xl mb-1"
+      onClick={onSelect}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(); }}
+      role="button"
+      tabIndex={0}
+      style={{ cursor: "pointer" }}
+    >
+      <div
+        className="flex items-center gap-3 px-3 py-2.5 select-none rounded-xl"
+        style={{
+          background: "linear-gradient(135deg, hsl(210 18% 13%), hsl(210 18% 10%))",
+          border: "1px solid hsl(210 15% 20% / 0.6)",
+        }}
+      >
+        <div
+          className="flex-shrink-0 flex items-center justify-center rounded-full"
+          style={{
+            width: "40px",
+            height: "40px",
+            background: "linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.07))",
+            border: "1px solid hsl(var(--primary) / 0.2)",
+          }}
+        >
+          <span className="tab-avatar-text">{conv.callsign.slice(0, 4)}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-0.5">
+            <span className="tab-callsign tab-callsign-primary">{conv.callsign}</span>
+            <span className="tab-meta">{formatTime(conv.updatedAt)}</span>
+          </div>
+          {last && (
+            <p className="tab-body truncate" style={{ opacity: 0.55 }}>
+              {last.direction === "sent" ? "You: " : ""}{last.text}
+            </p>
+          )}
+        </div>
+        <ChevronRight
+          className="h-3.5 w-3.5 flex-shrink-0"
+          style={{ color: "hsl(var(--muted-foreground) / 0.4)" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 const ConversationList = ({
   conversations,
   onSelect,
@@ -28,7 +87,7 @@ const ConversationList = ({
   onDelete,
 }: ConversationListProps) => {
   return (
-    <div className="tab-panel flex flex-1 flex-col w-full max-w-lg mx-auto animate-fade-in">
+    <div className="tab-panel flex flex-1 flex-col min-h-0 w-full max-w-lg mx-auto animate-fade-in overflow-hidden">
       {/* Toolbar row — label + new-chat button */}
       <div className="tab-header flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
@@ -60,61 +119,15 @@ const ConversationList = ({
             </span>
           </div>
         ) : (
-          conversations.map((conv) => {
-            const last = conv.messages[conv.messages.length - 1];
-            return (
-              <SwipeToDelete
-                key={conv.id}
-                onTap={() => onSelect(conv.id)}
-                onDelete={() => onDelete(conv.id)}
-                className="rounded-xl"
-              >
-                {/* Row content */}
-                <div
-                  className="flex items-center gap-3 px-3 py-2.5 select-none rounded-xl"
-                  style={{
-                    background: "linear-gradient(135deg, hsl(210 18% 13%), hsl(210 18% 10%))",
-                    border: "1px solid hsl(210 15% 20% / 0.6)",
-                  }}
-                >
-                  {/* Avatar */}
-                  <div
-                    className="flex-shrink-0 flex items-center justify-center rounded-full"
-                    style={{
-                      width: "40px",
-                      height: "40px",
-                      background: "linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.07))",
-                      border: "1px solid hsl(var(--primary) / 0.2)",
-                    }}
-                  >
-                    <span className="tab-avatar-text">
-                      {conv.callsign.slice(0, 4)}
-                    </span>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="tab-callsign tab-callsign-primary">
-                        {conv.callsign}
-                      </span>
-                      <span className="tab-meta">{formatTime(conv.updatedAt)}</span>
-                    </div>
-                    {last && (
-                      <p className="tab-body truncate" style={{ opacity: 0.55 }}>
-                        {last.direction === "sent" ? "You: " : ""}{last.text}
-                      </p>
-                    )}
-                  </div>
-
-                  <ChevronRight
-                    className="h-3.5 w-3.5 flex-shrink-0"
-                    style={{ color: "hsl(var(--muted-foreground) / 0.4)" }}
-                  />
-                </div>
-              </SwipeToDelete>
-            );
-          })
+          conversations.map((conv) => (
+            <ConversationRow
+              key={conv.id}
+              conversation={conv}
+              onSelect={() => onSelect(conv.id)}
+              onDelete={() => onDelete(conv.id)}
+              formatTime={formatTime}
+            />
+          ))
         )}
       </div>
     </div>

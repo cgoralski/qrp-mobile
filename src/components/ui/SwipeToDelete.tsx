@@ -178,8 +178,9 @@ export const SwipeToDelete = ({
         </button>
       </div>
 
-      {/* ── Sliding row content ─────────────────── */}
+      {/* ── Sliding row content (data-no-swipe so tab swipe is skipped when touch starts on row) ─────────────────── */}
       <div
+        data-no-swipe
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}

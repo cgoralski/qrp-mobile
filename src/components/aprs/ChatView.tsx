@@ -1,7 +1,6 @@
 import { useRef, useEffect } from "react";
-import { Send, ArrowLeft, AlertTriangle } from "lucide-react";
+import { Send, ArrowLeft, AlertTriangle, Trash2 } from "lucide-react";
 import type { Conversation } from "./types";
-
 
 interface ChatViewProps {
   conversation: Conversation;
@@ -10,6 +9,7 @@ interface ChatViewProps {
   onDraftChange: (v: string) => void;
   onSend: () => void;
   onBack: () => void;
+  onDelete: () => void;
   onNavigateToSettings: () => void;
 }
 
@@ -23,14 +23,19 @@ const ChatView = ({
   onDraftChange,
   onSend,
   onBack,
+  onDelete,
   onNavigateToSettings,
 }: ChatViewProps) => {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const callsignValid = myCallsign.trim().length >= 3;
 
+  // Scroll messages to bottom without scrolling the window (prevents page shifting under header on mobile)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
   }, [conversation.messages]);
 
   // Focus input without scrolling the page
@@ -61,7 +66,7 @@ const ChatView = ({
         </button>
 
         {/* Callsign badge */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <span className="tab-callsign tab-callsign-primary text-glow" style={{ fontSize: "16px" }}>
             {conversation.callsign}
           </span>
@@ -72,6 +77,20 @@ const ChatView = ({
             </span>
           </span>
         </div>
+
+        {/* Delete conversation */}
+        <button
+          onClick={onDelete}
+          className="tab-icon-btn h-8 w-8 flex-shrink-0 active:scale-90 transition-transform"
+          style={{
+            background: "hsl(0 72% 40% / 0.15)",
+            border: "1px solid hsl(0 72% 40% / 0.35)",
+            borderRadius: "8px",
+          }}
+          aria-label="Delete conversation"
+        >
+          <Trash2 className="h-4 w-4" style={{ color: "hsl(0 72% 55%)" }} />
+        </button>
       </div>
 
       {/* No callsign warning */}
@@ -88,8 +107,9 @@ const ChatView = ({
         </div>
       )}
 
-      {/* Messages */}
+      {/* Messages — ref so we scroll only this container, never the document */}
       <div
+        ref={scrollContainerRef}
         className="flex-1 overflow-y-auto px-2 py-2 space-y-2 min-h-0"
       >
         {conversation.messages.length === 0 && (
@@ -134,7 +154,7 @@ const ChatView = ({
             </div>
           </div>
         ))}
-        <div ref={bottomRef} />
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Compose */}

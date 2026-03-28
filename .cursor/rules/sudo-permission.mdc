@@ -1,0 +1,11 @@
+---
+description: User grants permission to run scripts and commands with sudo when needed
+alwaysApply: true
+---
+
+# Sudo permission
+
+The user has given **permission to run scripts and commands using sudo** when required for this project.
+
+- You may use `sudo` for installing packages, editing system config, fixing permissions, or other tasks that need elevated privileges.
+- No need to ask for confirmation before running commands with sudo when it is appropriate to the task.

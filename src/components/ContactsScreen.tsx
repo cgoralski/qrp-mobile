@@ -1,9 +1,8 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
-  Search, Radio, UserPlus, X, Check, ChevronRight, Trash2,
-  Download, Upload, BookUser, Plus, Filter,
+  Search, Radio, X, Check, ChevronRight, Trash2,
+  BookUser, Plus, Filter,
 } from "lucide-react";
-import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import { supabase } from "@/integrations/supabase/client";
 import type { BandId } from "@/lib/hardware";
 import { frequencyMatchesBand, BAND_CONFIGS } from "@/lib/hardware";
@@ -83,7 +82,7 @@ function formatFreq(f: number | string) {
 }
 
 // ─────────────────────────────────────────────
-// Contact row (uses global SwipeToDelete)
+// Contact row (tap to reveal TUNE + DELETE — same pattern as APRS, no swipe)
 // ─────────────────────────────────────────────
 
 interface ContactRowProps {
@@ -92,6 +91,8 @@ interface ContactRowProps {
   onTune: () => void;
   onDelete: () => void;
 }
+
+const ACTIONS_W = 144; // 72px TUNE + 72px DELETE
 
 const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => {
   const groupColor = GROUP_COLORS[contact.group_tag ?? ""] ?? "hsl(215 15% 42%)";
@@ -112,8 +113,6 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
     setTimeout(() => onDelete(), 260);
   };
 
-  const ACTIONS_W = 144; // 72px tune + 72px delete
-
   return (
     <div
       className="relative mb-0.5 rounded-xl"
@@ -124,7 +123,7 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
         transition: collapsed ? "max-height 0.26s ease, opacity 0.22s ease" : "none",
       }}
     >
-      {/* Action buttons revealed behind the row */}
+      {/* Action buttons revealed behind the row (same pattern as APRS) */}
       <div
         className="absolute inset-y-0 right-0 flex items-stretch"
         style={{
@@ -134,7 +133,6 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
           transition: "opacity 0.18s ease",
         }}
       >
-        {/* Green TUNE */}
         <button
           onClick={handleTune}
           className="flex flex-col items-center justify-center gap-0.5 active:opacity-70 transition-opacity"
@@ -150,8 +148,6 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
             TUNE
           </span>
         </button>
-
-        {/* Red DELETE */}
         <button
           onClick={handleDelete}
           className="flex flex-col items-center justify-center gap-0.5 active:opacity-70 transition-opacity"
@@ -168,7 +164,7 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
         </button>
       </div>
 
-      {/* Row — slides left when actions open */}
+      {/* Row — tap to reveal TUNE + DELETE (slides left when actions open) */}
       <div
         onClick={handleRowTap}
         style={{
@@ -188,12 +184,10 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
             border: `1px solid ${isTuned ? "hsl(var(--primary) / 0.2)" : "hsl(210 15% 22% / 0.5)"}`,
           }}
         >
-          {/* Group colour dot */}
           <div
             className="shrink-0 rounded-full"
             style={{ width: 6, height: 6, background: groupColor, boxShadow: `0 0 6px ${groupColor}` }}
           />
-
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
               <span className={`tab-callsign ${isTuned ? "tab-callsign-primary" : ""}`}
@@ -224,7 +218,6 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
               ) : null}
             </p>
           </div>
-
           <div className="shrink-0">
             {actionsOpen ? (
               <X className="h-3.5 w-3.5" style={{ color: "hsl(var(--muted-foreground))" }} />
@@ -236,7 +229,7 @@ const ContactRow = ({ contact, isTuned, onTune, onDelete }: ContactRowProps) => 
                   border: "1px solid hsl(142 65% 32% / 0.35)",
                 }}
               >
-                <Check className="h-3 w-3" style={{ color: "hsl(142 65% 55%)" }} />
+                <Check className="tick-success h-3 w-3" />
                 <span className="font-mono-display text-[8px] font-bold tracking-wider" style={{ color: "hsl(142 65% 55%)" }}>TUNED</span>
               </div>
             ) : (
@@ -258,9 +251,10 @@ interface RepeaterRowProps {
   onTune: () => void;
   onAddToContacts: () => void;
   isAdded: boolean;
+  isTuned?: boolean;
 }
 
-const RepeaterRow = ({ repeater, onTune, onAddToContacts, isAdded }: RepeaterRowProps) => {
+const RepeaterRow = ({ repeater, onTune, onAddToContacts, isAdded, isTuned }: RepeaterRowProps) => {
   const modeColor = MODE_COLORS[repeater.mode ?? "FM"] ?? "hsl(var(--primary))";
 
   return (
@@ -303,15 +297,21 @@ const RepeaterRow = ({ repeater, onTune, onAddToContacts, isAdded }: RepeaterRow
         <button
           onClick={onTune}
           className="flex items-center justify-center rounded-lg w-8 h-8 transition-all active:brightness-125"
-          style={{ background: "hsl(185 60% 55% / 0.15)", border: "1px solid hsl(185 60% 55% / 0.25)" }}
-          title="Tune to frequency"
+          style={{
+            background: isTuned ? "hsl(142 60% 55% / 0.15)" : "hsl(185 60% 55% / 0.15)",
+            border: `1px solid ${isTuned ? "hsl(142 60% 55% / 0.3)" : "hsl(185 60% 55% / 0.25)"}`,
+          }}
+          title={isTuned ? "Tuned" : "Tune to frequency"}
         >
-          <Radio className="h-3.5 w-3.5 text-primary" />
+          {isTuned ? (
+            <Check className="tick-success h-3.5 w-3.5" />
+          ) : (
+            <Radio className="h-3.5 w-3.5 text-primary" />
+          )}
         </button>
         <button
-          onClick={onAddToContacts}
-          disabled={isAdded}
-          className="flex items-center justify-center rounded-lg w-8 h-8 transition-all active:brightness-125 disabled:opacity-40"
+          onClick={() => !isAdded && onAddToContacts()}
+          className="flex items-center justify-center rounded-lg w-8 h-8 transition-all active:brightness-125"
           style={{
             background: isAdded ? "hsl(142 60% 55% / 0.15)" : "hsl(var(--secondary))",
             border: `1px solid ${isAdded ? "hsl(142 60% 55% / 0.3)" : "hsl(var(--border))"}`,
@@ -319,7 +319,7 @@ const RepeaterRow = ({ repeater, onTune, onAddToContacts, isAdded }: RepeaterRow
           title={isAdded ? "Already in contacts" : "Add to contacts"}
         >
           {isAdded
-            ? <Check className="h-3.5 w-3.5" style={{ color: "hsl(142 60% 60%)" }} />
+            ? <Check className="tick-success h-3.5 w-3.5" />
             : <Plus className="h-3.5 w-3.5 text-muted-foreground" />}
         </button>
       </div>
@@ -332,7 +332,7 @@ const RepeaterRow = ({ repeater, onTune, onAddToContacts, isAdded }: RepeaterRow
 // ─────────────────────────────────────────────
 
 interface MyContactsTabProps {
-  onTuneChannel: (freq: string) => void;
+  onTuneChannel: (freq: string, channelName?: string) => void;
   activeChannel: "A" | "B";
   boardBand: BandId;
 }
@@ -343,9 +343,6 @@ const MyContactsTab = ({ onTuneChannel, activeChannel, boardBand }: MyContactsTa
   const [query, setQuery] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [tunedId, setTunedId] = useState<string | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
-  const [newContact, setNewContact] = useState({ callsign: "", name: "", frequency: "", group_tag: "LOCAL", mode: "FM" });
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load contacts
   const loadContacts = useCallback(async () => {
@@ -370,7 +367,8 @@ const MyContactsTab = ({ onTuneChannel, activeChannel, boardBand }: MyContactsTa
   }, [contacts, query, selectedGroup, boardBand]);
 
   const handleTune = (contact: Contact) => {
-    onTuneChannel(formatFreq(contact.frequency));
+    const name = (contact.name || contact.callsign || "").trim() || "CONTACT";
+    onTuneChannel(formatFreq(contact.frequency), name);
     setTunedId(contact.id);
     setTimeout(() => setTunedId(null), 1500);
   };
@@ -381,170 +379,12 @@ const MyContactsTab = ({ onTuneChannel, activeChannel, boardBand }: MyContactsTa
     if (tunedId === id) setTunedId(null);
   };
 
-  const handleAdd = async () => {
-    if (!newContact.frequency.trim()) return;
-    const freq = parseFloat(newContact.frequency);
-    if (isNaN(freq)) return;
-    const { data, error } = await supabase.from("contacts").insert({
-      callsign: newContact.callsign.toUpperCase().trim(),
-      name: newContact.name.trim() || newContact.callsign.toUpperCase().trim(),
-      frequency: freq,
-      group_tag: newContact.group_tag,
-      mode: newContact.mode,
-    }).select().single();
-    if (!error && data) {
-      setContacts((prev) => [data as Contact, ...prev]);
-      setNewContact({ callsign: "", name: "", frequency: "", group_tag: "LOCAL", mode: "FM" });
-      setShowAdd(false);
-    }
-  };
-
-  // Export as CSV
-  const handleExport = () => {
-    const headers = ["callsign", "name", "frequency", "freq_offset", "duplex", "tone_mode", "r_tone_freq", "c_tone_freq", "dtcs_code", "mode", "country", "region", "location_desc", "comment", "group_tag"];
-      const rows = contacts.map((c) =>
-      headers.map((h) => {
-        const val = (c as unknown as Record<string, unknown>)[h] ?? "";
-        return `"${String(val).replace(/"/g, '""')}"`;
-      }).join(",")
-    );
-    const csv = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `contacts-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Import from CSV
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-    if (lines.length < 2) return;
-    const headers = lines[0].split(",").map((h) => h.replace(/"/g, "").trim().toLowerCase());
-
-    const parseRow = (line: string) => {
-      // Simple CSV parse (handles quoted fields)
-      const result: string[] = [];
-      let current = "";
-      let inQuotes = false;
-      for (const char of line) {
-        if (char === '"') { inQuotes = !inQuotes; }
-        else if (char === "," && !inQuotes) { result.push(current); current = ""; }
-        else { current += char; }
-      }
-      result.push(current);
-      return result;
-    };
-
-    const records = lines.slice(1).map((line) => {
-      const vals = parseRow(line);
-      const obj: Record<string, string> = {};
-      headers.forEach((h, i) => { obj[h] = vals[i]?.replace(/^"|"$/g, "") ?? ""; });
-      return obj;
-    }).filter((r) => r.frequency && !isNaN(parseFloat(r.frequency)));
-
-    if (records.length === 0) return;
-
-    const inserts = records.map((r) => ({
-      callsign: r.callsign ?? "",
-      name: r.name ?? r.callsign ?? "",
-      frequency: parseFloat(r.frequency),
-      freq_offset: r.freq_offset ? parseFloat(r.freq_offset) : 0,
-      duplex: r.duplex ?? "",
-      tone_mode: r.tone_mode ?? "",
-      r_tone_freq: r.r_tone_freq ? parseFloat(r.r_tone_freq) : 88.5,
-      c_tone_freq: r.c_tone_freq ? parseFloat(r.c_tone_freq) : 88.5,
-      dtcs_code: r.dtcs_code ?? "023",
-      mode: r.mode ?? "FM",
-      country: r.country ?? "",
-      region: r.region ?? "",
-      location_desc: r.location_desc ?? "",
-      comment: r.comment ?? "",
-      group_tag: r.group_tag ?? "LOCAL",
-    }));
-
-    await supabase.from("contacts").insert(inserts);
-    await loadContacts();
-    e.target.value = "";
-  };
-
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
+      {/* Count only — Export/Import moved to Settings > Contacts */}
+      <div className="px-3 py-2 border-b border-border/40">
         <span className="tab-label">{contacts.length} CONTACTS</span>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-1 rounded-md px-2 py-1 tab-label transition-all bg-secondary border border-border hover:text-foreground"
-            title="Export contacts as CSV"
-          >
-            <Download className="h-3 w-3" /> EXP
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 rounded-md px-2 py-1 tab-label transition-all bg-secondary border border-border hover:text-foreground"
-            title="Import contacts from CSV"
-          >
-            <Upload className="h-3 w-3" /> IMP
-          </button>
-          <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
-          <button
-            onClick={() => setShowAdd((v) => !v)}
-            className="flex items-center justify-center rounded-md transition-all w-[26px] h-[26px]"
-            style={{
-              background: showAdd ? "hsl(var(--primary) / 0.2)" : "hsl(var(--secondary))",
-              border: `1px solid ${showAdd ? "hsl(var(--primary) / 0.4)" : "hsl(var(--border))"}`,
-              color: showAdd ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
-            }}
-          >
-            {showAdd ? <X className="h-3 w-3" /> : <UserPlus className="h-3 w-3" />}
-          </button>
-        </div>
       </div>
-
-      {/* Add form — styled like APRS compose area */}
-      {showAdd && (
-        <div className="px-3 py-2.5 flex flex-col gap-1.5 border-b border-border/40 bg-card/50">
-          <div className="grid grid-cols-2 gap-1.5">
-            <input type="text" placeholder="CALLSIGN" value={newContact.callsign}
-              onChange={(e) => setNewContact((p) => ({ ...p, callsign: e.target.value.toUpperCase() }))}
-              className="tab-input text-primary"
-            />
-            <input type="text" placeholder="FREQUENCY" value={newContact.frequency}
-              onChange={(e) => setNewContact((p) => ({ ...p, frequency: e.target.value }))}
-              className="tab-input"
-            />
-          </div>
-          <input type="text" placeholder="Name / Description" value={newContact.name}
-            onChange={(e) => setNewContact((p) => ({ ...p, name: e.target.value }))}
-            className="tab-input"
-          />
-          <div className="flex gap-1 flex-wrap">
-            {GROUPS.map((g) => (
-              <button key={g} onClick={() => setNewContact((p) => ({ ...p, group_tag: g }))}
-                className={`tab-chip ${newContact.group_tag === g ? "tab-chip-active" : ""} transition-all`}
-                style={newContact.group_tag === g ? {
-                  background: `${GROUP_COLORS[g]}22`,
-                  borderColor: GROUP_COLORS[g],
-                  color: GROUP_COLORS[g],
-                } : undefined}
-              >{g}</button>
-            ))}
-          </div>
-          <button onClick={handleAdd}
-            className="flex items-center justify-center gap-1.5 rounded-xl py-2 tab-section-title transition-all"
-            style={{ background: "linear-gradient(180deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.08))", border: "1px solid hsl(var(--primary) / 0.25)" }}
-          >
-            <Check className="h-3 w-3" /> SAVE CONTACT
-          </button>
-        </div>
-      )}
 
       {/* Search */}
       <div className="px-3 py-2 border-b border-border/40">
@@ -577,7 +417,7 @@ const MyContactsTab = ({ onTuneChannel, activeChannel, boardBand }: MyContactsTa
       </div>
 
       {/* Contact list */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-1 py-1 space-y-0.5">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-1 py-1 space-y-0.5">
         {loading ? (
           <div className="flex items-center justify-center py-10">
             <span className="tab-meta">LOADING…</span>
@@ -616,7 +456,7 @@ const MyContactsTab = ({ onTuneChannel, activeChannel, boardBand }: MyContactsTa
 // ─────────────────────────────────────────────
 
 interface RepeaterBrowserTabProps {
-  onTuneChannel: (freq: string) => void;
+  onTuneChannel: (freq: string, channelName?: string) => void;
   activeChannel: "A" | "B";
   boardBand: BandId;
 }
@@ -628,7 +468,9 @@ const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProp
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const [countries, setCountries] = useState<string[]>([]);
-  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  /** Repeater IDs already in My List (contacts with source_repeater_id) — loaded from DB so tick persists */
+  const [repeaterIdsInContacts, setRepeaterIdsInContacts] = useState<Set<string>>(new Set());
+  const [tunedId, setTunedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 40;
 
@@ -638,6 +480,16 @@ const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProp
       if (data) {
         const unique = Array.from(new Set(data.map((r) => r.country))).sort();
         setCountries(unique);
+      }
+    });
+  }, []);
+
+  // Load which repeaters are already in My List (contacts) so green tick persists across refresh/navigation
+  useEffect(() => {
+    supabase.from("contacts").select("source_repeater_id").not("source_repeater_id", "is", null).then(({ data }) => {
+      if (data) {
+        const ids = new Set((data as { source_repeater_id: string }[]).map((r) => r.source_repeater_id));
+        setRepeaterIdsInContacts(ids);
       }
     });
   }, []);
@@ -700,7 +552,7 @@ const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProp
       source_repeater_id: repeater.id,
     }).select().single();
     if (!error && data) {
-      setAddedIds((prev) => new Set([...prev, repeater.id]));
+      setRepeaterIdsInContacts((prev) => new Set([...prev, repeater.id]));
     }
   };
 
@@ -757,7 +609,7 @@ const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProp
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-1 py-1 space-y-0.5">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-1 py-1 space-y-0.5">
         {loading && repeaters.length === 0 ? (
           <div className="flex items-center justify-center py-10">
             <span className="tab-meta">SCANNING DATABASE…</span>
@@ -776,9 +628,15 @@ const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProp
               <RepeaterRow
                 key={r.id}
                 repeater={r}
-                onTune={() => onTuneChannel(formatFreq(r.frequency))}
+                onTune={() => {
+                  const name = (r.callsign || r.name || "").trim() || "REPEATER";
+                  onTuneChannel(formatFreq(r.frequency), name);
+                  setTunedId(r.id);
+                  setTimeout(() => setTunedId(null), 1500);
+                }}
                 onAddToContacts={() => handleAddToContacts(r)}
-                isAdded={addedIds.has(r.id)}
+                isAdded={repeaterIdsInContacts.has(r.id)}
+                isTuned={tunedId === r.id}
               />
             ))}
             {repeaters.length % PAGE_SIZE === 0 && (
@@ -802,7 +660,7 @@ const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProp
 // ─────────────────────────────────────────────
 
 interface ContactsScreenProps {
-  onTuneChannel: (frequency: string) => void;
+  onTuneChannel: (frequency: string, channelName?: string) => void;
   activeChannel: "A" | "B";
   /** Band locked by the connected hardware board. Null = no filtering. */
   boardBand: BandId;
@@ -814,11 +672,16 @@ const ContactsScreen = ({ onTuneChannel, activeChannel, boardBand }: ContactsScr
   const bandCfg = boardBand && boardBand !== "DUAL" ? BAND_CONFIGS[boardBand] : null;
 
   return (
-    <div className="tab-panel flex flex-col w-full h-full animate-fade-in overflow-hidden" data-no-swipe>
-      {/* Header */}
+    <div className="tab-panel flex flex-col flex-1 min-h-0 w-full animate-fade-in overflow-hidden">
+      {/* Header — page title left (match APRS/Settings), sub-tabs right */}
       <div className="tab-header flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2">
-          {/* Sub-tab toggle */}
+          <BookUser className="h-4 w-4 text-primary" />
+          <span className="tab-section-title">CONTACTS</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Sub-tab toggle — right side */}
           <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid hsl(var(--border) / 0.5)" }}>
             <button
               onClick={() => setTab("contacts")}
@@ -840,28 +703,28 @@ const ContactsScreen = ({ onTuneChannel, activeChannel, boardBand }: ContactsScr
               <span className="tab-callsign" style={{ color: tab === "repeaters" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}>REPEATERS</span>
             </button>
           </div>
-        </div>
 
-        {/* Band lock badge — shown when hardware board imposes a band filter */}
-        {bandCfg && (
-          <span
-            className="tab-label px-2 py-0.5 rounded-full"
-            style={{
-              color: bandCfg.color,
-              background: `${bandCfg.color.replace(")", " / 0.12)")}`,
-              border: `1px solid ${bandCfg.color.replace(")", " / 0.3)")}`,
-              letterSpacing: "0.12em",
-            }}
-          >
-            {bandCfg.badge} ONLY
-          </span>
-        )}
-        {boardBand === "DUAL" && (
-          <span className="tab-label px-2 py-0.5 rounded-full"
-            style={{ color: "hsl(var(--primary))", background: "hsl(var(--primary) / 0.12)", border: "1px solid hsl(var(--primary) / 0.3)" }}>
-            DUAL
-          </span>
-        )}
+          {/* Band lock badge — when hardware board imposes a band filter */}
+          {bandCfg && (
+            <span
+              className="tab-label px-2 py-0.5 rounded-full"
+              style={{
+                color: bandCfg.color,
+                background: `${bandCfg.color.replace(")", " / 0.12)")}`,
+                border: `1px solid ${bandCfg.color.replace(")", " / 0.3)")}`,
+                letterSpacing: "0.12em",
+              }}
+            >
+              {bandCfg.badge} ONLY
+            </span>
+          )}
+          {boardBand === "DUAL" && (
+            <span className="tab-label px-2 py-0.5 rounded-full"
+              style={{ color: "hsl(var(--primary))", background: "hsl(var(--primary) / 0.12)", border: "1px solid hsl(var(--primary) / 0.3)" }}>
+              DUAL
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Tab content */}

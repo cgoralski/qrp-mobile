@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
-import { Mic, MessageSquare, Settings, BookUser, Radio, Map, ChevronUp, ChevronDown } from "lucide-react";
+import { Mic, MessageSquare, Settings, BookUser, Radio, Map, Terminal, ChevronUp, ChevronDown } from "lucide-react";
 
-export type TabId = "voice" | "aprs" | "contacts" | "scanner" | "map" | "settings";
+export type TabId = "voice" | "aprs" | "contacts" | "scanner" | "map" | "serial" | "settings";
 
 interface BottomTabBarProps {
   activeTab: TabId;
@@ -14,6 +14,7 @@ const ALL_TABS = [
   { id: "contacts" as TabId, label: "Contacts", icon: BookUser },
   { id: "scanner" as TabId,  label: "Scanner",  icon: Radio },
   { id: "map" as TabId,      label: "Map",      icon: Map },
+  { id: "serial" as TabId,   label: "Serial",   icon: Terminal },
   { id: "settings" as TabId, label: "Settings", icon: Settings },
 ];
 
@@ -54,7 +55,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         style={{
-          bottom: "44px", // sit just above the bar
+          bottom: "44px",
           transform: drawerOpen ? "translateY(0)" : "translateY(110%)",
           background: "linear-gradient(180deg, hsl(210 20% 9% / 0.97), hsl(210 20% 7% / 0.99))",
           backdropFilter: "blur(20px) saturate(1.5)",

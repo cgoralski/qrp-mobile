@@ -1,16 +1,26 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Radio, BookUser, Radio as RadioIcon, Map } from "lucide-react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { Radio, BookUser, Radio as RadioIcon } from "lucide-react";
 import type { TabId } from "@/components/BottomTabBar";
 import RadioScreen from "@/components/RadioScreen";
 import NumPad from "@/components/NumPad";
 import DPad from "@/components/DPad";
 import ConnectionStatus from "@/components/ConnectionStatus";
+import WifiProvisioningModal from "@/components/WifiProvisioningModal";
 import BottomTabBar from "@/components/BottomTabBar";
+import { getSavedWifiHost, getSavedWifiPort } from "@/lib/wifi-storage";
+import { getPersistedRadioState, setPersistedRadioState, setPersistedVolume } from "@/lib/radio-storage";
 import APRSMessaging from "@/components/APRSMessaging";
 import ContactsScreen from "@/components/ContactsScreen";
+import MapScreen from "@/components/MapScreen";
+import SerialLogScreen from "@/components/SerialLogScreen";
 import SettingsScreen from "@/components/SettingsScreen";
 import { useCaptions } from "@/hooks/use-captions";
-import type { BandId } from "@/lib/hardware";
+import { useRxAudioPlayback } from "@/hooks/useRxAudioPlayback";
+import { useTxAudio } from "@/hooks/useTxAudio";
+import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
+import { useKv4p } from "@/contexts/Kv4pContext";
+import { CMD_HOST_TX_AUDIO } from "@/lib/kv4p-protocol";
+import { BAND_CONFIGS, type BandId } from "@/lib/hardware";
 
 
 /* ── Header Caption Panel — inline live CC text for the top bar ── */
@@ -128,38 +138,60 @@ const SideButton = ({
 
 
 
-/* ── Speaker grille dots ── */
+/* ── Speaker grille (diagonal grill cloth pattern) ── */
 const SpeakerGrille = () => (
   <div
-    className="w-full grid gap-[3px] px-3 py-1.5"
-    style={{ gridTemplateColumns: "repeat(12, 1fr)" }}
-  >
-    {Array.from({ length: 36 }).map((_, i) => (
-      <div
-        key={i}
-        className="rounded-full"
-        style={{
-          width: "4px",
-          height: "4px",
-          background: "hsl(220 15% 10%)",
-          boxShadow: "inset 0 1px 1px hsl(0 0% 0% / 0.8), 0 0.5px 0 hsl(0 0% 20% / 0.2)",
-        }}
-      />
-    ))}
-  </div>
+    className="w-full px-3 py-1.5 min-h-[28px] rounded-b-xl"
+    style={{
+      backgroundColor: "hsl(220 12% 5%)",
+      backgroundImage: [
+        "linear-gradient(45deg, hsl(220 10% 12% / 0.5) 0%, transparent 1px)",
+        "linear-gradient(-45deg, hsl(220 10% 12% / 0.5) 0%, transparent 1px)",
+      ].join(", "),
+      backgroundSize: "8px 8px",
+      boxShadow: "inset 0 1px 2px hsl(0 0% 0% / 0.5)",
+    }}
+  />
 );
 
-const TAB_ORDER: TabId[] = ["voice", "aprs", "contacts", "scanner", "map", "settings"];
+const TAB_ORDER: TabId[] = ["voice", "aprs", "contacts", "scanner", "map", "serial", "settings"];
 
 const Index = () => {
-  const [channelA, setChannelA] = useState("027.00000");
-  const [channelB, setChannelB] = useState("435.00000");
-  const [activeChannel, setActiveChannel] = useState<"A" | "B">("A");
+  const persistedRadio = useMemo(() => getPersistedRadioState(), []);
+  const [channelA, setChannelA] = useState(persistedRadio.channelA);
+  const [channelB, setChannelB] = useState(persistedRadio.channelB);
+  const [activeChannel, setActiveChannel] = useState<"A" | "B">(persistedRadio.activeChannel);
   const [inputBuffer, setInputBuffer] = useState("");
   const [activeTab, setActiveTab] = useState<TabId>("voice");
   const [isTransmitting, setIsTransmitting] = useState(false);
-  const [channelAName, setChannelAName] = useState("REPEATER 1");
-  const [channelBName, setChannelBName] = useState("CALLING CH");
+  const isTransmittingRef = useRef(false);
+  useEffect(() => {
+    isTransmittingRef.current = isTransmitting;
+  }, [isTransmitting]);
+  const [channelAName, setChannelAName] = useState(persistedRadio.channelAName);
+  const [channelBName, setChannelBName] = useState(persistedRadio.channelBName);
+  const [squelchA, setSquelchA] = useState(persistedRadio.squelchA);
+  const [squelchB, setSquelchB] = useState(persistedRadio.squelchB);
+  const squelch = activeChannel === "A" ? squelchA : squelchB;
+
+  const radioPersistSkipFirst = useRef(true);
+  useEffect(() => {
+    if (radioPersistSkipFirst.current) {
+      radioPersistSkipFirst.current = false;
+      return;
+    }
+    setPersistedRadioState({
+      ...getPersistedRadioState(),
+      channelA,
+      channelB,
+      activeChannel,
+      channelAName,
+      channelBName,
+      squelchA,
+      squelchB,
+    });
+  }, [channelA, channelB, activeChannel, channelAName, channelBName, squelchA, squelchB]);
+  const [txPower, setTxPower] = useState<"high" | "low">("low");
   const [myCallsign, setMyCallsign] = useState<string>(
     () => localStorage.getItem("myCallsign") ?? ""
   );
@@ -184,10 +216,131 @@ const Index = () => {
    * "DUAL"= dual-band board — no frequency filtering applied
    */
   const [boardBand, setBoardBand] = useState<BandId>(null);
-  // Suppress unused-var warning until USB serial is wired up:
-  void setBoardBand;
 
   const captions = useCaptions();
+  const {
+    connected,
+    connectionType,
+    deviceName,
+    connecting,
+    error,
+    connect,
+    connectViaUsb,
+    connectViaWifi,
+    isBluetoothSupported,
+    isSerialSupported,
+    isWifiSupported,
+    rxPlaybackHandleRef,
+  } = useDeviceConnection();
+  const { rssi: deviceRssi, sendPttDown, sendPttUp, sendGroup, sendStop, sendCommand, requestVersion, version: deviceVersion } = useKv4p();
+
+  useRxAudioPlayback();
+
+  // Capture mic and send TX Opus frames to device while PTT is down and connected
+  const onTxEncoded = useCallback((data: Uint8Array) => sendCommand(CMD_HOST_TX_AUDIO, data), [sendCommand]);
+  useTxAudio(connected && isTransmitting, connected && isTransmitting ? onTxEncoded : null);
+
+  // Set board band from device version (rfModuleType: 0 = VHF, 1 = UHF)
+  useEffect(() => {
+    if (!deviceVersion) return;
+    const band: BandId = deviceVersion.rfModuleType === 0 ? "VHF" : deviceVersion.rfModuleType === 1 ? "UHF" : null;
+    setBoardBand(band);
+  }, [deviceVersion]);
+
+  // RSSI from device when connected; 0 when disconnected (no mock data)
+  const displayRssi = connected ? deviceRssi : 0;
+
+  const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const groupRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [wifiProvisioningOpen, setWifiProvisioningOpen] = useState(false);
+  const [squelchSliderOpen, setSquelchSliderOpen] = useState(false);
+  const savedWifiHost = getSavedWifiHost();
+  const savedWifiPort = getSavedWifiPort();
+
+  const sendGroupNow = useCallback(
+    (overrideFreq?: string) => {
+      if (sendTimeoutRef.current !== null) {
+        clearTimeout(sendTimeoutRef.current);
+        sendTimeoutRef.current = null;
+      }
+      if (!connected) return;
+      // Never send GROUP until handshake is done and we have version; otherwise the board ignores it and stays "deaf".
+      if (!deviceVersion) return;
+      const freqStr = overrideFreq ?? (activeChannel === "A" ? channelA : channelB);
+      const freq = parseFloat(freqStr);
+      if (Number.isNaN(freq)) {
+        console.warn("[KV4P] GROUP not sent: invalid frequency", freqStr);
+        return;
+      }
+      console.log("[KV4P] Sending GROUP freqTx=" + freq + " freqRx=" + freq + " squelch=" + squelch);
+      sendGroup({ freqTx: freq, freqRx: freq, squelch });
+    },
+    [connected, deviceVersion, activeChannel, channelA, channelB, squelchA, squelchB, sendGroup]
+  );
+  const sendGroupNowRef = useRef(sendGroupNow);
+  sendGroupNowRef.current = sendGroupNow;
+
+  // If we still have no version after handshake (and 2s retry), send CONFIG once more. Delay until
+  // after HELLO timeout (3s) so we never send CONFIG before STOP.
+  useEffect(() => {
+    if (!connected || deviceVersion) return;
+    const t = window.setTimeout(() => requestVersion(), 4500);
+    return () => window.clearTimeout(t);
+  }, [connected, deviceVersion, requestVersion]);
+
+  // Match Android handshake: send GROUP only after we have received COMMAND_VERSION from the board.
+  // Send STOP first so the board is in MODE_STOPPED; then GROUP so it transitions to MODE_RX and starts RX audio.
+  // Retry GROUP once after 250ms so a single lost packet doesn't require replugging.
+  const groupSentAfterVersionRef = useRef(false);
+  useEffect(() => {
+    if (!connected) {
+      groupSentAfterVersionRef.current = false;
+      return;
+    }
+    if (deviceVersion && !groupSentAfterVersionRef.current) {
+      groupSentAfterVersionRef.current = true;
+      sendStop();
+      const t1 = window.setTimeout(() => {
+        sendGroupNow();
+        groupRetryRef.current = window.setTimeout(() => sendGroupNowRef.current(), 250);
+      }, 100);
+      return () => {
+        window.clearTimeout(t1);
+        if (groupRetryRef.current !== null) {
+          window.clearTimeout(groupRetryRef.current);
+          groupRetryRef.current = null;
+        }
+      };
+    }
+  }, [connected, deviceVersion, sendGroupNow, sendStop]);
+
+  // On VFO switch (A ↔ B), send GROUP immediately so the board tunes to the new channel and RX audio flows without reboot.
+  const prevActiveChannelRef = useRef<"A" | "B" | null>(null);
+  useEffect(() => {
+    if (!connected || !deviceVersion) return;
+    if (prevActiveChannelRef.current !== null && prevActiveChannelRef.current !== activeChannel) {
+      sendGroupNow();
+    }
+    prevActiveChannelRef.current = activeChannel;
+  }, [connected, deviceVersion, activeChannel, sendGroupNow]);
+
+  // Debounce: send frequency to board 800ms after last keypad change; or immediately on Enter / TUNE (squelch has its own effect)
+  useEffect(() => {
+    if (!connected) return;
+    sendTimeoutRef.current = setTimeout(() => sendGroupNowRef.current(), 800);
+    return () => {
+      if (sendTimeoutRef.current !== null) {
+        clearTimeout(sendTimeoutRef.current);
+        sendTimeoutRef.current = null;
+      }
+    };
+  }, [connected, activeChannel, channelA, channelB]);
+
+  // Send GROUP when squelch changes for the active VFO (same freq, new squelch)
+  useEffect(() => {
+    if (!connected) return;
+    sendGroupNow();
+  }, [squelchA, squelchB]);
 
   // Reset any browser-induced scroll offset whenever the tab changes.
   // On mobile, opening a keyboard in APRS chat can push window.scrollY up;
@@ -207,6 +360,8 @@ const Index = () => {
   const swipeTouchStartX = useRef<number | null>(null);
   const swipeTouchStartY = useRef<number | null>(null);
   const swipeLockedAxis = useRef<"h" | "v" | null>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const handleSwipeTouchMoveRef = useRef<(e: React.TouchEvent) => void>(() => {});
 
   const handleSwipeTouchStart = (e: React.TouchEvent) => {
     // Don't capture swipes that start inside components that handle their own touch
@@ -238,6 +393,15 @@ const Index = () => {
       setIsSwiping(true);
     }
   };
+  handleSwipeTouchMoveRef.current = handleSwipeTouchMove;
+
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const onMove = (e: TouchEvent) => handleSwipeTouchMoveRef.current?.(e as unknown as React.TouchEvent);
+    el.addEventListener("touchmove", onMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onMove);
+  }, []);
 
   const handleSwipeTouchEnd = (e: React.TouchEvent) => {
     if (swipeTouchStartX.current === null || swipeTouchStartY.current === null) return;
@@ -290,9 +454,8 @@ const Index = () => {
 
   const handleDecimal = useCallback(() => {
     if (inputBuffer.includes(".")) return; // already has a dot
-    // Pad integer part to 3 digits before inserting dot
-    const padded = inputBuffer.padStart(3, "0");
-    const next = padded + ".";
+    // Do not pad buffer so user can type 3rd digit before decimal (e.g. 497 then .)
+    const next = inputBuffer + ".";
     setInputBuffer(next);
     setActiveFreq(next);
   }, [inputBuffer, setActiveFreq]);
@@ -312,8 +475,9 @@ const Index = () => {
   }, [inputBuffer, setActiveFreq]);
 
   const handleEnter = useCallback(() => {
+    sendGroupNow();
     setInputBuffer("");
-  }, []);
+  }, [sendGroupNow]);
 
   const stepFrequency = useCallback((direction: 1 | -1) => {
     const current = activeChannel === "A" ? channelA : channelB;
@@ -324,12 +488,24 @@ const Index = () => {
     setInputBuffer("");
     if (activeChannel === "A") setChannelA(formatted);
     else setChannelB(formatted);
+    // GROUP is sent once by the debounce effect (800ms after last change) to avoid duplicate sends per click.
   }, [activeChannel, channelA, channelB]);
 
   return (
     <div className="flex h-[100dvh] flex-col bg-mesh overflow-hidden">
-      {/* App header */}
-      <header className="glass-header sticky top-0 z-50 flex items-center justify-between px-4 py-2">
+      {/* App header — chassis look on Voice tab, glass elsewhere */}
+      <header
+        className={`sticky top-0 z-50 flex items-center justify-between px-4 py-2 ${activeTab !== "voice" ? "glass-header" : "rounded-t-2xl"}`}
+        style={activeTab === "voice" ? {
+          background:
+            "linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E\"), linear-gradient(175deg, hsl(220 12% 16%) 0%, hsl(220 10% 11%) 60%, hsl(220 8% 8%) 100%)",
+          backgroundBlendMode: "overlay, normal",
+          borderBottom: "1px solid hsl(220 10% 22%)",
+          boxShadow: "inset 0 1px 0 hsl(0 0% 45% / 0.18)",
+        } : undefined}
+      >
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
             <Radio className="h-4 w-4 text-primary" />
@@ -339,17 +515,129 @@ const Index = () => {
           </span>
         </div>
 
-        <ConnectionStatus connected={false} boardBand={boardBand} />
-      </header>
+        {/* Band badge + Powered by KV4P — when board is connected and identified */}
+        {boardBand && (() => {
+          const bandCfg = boardBand !== "DUAL" ? BAND_CONFIGS[boardBand] : null;
+          const dualBand = boardBand === "DUAL";
+          return (
+            <div className="flex items-center gap-2 shrink-0">
+              <span
+                className="font-mono-display font-bold tracking-wider px-2.5 py-1 rounded-full text-[10px]"
+                style={{
+                  background: dualBand
+                    ? "hsl(185 80% 55% / 0.15)"
+                    : bandCfg
+                      ? `${bandCfg.color.replace(")", " / 0.15)")}`
+                      : undefined,
+                  border: dualBand
+                    ? "1px solid hsl(185 80% 55% / 0.35)"
+                    : bandCfg
+                      ? `1px solid ${bandCfg.color.replace(")", " / 0.35)")}`
+                      : undefined,
+                  color: dualBand ? "hsl(185 80% 55%)" : bandCfg?.color,
+                  boxShadow: bandCfg ? `0 0 10px ${bandCfg.color.replace(")", " / 0.35)")}` : undefined,
+                }}
+              >
+                {dualBand ? "DUAL" : bandCfg?.badge}
+              </span>
+              <span className="font-mono-display text-[9px] font-medium tracking-wider text-muted-foreground/80 whitespace-nowrap">
+                Powered by KV4P
+              </span>
+            </div>
+          );
+        })()}
 
+        <ConnectionStatus
+          connected={connected}
+          connectionType={connectionType}
+          boardBand={boardBand}
+          deviceName={deviceName}
+          connecting={connecting}
+          error={error}
+          onConnectBle={connect}
+          onConnectUsb={connectViaUsb}
+          onConnectWifi={connectViaWifi}
+          savedWifiHost={savedWifiHost}
+          savedWifiPort={savedWifiPort}
+          defaultWifiHost="192.168.4.1"
+          defaultWifiPort={8765}
+          onOpenSetUpWifi={() => setWifiProvisioningOpen(true)}
+          isBluetoothSupported={isBluetoothSupported}
+          isSerialSupported={isSerialSupported}
+          isWifiSupported={isWifiSupported}
+        />
+        <WifiProvisioningModal
+          open={wifiProvisioningOpen}
+          onOpenChange={setWifiProvisioningOpen}
+          onSuccess={(ip) => connectViaWifi(ip, savedWifiPort)}
+        />
+        {/* Squelch slider popup: opens when SQ is pressed on numpad */}
+        {squelchSliderOpen && (
+          <div
+            className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-4"
+            onClick={() => setSquelchSliderOpen(false)}
+            role="presentation"
+          >
+            <div
+              className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-xl"
+              style={{
+                background: "linear-gradient(180deg, hsl(220 14% 14%) 0%, hsl(220 12% 10%) 100%)",
+                border: "1px solid hsl(220 12% 24%)",
+                boxShadow: "0 -8px 32px hsl(220 30% 2% / 0.9), 0 0 0 1px hsl(220 10% 20% / 0.5)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-mono-display text-sm font-bold tracking-wider text-white/90">
+                  Squelch
+                </span>
+                <span className="font-mono-display text-lg font-bold tabular-nums text-blue-400/90">
+                  {squelch}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={8}
+                step={1}
+                value={squelch}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (activeChannel === "A") setSquelchA(v);
+                  else setSquelchB(v);
+                }}
+                className="w-full h-3 rounded-full appearance-none cursor-pointer bg-[hsl(220,12%,22%)] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[hsl(185,55%,50%)] [&::-webkit-slider-thumb]:shadow-[0_0_6px_hsl(185,60%,50%,0.6)] [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-[hsl(185,55%,50%)]"
+                style={{ accentColor: "hsl(185 55% 50%)" }}
+                aria-label="Squelch level"
+              />
+              <div className="flex justify-between mt-1 px-0.5">
+                <span className="font-mono-display text-[11px] text-white/45">Open</span>
+                <span className="font-mono-display text-[11px] text-white/45">Tight</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSquelchSliderOpen(false)}
+                className="mt-4 w-full py-2.5 rounded-lg font-mono-display text-sm font-bold tracking-wider transition-colors"
+                style={{
+                  background: "hsl(220 14% 22%)",
+                  color: "hsl(0 0% 90%)",
+                  border: "1px solid hsl(220 12% 30%)",
+                }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        )}
+      </header>
 
       {/* ── Radio body shell ── */}
       <main
-        className="flex flex-1 flex-col max-w-[480px] mx-auto w-full"
+        ref={mainRef}
+        className="flex flex-1 flex-col min-h-0 max-w-[480px] mx-auto w-full"
         onTouchStart={handleSwipeTouchStart}
-        onTouchMove={handleSwipeTouchMove}
         onTouchEnd={handleSwipeTouchEnd}
-        style={{ touchAction: "pan-y" }}
+        style={{ touchAction: "pan-x pan-y" }}
       >
         {/* Overflow clip wrapper — strips must NOT overflow this */}
         <div className="flex-1 overflow-hidden relative min-h-0">
@@ -428,8 +716,9 @@ const Index = () => {
                     onChannelBChange={setChannelB}
                     activeChannel={activeChannel}
                     onActiveChannelChange={setActiveChannel}
-                    rssi={5}
+                    rssi={displayRssi}
                     isTransmitting={isTransmitting}
+                    txPower={txPower}
                     channelAName={channelAName}
                     channelBName={channelBName}
                     onChannelANameChange={setChannelAName}
@@ -490,8 +779,16 @@ const Index = () => {
                   </div>
                 )}
                 <DPad
-                  onUp={() => stepFrequency(1)}
-                  onDown={() => stepFrequency(-1)}
+                  onUp={() => {
+                    rxPlaybackHandleRef.current?.volumeUp();
+                    const v = rxPlaybackHandleRef.current?.getVolume();
+                    if (v != null) setPersistedVolume(v);
+                  }}
+                  onDown={() => {
+                    rxPlaybackHandleRef.current?.volumeDown();
+                    const v = rxPlaybackHandleRef.current?.getVolume();
+                    if (v != null) setPersistedVolume(v);
+                  }}
                   onLeft={() => {
                     const i = TAB_ORDER.indexOf(activeTab);
                     if (i > 0) setActiveTab(TAB_ORDER[i - 1]);
@@ -499,6 +796,19 @@ const Index = () => {
                   onRight={() => {
                     const i = TAB_ORDER.indexOf(activeTab);
                     if (i < TAB_ORDER.length - 1) setActiveTab(TAB_ORDER[i + 1]);
+                  }}
+                  onOk={handleEnter}
+                  onPttDown={() => {
+                    if (connected) {
+                      sendPttDown();
+                      setIsTransmitting(true);
+                    } else if (displayRssi <= 3) {
+                      setIsTransmitting(true);
+                    }
+                  }}
+                  onPttUp={() => {
+                    if (connected) sendPttUp();
+                    setIsTransmitting(false);
                   }}
                   onVm={captions.toggle}
                   onAb={() => setActiveChannel((ch) => ch === "A" ? "B" : "A")}
@@ -510,7 +820,7 @@ const Index = () => {
                     onDigit={handleDigit}
                     onDecimal={handleDecimal}
                     onBackspace={handleBackspace}
-                    onEnter={handleEnter}
+                    onSq={() => setSquelchSliderOpen(true)}
                   />
                 </div>
                 <div
@@ -539,16 +849,22 @@ const Index = () => {
           </div>
 
           {/* ── APRS tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
             <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
           </div>
 
           {/* ── Contacts tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
             <ContactsScreen
-              onTuneChannel={(freq) => {
-                if (activeChannel === "A") setChannelA(freq);
-                else setChannelB(freq);
+              onTuneChannel={(freq, channelName) => {
+                if (activeChannel === "A") {
+                  setChannelA(freq);
+                  setChannelAName(channelName || "CH A");
+                } else {
+                  setChannelB(freq);
+                  setChannelBName(channelName || "CH B");
+                }
+                sendGroupNow(freq);
               }}
               activeChannel={activeChannel}
               boardBand={boardBand}
@@ -576,23 +892,13 @@ const Index = () => {
           </div>
 
           {/* ── Map tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
-            <div className="tab-panel flex flex-1 flex-col w-full">
-              <div className="tab-header flex items-center justify-between px-3 py-2.5">
-                <div className="flex items-center gap-2">
-                  <Map className="h-4 w-4 text-primary" />
-                  <span className="tab-section-title">MAP</span>
-                </div>
-                <span className="tab-meta">REPEATER MAP</span>
-              </div>
-              <div className="flex flex-1 flex-col items-center justify-center gap-3 px-3 py-6">
-                <Map className="h-8 w-8 opacity-20 text-primary" />
-                <span className="tab-section-title opacity-50">COMING SOON</span>
-                <span className="tab-meta opacity-40 text-center leading-relaxed">
-                  Interactive map showing repeater locations with pins for each country.
-                </span>
-              </div>
-            </div>
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+            <MapScreen myCallsign={myCallsign} />
+          </div>
+
+          {/* ── Serial log tab ── */}
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+            <SerialLogScreen />
           </div>
 
           {/* ── Settings tab ── */}
@@ -603,7 +909,8 @@ const Index = () => {
         </div>
       </main>
 
-      <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+      {/* Bottom drawer hidden for now */}
+      {false && <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />}
     </div>
   );
 };

@@ -1,0 +1,12 @@
+---
+description: User grants permission to rebuild the app when required
+alwaysApply: true
+---
+
+# Rebuild permission
+
+The user has given **full permission to rebuild the app whenever it is required**.
+
+- After making changes that affect the built output (e.g. source, config, nginx), run `npm run build` without asking.
+- If deployment or serving depends on a fresh build, run the build as part of the change.
+- No need to ask for confirmation before running `npm run build`.
