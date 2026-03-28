@@ -56,7 +56,7 @@ verify_websocket_patch() {
   fi
   if ! grep -q 'Starscream\.WebSocket' "$f"; then
     echo "error: iOS WebSocket plugin is not patched (still shows unqualified WebSocket)." >&2
-    echo "  Run: bash scripts/apply-npm-patches.sh" >>>&22
+    echo "  Run: bash scripts/apply-npm-patches.sh" >&2
     echo "  Do not use: npm install --ignore-scripts (skips postinstall patches)." >&2
     echo "  Ensure git has scripts/npm-patches/@miaz/capacitor-websocket/*.swift and you ran git pull." >&2
     exit 1
