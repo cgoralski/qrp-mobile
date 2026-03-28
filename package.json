@@ -14,7 +14,7 @@
     "ios:sync": "npm run build:capacitor && npx cap sync ios",
     "ios:open": "npx cap open ios",
     "postinstall": "bash scripts/apply-npm-patches.sh",
-    "build:capacitor": "vite build --mode capacitor"
+    "build:capacitor": "vite build --mode capacitor && node scripts/assert-capacitor-dist.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",

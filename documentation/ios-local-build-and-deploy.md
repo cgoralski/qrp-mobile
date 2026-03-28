@@ -4,7 +4,7 @@ This guide walks through preparing **QRP Mobile** on a Mac (including Apple Sili
 
 **Related project facts**
 
-- `capacitor.config.ts` sets `webDir` to **`dist`** — you must run a Vite build before syncing to native.
+- `capacitor.config.ts` sets `webDir` to **`dist-native`** — the site PWA build uses **`dist/`**; Capacitor must never sync that folder. Run **`npm run build:capacitor`** before `cap sync`.
 - App id: `com.vk4cgo.qrpmobile` (see `capacitor.config.ts`).
 - Server-side deploy notes (nginx, `.env`, Supabase) live in [`docs/DEPLOY.md`](../docs/DEPLOY.md).
 - The **HTTPS PWA** from your public URL **cannot** open `ws://` to the ESP32; use this native build for Wi‑Fi. See [`pwa-wifi-and-https.md`](./pwa-wifi-and-https.md).
@@ -83,8 +83,8 @@ npm run build:capacitor
 npx cap sync ios
 ```
 
-- **`npm run build:capacitor`** (no PWA/service worker — avoids blank WKWebView) produces the production bundle in **`dist/`**.
-- **`npx cap sync ios`** copies `dist/` into the native project, updates native dependencies, and registers Capacitor plugins (including `@miaz/capacitor-websocket`).
+- **`npm run build:capacitor`** (no PWA/service worker — avoids blank WKWebView) writes the native bundle to **`dist-native/`** (single JS file; no `leaflet-*.js` chunks).
+- **`npx cap sync ios`** copies **`dist-native/`** into the native project. Do not run **`npm run build`** (web/PWA) and then sync — that only updates **`dist/`**, which Capacitor no longer uses.
 
 **Whenever you change web code or add/upgrade Capacitor plugins**, repeat **build → `cap sync ios`** before rebuilding in Xcode.
 
