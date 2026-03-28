@@ -6,6 +6,8 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Relative URLs so Capacitor WKWebView loads JS/CSS (absolute /assets/... breaks native).
+  base: "./",
   server: {
     host: "::",
     port: 8080,
