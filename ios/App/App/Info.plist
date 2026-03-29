@@ -49,5 +49,10 @@
 	<true/>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>QRP Mobile connects to your KV4P radio over WiFi on your local network (e.g. 192.168.4.1).</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

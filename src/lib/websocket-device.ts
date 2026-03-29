@@ -234,6 +234,10 @@ function deliverWsMessageData(data: unknown): void {
     } catch {
       /* ignore invalid base64 */
     }
+    return;
+  }
+  if (typeof Blob !== "undefined" && data instanceof Blob) {
+    void data.arrayBuffer().then((buf) => deliverWsMessageData(buf));
   }
 }
 
@@ -256,6 +260,8 @@ async function connectStandardWebSocket(url: string): Promise<void> {
 
   return new Promise((resolve, reject) => {
     let settled = false;
+    /** Must be true before we consider the socket connected (fixes iOS/WKWebView closing with wasClean before onopen). */
+    let sawOpen = false;
     const timeout = globalThis.setTimeout(() => {
       if (settled) return;
       settled = true;
@@ -289,25 +295,24 @@ async function connectStandardWebSocket(url: string): Promise<void> {
     }
 
     ws.onopen = () => {
+      sawOpen = true;
       console.log("[WebSocket] Connected to", url);
       onConnectCb?.(url);
       done(() => resolve());
     };
 
     ws.onclose = (ev) => {
-      if (ws != null) {
-        notifyDisconnected();
-      }
-      const failed = !ev.wasClean && ev.code !== 1000;
-      const part = ev.reason?.trim() || `code ${ev.code}`;
-      const msg = failed ? `Connection failed: ${part}` : null;
-      if (failed && msg) {
+      if (!settled) {
+        const part = ev.reason?.trim() || `code ${ev.code}`;
+        const msg = `Connection failed: ${part}`;
         done(() => {
           onErrorCb?.(msg);
           reject(new Error(msg));
         });
-      } else {
-        done(() => resolve());
+        return;
+      }
+      if (sawOpen) {
+        notifyDisconnected();
       }
     };
 
