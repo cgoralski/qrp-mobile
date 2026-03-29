@@ -2,8 +2,9 @@ import { logWifiDiag } from "@/lib/wifi-diagnostics";
 
 /**
  * WebSocket client transport for KV4P-HT over WiFi.
- * - Browser / Capacitor iOS: WKWebView `WebSocket` (ws:// to the board works; avoids Starscream plugin issues).
- * - Capacitor Android: @miaz/capacitor-websocket (cleartext / WebView quirks).
+ * - Capacitor iOS/Android: @miaz/capacitor-websocket (Starscream / native TCP; WKWebView JS WebSocket
+ *   often fails to 192.168.x.x with 1006 on iOS).
+ * - Browser/PWA: native WebSocket (watch HTTPS mixed-content for ws://).
  * Firmware sends KV4P frames as WebSocket TEXT (base64) and accepts BIN or TEXT; see wifi_ws.cpp.
  */
 
@@ -21,11 +22,11 @@ let onDataCb: ((data: Uint8Array) => void) | null = null;
 let wsRxDiagCount = 0;
 let wsTxDiagCount = 0;
 
-/** Android uses the Capacitor plugin; iOS uses WKWebView WebSocket (more reliable to ws:// LAN). */
-async function shouldUseNativeWebsocketPlugin(): Promise<boolean> {
+/** True for Capacitor shell (iOS or Android) — use native plugin, not WKWebView WebSocket. */
+async function isCapacitorNativeApp(): Promise<boolean> {
   try {
     const { Capacitor } = await import("@capacitor/core");
-    return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+    return Capacitor.isNativePlatform();
   } catch {
     return false;
   }
@@ -54,11 +55,10 @@ async function clearConnection(): Promise<void> {
   }
   pluginListeners = [];
 
-  // Only talk to @miaz/capacitor-websocket on Android. On iOS we use WKWebView WebSocket only;
-  // calling plugin disconnect() when the plugin was never connected can hang the native bridge
-  // and block connect() forever (no onopen/onclose — matches user logs stopping after clearConnection).
-  const usePlugin = await shouldUseNativeWebsocketPlugin();
-  if (usePlugin) {
+  // Native app: tear down Starscream socket. Patched plugin resolves disconnect() even when no socket
+  // (stock plugin returned without resolve → JS await clearConnection hung forever).
+  const nativeApp = await isCapacitorNativeApp();
+  if (nativeApp) {
     try {
       const { CapacitorWebsocket } = await import("@miaz/capacitor-websocket");
       await CapacitorWebsocket.disconnect({ name: PLUGIN_SOCKET_NAME });
@@ -142,7 +142,7 @@ function uint8ArrayToBase64(arr: Uint8Array): string {
 async function connectNative(url: string): Promise<void> {
   const { CapacitorWebsocket } = await import("@miaz/capacitor-websocket");
 
-  logWifiDiag("[WS] connectNative (Capacitor plugin / Android) url=" + url);
+  logWifiDiag("[WS] connectNative (Capacitor plugin iOS/Android) url=" + url);
   await clearConnection();
 
   return new Promise((resolve, reject) => {
@@ -272,7 +272,7 @@ function deliverWsMessageData(data: unknown): void {
 }
 
 /**
- * Standard WebSocket (browser or Capacitor iOS WKWebView).
+ * Standard WebSocket (browser / PWA only — not used in Capacitor native).
  */
 async function connectStandardWebSocket(url: string): Promise<void> {
   const plat = await (async () => {
@@ -382,10 +382,10 @@ async function connectStandardWebSocket(url: string): Promise<void> {
 
 export async function connect(urlOrHost: string, port?: number): Promise<void> {
   const url = buildWsUrl(urlOrHost, port);
-  const usePlugin = await shouldUseNativeWebsocketPlugin();
-  logWifiDiag(`[WS] connect() host/port resolved → ${url} useNativePlugin=${usePlugin}`);
+  const nativeApp = await isCapacitorNativeApp();
+  logWifiDiag(`[WS] connect() → ${url} capacitorNative=${nativeApp}`);
 
-  if (usePlugin) {
+  if (nativeApp) {
     return connectNative(url);
   }
 
@@ -413,7 +413,7 @@ export async function write(data: Uint8Array): Promise<void> {
     ws.send(data);
     return;
   }
-  if (await shouldUseNativeWebsocketPlugin()) {
+  if (await isCapacitorNativeApp()) {
     if (!nativeConnected) throw new Error("Not connected");
     const { CapacitorWebsocket } = await import("@miaz/capacitor-websocket");
     await CapacitorWebsocket.send({

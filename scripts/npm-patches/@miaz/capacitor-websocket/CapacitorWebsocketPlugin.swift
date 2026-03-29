@@ -31,25 +31,38 @@ public class CapacitorWebsocketPlugin: CAPPlugin {
     }
 
     @objc public func applyListeners(_ call: CAPPluginCall) {
-        guard let connection = getSocket(call) else { return }
+        guard let connection = getSocket(call) else {
+            // Missing socket (e.g. disconnect before build): must resolve or JS await hangs forever.
+            call.resolve()
+            return
+        }
         connection.bind()
         call.resolve()
     }
 
     @objc public func connect(_ call: CAPPluginCall) {
-        guard let connection = getSocket(call) else { return }
+        guard let connection = getSocket(call) else {
+            call.reject("Socket not found")
+            return
+        }
         connection.connect()
         call.resolve()
     }
 
     @objc public func disconnect(_ call: CAPPluginCall) {
-        guard let connection = getSocket(call) else { return }
+        guard let connection = getSocket(call) else {
+            call.resolve()
+            return
+        }
         connection.disconnect()
         call.resolve()
     }
 
     @objc public func send(_ call: CAPPluginCall) {
-        guard let connection = getSocket(call) else { return }
+        guard let connection = getSocket(call) else {
+            call.reject("Socket not found")
+            return
+        }
         guard let message = call.getString("data") else {
             call.reject("Must provide data to send")
             return
