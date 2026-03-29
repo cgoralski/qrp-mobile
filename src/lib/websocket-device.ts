@@ -21,15 +21,6 @@ let onDataCb: ((data: Uint8Array) => void) | null = null;
 let wsRxDiagCount = 0;
 let wsTxDiagCount = 0;
 
-async function isNative(): Promise<boolean> {
-  try {
-    const { Capacitor } = await import("@capacitor/core");
-    return Capacitor.isNativePlatform();
-  } catch {
-    return false;
-  }
-}
-
 /** Android uses the Capacitor plugin; iOS uses WKWebView WebSocket (more reliable to ws:// LAN). */
 async function shouldUseNativeWebsocketPlugin(): Promise<boolean> {
   try {
@@ -41,7 +32,7 @@ async function shouldUseNativeWebsocketPlugin(): Promise<boolean> {
 }
 
 async function clearConnection(): Promise<void> {
-  logWifiDiag("[WS] clearConnection()");
+  logWifiDiag("[WS] clearConnection() start");
   wsRxDiagCount = 0;
   wsTxDiagCount = 0;
   if (ws) {
@@ -52,24 +43,32 @@ async function clearConnection(): Promise<void> {
     }
     ws = null;
   }
-  const native = await isNative();
-  if (native) {
-    nativeConnected = false;
-    for (const h of pluginListeners) {
-      try {
-        await h.remove();
-      } catch {
-        /* ignore */
-      }
-    }
-    pluginListeners = [];
+
+  nativeConnected = false;
+  for (const h of pluginListeners) {
     try {
-      const { CapacitorWebsocket } = await import("@miaz/capacitor-websocket");
-      await CapacitorWebsocket.disconnect({ name: PLUGIN_SOCKET_NAME });
+      await h.remove();
     } catch {
       /* ignore */
     }
   }
+  pluginListeners = [];
+
+  // Only talk to @miaz/capacitor-websocket on Android. On iOS we use WKWebView WebSocket only;
+  // calling plugin disconnect() when the plugin was never connected can hang the native bridge
+  // and block connect() forever (no onopen/onclose — matches user logs stopping after clearConnection).
+  const usePlugin = await shouldUseNativeWebsocketPlugin();
+  if (usePlugin) {
+    try {
+      const { CapacitorWebsocket } = await import("@miaz/capacitor-websocket");
+      await CapacitorWebsocket.disconnect({ name: PLUGIN_SOCKET_NAME });
+      logWifiDiag("[WS] clearConnection: native plugin disconnect done");
+    } catch {
+      /* ignore */
+    }
+  }
+
+  logWifiDiag("[WS] clearConnection() done");
 }
 
 function notifyDisconnected() {
