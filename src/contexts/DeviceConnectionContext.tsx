@@ -162,15 +162,17 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
     try {
       rxPlaybackHandleRef.current?.destroy();
       rxPlaybackHandleRef.current = null;
+      await serial.disconnectSerial();
+      await serial.connectSerial();
       const { volume: savedVolume } = getPersistedRadioState();
       const handle = await createRxPlayback(savedVolume);
       rxPlaybackHandleRef.current = handle;
-      await serial.disconnectSerial();
-      await serial.connectSerial();
     } catch (e) {
       rxPlaybackHandleRef.current?.destroy();
       rxPlaybackHandleRef.current = null;
+      await serial.disconnectSerial().catch(() => {});
       setConnecting(false);
+      setError(e instanceof Error ? e.message : String(e));
     }
   }, []);
 
@@ -180,13 +182,14 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
     try {
       rxPlaybackHandleRef.current?.destroy();
       rxPlaybackHandleRef.current = null;
+      await ws.connect(hostOrUrl, port);
       const { volume: savedVolume } = getPersistedRadioState();
       const handle = await createRxPlayback(savedVolume);
       rxPlaybackHandleRef.current = handle;
-      await ws.connect(hostOrUrl, port);
     } catch (e) {
       rxPlaybackHandleRef.current?.destroy();
       rxPlaybackHandleRef.current = null;
+      await ws.disconnect().catch(() => {});
       setConnecting(false);
       setError(e instanceof Error ? e.message : String(e));
     }
