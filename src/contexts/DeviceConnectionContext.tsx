@@ -92,6 +92,11 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
         logWifiDiag("[DeviceConn] WiFi onError: " + msg);
         setConnecting(false);
         setError(msg);
+        // Same as onDisconnect: drop Wi‑Fi link so UI is not "connected" with a stale socket.
+        setConnectionType((prev) => {
+          if (prev === "wifi") setDeviceName(null);
+          return prev === "wifi" ? null : prev;
+        });
       },
       onData: (data) => onDataRef.current?.(data),
     });

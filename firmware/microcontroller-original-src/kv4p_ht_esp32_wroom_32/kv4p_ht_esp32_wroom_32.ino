@@ -95,9 +95,11 @@ void setup() {
   Serial.println("Use `logcat` or a kv4p decoder to view readable logs.");
   Serial.println("More info: https://github.com/VanceVagell/kv4p-ht/blob/main/microcontroller-src/kv4p_ht_esp32_wroom_32/readme.md");
   Serial.println("==============================");
-  // Configure watch dog timer (WDT), which will reset the system if it gets stuck somehow.
-  esp_task_wdt_init(10, true);  // Reboot if locked up for a bit
-  esp_task_wdt_add(NULL);       // Add the current task to WDT watch
+  // Task WDT: SA818 handshake() can block ~6s per attempt; doConfig may run several attempts.
+  // Blocking while (!sa818.group/...) loops must feed the WDT inside the loop (see handleCommands).
+  // 35s avoids spurious resets that look like "Connection reset by peer" on the phone WebSocket.
+  esp_task_wdt_init(35, true);
+  esp_task_wdt_add(NULL);
   buttonsSetup();
   // Set up radio module defaults
   pinMode(hw.pins.pinPd, OUTPUT);
@@ -168,7 +170,10 @@ void handleCommands(RcvCommand command, uint8_t *params, size_t param_len) {
       if (param_len == sizeof(Filters)) {
         Filters filters;
         memcpy(&filters, params, sizeof(Filters));
-        while (!sa818.filters((filters.flags & FILTER_PRE), (filters.flags & FILTER_HIGH), (filters.flags & FILTER_LOW)));
+        while (!sa818.filters((filters.flags & FILTER_PRE), (filters.flags & FILTER_HIGH), (filters.flags & FILTER_LOW))) {
+          esp_task_wdt_reset();
+          yield();
+        }
         esp_task_wdt_reset();
       }
       break;
@@ -176,7 +181,10 @@ void handleCommands(RcvCommand command, uint8_t *params, size_t param_len) {
       if (param_len == sizeof(Group)) {
         Group group;
         memcpy(&group, params, sizeof(Group));
-        while (!sa818.group(group.bw, group.freq_tx, group.freq_rx, group.ctcss_tx, group.squelch, group.ctcss_rx));
+        while (!sa818.group(group.bw, group.freq_tx, group.freq_rx, group.ctcss_tx, group.squelch, group.ctcss_rx)) {
+          esp_task_wdt_reset();
+          yield();
+        }
         esp_task_wdt_reset();
         if (mode == MODE_STOPPED) {
           setMode(MODE_RX);   
@@ -242,6 +250,7 @@ void rssiLoop() {
 }
 
 void loop() {
+  esp_task_wdt_reset();
   squelched = squelchDebounce.debounce((digitalRead(hw.pins.pinSq) == HIGH));
   debugLoop();
   ledLoop();
