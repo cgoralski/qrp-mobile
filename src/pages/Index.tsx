@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Radio, BookUser, Radio as RadioIcon } from "lucide-react";
 import type { TabId } from "@/components/BottomTabBar";
 import RadioScreen from "@/components/RadioScreen";
@@ -156,6 +157,7 @@ const SpeakerGrille = () => (
 const TAB_ORDER: TabId[] = ["voice", "aprs", "contacts", "scanner", "map", "serial", "settings"];
 
 const Index = () => {
+  const navigate = useNavigate();
   const persistedRadio = useMemo(() => getPersistedRadioState(), []);
   const [channelA, setChannelA] = useState(persistedRadio.channelA);
   const [channelB, setChannelB] = useState(persistedRadio.channelB);
@@ -564,6 +566,7 @@ const Index = () => {
           isBluetoothSupported={isBluetoothSupported}
           isSerialSupported={isSerialSupported}
           isWifiSupported={isWifiSupported}
+          onOpenWifiDiagnostics={() => navigate("/wifi-console")}
         />
         <WifiProvisioningModal
           open={wifiProvisioningOpen}

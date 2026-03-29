@@ -1,3 +1,5 @@
+import { logWifiDiag } from "@/lib/wifi-diagnostics";
+
 /**
  * WebSocket client transport for KV4P-HT over WiFi.
  * - Browser / Capacitor iOS: WKWebView `WebSocket` (ws:// to the board works; avoids Starscream plugin issues).
@@ -16,6 +18,8 @@ let onConnectCb: ((url: string) => void) | null = null;
 let onDisconnectCb: (() => void) | null = null;
 let onErrorCb: ((message: string) => void) | null = null;
 let onDataCb: ((data: Uint8Array) => void) | null = null;
+let wsRxDiagCount = 0;
+let wsTxDiagCount = 0;
 
 async function isNative(): Promise<boolean> {
   try {
@@ -37,6 +41,9 @@ async function shouldUseNativeWebsocketPlugin(): Promise<boolean> {
 }
 
 async function clearConnection(): Promise<void> {
+  logWifiDiag("[WS] clearConnection()");
+  wsRxDiagCount = 0;
+  wsTxDiagCount = 0;
   if (ws) {
     try {
       ws.close();
@@ -67,6 +74,7 @@ async function clearConnection(): Promise<void> {
 
 function notifyDisconnected() {
   console.log("[WebSocket] Disconnected");
+  logWifiDiag("[WS] notifyDisconnected (socket closed)");
   onDisconnectCb?.();
 }
 
@@ -135,10 +143,12 @@ function uint8ArrayToBase64(arr: Uint8Array): string {
 async function connectNative(url: string): Promise<void> {
   const { CapacitorWebsocket } = await import("@miaz/capacitor-websocket");
 
+  logWifiDiag("[WS] connectNative (Capacitor plugin / Android) url=" + url);
   await clearConnection();
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
+      logWifiDiag("[WS] native timeout 15s");
       reject(new Error("Connection timeout"));
       onErrorCb?.("Connection timeout.");
     }, 15000);
@@ -147,18 +157,21 @@ async function connectNative(url: string): Promise<void> {
       clearTimeout(timeout);
       nativeConnected = true;
       console.log("[WebSocket] Connected to", url);
+      logWifiDiag("[WS] native plugin: connected event");
       onConnectCb?.(url);
       resolve();
     };
     const onConnectError = (event: { exception?: string }) => {
       clearTimeout(timeout);
       const msg = event?.exception ?? "Connection failed.";
+      logWifiDiag("[WS] native plugin connect error: " + msg);
       onErrorCb?.(msg);
       reject(new Error(msg));
     };
 
     (async () => {
       try {
+        logWifiDiag("[WS] native: build + applyListeners + connect");
         await CapacitorWebsocket.build({ name: PLUGIN_SOCKET_NAME, url });
         // iOS native: Starscream callbacks are only registered when applyListeners runs (see plugin Swift).
         await CapacitorWebsocket.applyListeners({ name: PLUGIN_SOCKET_NAME });
@@ -185,6 +198,7 @@ async function connectNative(url: string): Promise<void> {
         const hDisconnected = await CapacitorWebsocket.addListener(
           `${PLUGIN_SOCKET_NAME}:disconnected`,
           () => {
+            logWifiDiag("[WS] native plugin: disconnected event");
             nativeConnected = false;
             notifyDisconnected();
           }
@@ -207,9 +221,11 @@ async function connectNative(url: string): Promise<void> {
         pluginListeners.push(hStarscreamError);
 
         await CapacitorWebsocket.connect({ name: PLUGIN_SOCKET_NAME });
+        logWifiDiag("[WS] native: connect() invoked");
       } catch (e) {
         clearTimeout(timeout);
         const msg = e instanceof Error ? e.message : String(e);
+        logWifiDiag("[WS] native exception: " + msg);
         onErrorCb?.(msg);
         reject(e);
       }
@@ -224,20 +240,35 @@ async function connectNative(url: string): Promise<void> {
  */
 function deliverWsMessageData(data: unknown): void {
   if (!onDataCb) return;
+  wsRxDiagCount += 1;
+  const n = wsRxDiagCount;
   if (data instanceof ArrayBuffer) {
+    if (n <= 15 || n % 40 === 0) {
+      logWifiDiag(`[WS] rx #${n} ArrayBuffer len=${data.byteLength}`);
+    }
     onDataCb(new Uint8Array(data));
     return;
   }
   if (typeof data === "string") {
+    if (n <= 15 || n % 40 === 0) {
+      logWifiDiag(`[WS] rx #${n} string len=${data.length} (base64 text from board)`);
+    }
     try {
       onDataCb(base64ToUint8Array(data));
     } catch {
-      /* ignore invalid base64 */
+      if (n <= 5) logWifiDiag(`[WS] rx #${n} base64 decode failed`);
     }
     return;
   }
   if (typeof Blob !== "undefined" && data instanceof Blob) {
-    void data.arrayBuffer().then((buf) => deliverWsMessageData(buf));
+    if (n <= 15) logWifiDiag(`[WS] rx #${n} Blob size=${data.size}`);
+    void data.arrayBuffer().then((buf) => {
+      if (!onDataCb) return;
+      if (n <= 15 || n % 40 === 0) {
+        logWifiDiag(`[WS] rx #${n} Blob→ArrayBuffer len=${buf.byteLength}`);
+      }
+      onDataCb(new Uint8Array(buf));
+    });
   }
 }
 
@@ -245,7 +276,18 @@ function deliverWsMessageData(data: unknown): void {
  * Standard WebSocket (browser or Capacitor iOS WKWebView).
  */
 async function connectStandardWebSocket(url: string): Promise<void> {
+  const plat = await (async () => {
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      return Capacitor.isNativePlatform() ? `native:${Capacitor.getPlatform()}` : "web";
+    } catch {
+      return "web?";
+    }
+  })();
+  logWifiDiag(`[WS] connectStandardWebSocket url=${url} env=${plat} href=${typeof location !== "undefined" ? location.href : "n/a"}`);
+
   if (!isWifiSupported()) {
+    logWifiDiag("[WS] WebSocket API missing");
     onErrorCb?.("WebSocket is not supported in this browser.");
     return Promise.reject(new Error("WebSocket is not supported"));
   }
@@ -254,6 +296,7 @@ async function connectStandardWebSocket(url: string): Promise<void> {
 
   const mixed = getBrowserWsMixedContentBlockedMessage();
   if (mixed && url.startsWith("ws://")) {
+    logWifiDiag("[WS] blocked: HTTPS mixed content");
     onErrorCb?.(mixed);
     return Promise.reject(new Error(mixed));
   }
@@ -265,6 +308,7 @@ async function connectStandardWebSocket(url: string): Promise<void> {
     const timeout = globalThis.setTimeout(() => {
       if (settled) return;
       settled = true;
+      logWifiDiag("[WS] standard: 15s timeout (no open/close in time)");
       try {
         ws?.close();
       } catch {
@@ -286,9 +330,11 @@ async function connectStandardWebSocket(url: string): Promise<void> {
     try {
       ws = new WebSocket(url);
       ws.binaryType = "arraybuffer";
+      logWifiDiag("[WS] standard: new WebSocket() created, readyState=" + ws.readyState);
     } catch (e) {
       globalThis.clearTimeout(timeout);
       const msg = e instanceof Error ? e.message : String(e);
+      logWifiDiag("[WS] standard: ctor threw " + msg);
       onErrorCb?.(msg);
       reject(new Error(msg));
       return;
@@ -297,11 +343,15 @@ async function connectStandardWebSocket(url: string): Promise<void> {
     ws.onopen = () => {
       sawOpen = true;
       console.log("[WebSocket] Connected to", url);
+      logWifiDiag("[WS] standard: onopen readyState=" + ws!.readyState);
       onConnectCb?.(url);
       done(() => resolve());
     };
 
     ws.onclose = (ev) => {
+      logWifiDiag(
+        `[WS] standard: onclose code=${ev.code} wasClean=${ev.wasClean} reason=${(ev.reason || "").slice(0, 80)} settled=${settled} sawOpen=${sawOpen}`
+      );
       if (!settled) {
         const part = ev.reason?.trim() || `code ${ev.code}`;
         const msg = `Connection failed: ${part}`;
@@ -318,6 +368,7 @@ async function connectStandardWebSocket(url: string): Promise<void> {
 
     ws.onerror = () => {
       const msg = "Connection failed.";
+      logWifiDiag("[WS] standard: onerror event");
       done(() => {
         onErrorCb?.(msg);
         reject(new Error(msg));
@@ -332,8 +383,10 @@ async function connectStandardWebSocket(url: string): Promise<void> {
 
 export async function connect(urlOrHost: string, port?: number): Promise<void> {
   const url = buildWsUrl(urlOrHost, port);
+  const usePlugin = await shouldUseNativeWebsocketPlugin();
+  logWifiDiag(`[WS] connect() host/port resolved → ${url} useNativePlugin=${usePlugin}`);
 
-  if (await shouldUseNativeWebsocketPlugin()) {
+  if (usePlugin) {
     return connectNative(url);
   }
 
@@ -352,6 +405,11 @@ export async function disconnect(): Promise<void> {
  * Send raw bytes to the board (KV4P protocol frames).
  */
 export async function write(data: Uint8Array): Promise<void> {
+  wsTxDiagCount += 1;
+  const tn = wsTxDiagCount;
+  if (tn <= 12 || tn % 60 === 0) {
+    logWifiDiag(`[WS] tx #${tn} ${data.length} bytes`);
+  }
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(data);
     return;

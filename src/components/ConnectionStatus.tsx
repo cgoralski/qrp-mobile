@@ -39,6 +39,8 @@ interface ConnectionStatusProps {
   deviceName?: string | null;
   /** If set, show as error state or tooltip (optional). */
   error?: string | null;
+  /** Navigate to Wi‑Fi diagnostics console (full connection log). */
+  onOpenWifiDiagnostics?: () => void;
 }
 
 const ConnectionStatus = ({
@@ -59,6 +61,7 @@ const ConnectionStatus = ({
   connecting = false,
   deviceName,
   error,
+  onOpenWifiDiagnostics,
 }: ConnectionStatusProps) => {
   const connectingToRadio = connected && connectionType === "usb" && !boardBand;
 
@@ -74,13 +77,18 @@ const ConnectionStatus = ({
           : (deviceName ?? "Connected")
       : "Disconnected";
 
-  const canConnect =
-    !connected &&
-    !connecting &&
-    (isBluetoothSupported || isSerialSupported || isWifiSupported);
+  const hasIoOptions = isBluetoothSupported || isSerialSupported || isWifiSupported;
+  const canConnect = !connected && !connecting && hasIoOptions;
   const hasMultipleOptions =
     [isBluetoothSupported, isSerialSupported, isWifiSupported].filter(Boolean).length > 1;
-  const showChoice = canConnect && (hasMultipleOptions || isWifiSupported);
+  const diagnosticsAvailable = isWifiSupported && !!onOpenWifiDiagnostics;
+  /** Popover: normal connect menu, or Wi‑Fi diagnostics while connecting / when on Wi‑Fi. */
+  const showChoice =
+    (canConnect && (hasMultipleOptions || isWifiSupported)) ||
+    (diagnosticsAvailable && connecting) ||
+    (diagnosticsAvailable && connected && connectionType === "wifi");
+  const diagnosticsOnlyPanel =
+    diagnosticsAvailable && (connecting || (connected && connectionType === "wifi"));
 
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [wifiFormOpen, setWifiFormOpen] = useState(false);
@@ -125,11 +133,19 @@ const ConnectionStatus = ({
     onConnectWifi?.(host, portNum);
   };
 
+  const handleOpenWifiDiagnostics = () => {
+    setPopoverOpen(false);
+    setWifiFormOpen(false);
+    onOpenWifiDiagnostics?.();
+  };
+
   const disconnected = !connected;
+  const chipPointer =
+    showChoice || (canConnect && !showChoice);
   const chip = (
     <div
       className={`glass-panel flex items-center gap-2 rounded-full px-3 py-1.5 ${
-        canConnect ? "cursor-pointer hover:bg-white/5 active:scale-[0.98] transition-transform" : ""
+        chipPointer ? "cursor-pointer hover:bg-white/5 active:scale-[0.98] transition-transform" : ""
       } ${connectingToRadio ? "connection-status-pulse" : ""} ${
         disconnected ? "ring-1 ring-red-500/50 bg-red-950/20" : ""
       }`}
@@ -138,8 +154,8 @@ const ConnectionStatus = ({
           ? () => (isBluetoothSupported ? onConnectBle?.() : onConnectUsb?.())
           : undefined
       }
-      role={canConnect ? "button" : undefined}
-      title={error ?? (canConnect ? "Tap to connect" : undefined)}
+      role={chipPointer ? "button" : undefined}
+      title={error ?? (chipPointer ? "Tap for connection options" : undefined)}
     >
       <div
         className={`h-1.5 w-1.5 rounded-full transition-colors shrink-0 ${
@@ -205,6 +221,33 @@ const ConnectionStatus = ({
             )}
             {!wifiFormOpen ? (
             <>
+              {diagnosticsAvailable && (
+                <div className="mb-3 space-y-1.5 pb-2 border-b border-border/50">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full justify-start gap-2 font-mono-display text-[11px]"
+                    onClick={handleOpenWifiDiagnostics}
+                  >
+                    Wi‑Fi diagnostics console
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground px-1">
+                    Full WebSocket + handshake log. Use while joining KV4P-Radio to debug.
+                  </p>
+                </div>
+              )}
+              {diagnosticsOnlyPanel && connecting && (
+                <p className="text-xs text-amber-600/90 px-1 mb-2">
+                  Still connecting… Open the diagnostics console to capture live logs.
+                </p>
+              )}
+              {diagnosticsOnlyPanel && connected && connectionType === "wifi" && (
+                <p className="text-xs text-muted-foreground px-1 mb-2">
+                  Wi‑Fi connected. Open the console to copy logs for support.
+                </p>
+              )}
+              {!diagnosticsOnlyPanel && (
+              <>
               <p className="text-sm font-medium text-foreground px-1 py-1 mb-2">Connect via</p>
               {isBluetoothSupported && (
                 <p className="text-xs text-muted-foreground px-1 pb-2">
@@ -269,6 +312,8 @@ const ConnectionStatus = ({
                     </Button>
                   )}
                 </>
+              )}
+              </>
               )}
             </>
           ) : (

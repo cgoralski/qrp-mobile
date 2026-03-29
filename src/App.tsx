@@ -9,6 +9,7 @@ import { SerialLogProvider } from "@/contexts/SerialLogContext";
 import { Kv4pProvider } from "@/contexts/Kv4pContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import WifiConsolePage from "./pages/WifiConsolePage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
             <Kv4pProvider>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/wifi-console" element={<WifiConsolePage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

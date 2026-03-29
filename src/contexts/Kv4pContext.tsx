@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
+import { logWifiDiag } from "@/lib/wifi-diagnostics";
 import {
   Kv4pParser,
   buildPacket,
@@ -140,8 +141,10 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
         await sendData(buildPacket(CMD_HOST_CONFIG, buildConfig(true)));
         await sendData(buildPacket(CMD_HOST_RSSI, buildRssiState(true)));
         console.log("[KV4P] Handshake sent (STOP, CONFIG, RSSI)" + (isRetry ? ` (retry ${handshakeRetryCountRef.current}/${HANDSHAKE_RETRY_MAX})` : ""));
+        logWifiDiag("[KV4P] handshake sent (STOP, CONFIG, RSSI)" + (isRetry ? ` retry=${handshakeRetryCountRef.current}` : ""));
       } catch (e) {
         console.warn("[KV4P] Handshake send failed:", e);
+        logWifiDiag("[KV4P] handshake send failed: " + (e instanceof Error ? e.message : String(e)));
       }
       const scheduleRetry = () => {
         if (handshakeRetryTimerRef.current) clearTimeout(handshakeRetryTimerRef.current);
@@ -209,6 +212,9 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
               setVersion(v);
               windowSizeRef.current = v.windowSize;
               console.log("[KV4P] version received, windowSize=" + v.windowSize);
+              logWifiDiag(
+                `[KV4P] VERSION ver=${v.ver} radioStatus=${v.radioModuleStatus} rfModule=${v.rfModuleType} window=${v.windowSize} features=${v.features}`
+              );
             }
             break;
           case CMD_WINDOW_UPDATE:
@@ -233,6 +239,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
           }
           case CMD_HELLO:
             console.log("[KV4P] HELLO received, sending handshake");
+            logWifiDiag("[KV4P] HELLO from board → trigger handshake");
             triggerHandshakeRef.current();
             break;
           default:
@@ -253,6 +260,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!connected) {
+      logWifiDiag("[KV4P] disconnected → reset parser/handshake state");
       setRssi(0);
       setVersion(null);
       setHandshakePending(false);
@@ -274,11 +282,13 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
     handshakeSentRef.current = false;
     versionReceivedRef.current = false;
     setHandshakePending(true);
+    logWifiDiag(`[KV4P] connected type=${connectionType} handshake scheduled in ${handshakeDelayMs}ms`);
     triggerHandshakeRef.current = () => {}; // Don't send on HELLO; only send after delay
     const t = window.setTimeout(() => {
       if (handshakeSentRef.current) return;
       setHandshakePending(false);
       console.log("[KV4P] handshake delay elapsed (" + handshakeDelayMs + "ms), sending handshake");
+      logWifiDiag("[KV4P] handshake delay elapsed → runHandshake()");
       runHandshake();
     }, handshakeDelayMs);
     return () => {

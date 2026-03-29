@@ -14,6 +14,7 @@ import { saveWifiHostFromUrl } from "@/lib/wifi-storage";
 import { createRxPlayback, type RxPlaybackHandle } from "@/lib/rx-audio-playback";
 import { getPersistedRadioState } from "@/lib/radio-storage";
 import { useSerialLog } from "@/contexts/SerialLogContext";
+import { logWifiDiag } from "@/lib/wifi-diagnostics";
 
 export type ConnectionType = "usb" | "ble" | "wifi" | null;
 
@@ -70,6 +71,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
   useEffect(() => {
     ws.setCallbacks({
       onConnect: (url) => {
+        logWifiDiag("[DeviceConn] WiFi onConnect url=" + url);
         saveWifiHostFromUrl(url);
         ble.disconnect().catch(() => {});
         serial.disconnectSerial().catch(() => {});
@@ -79,6 +81,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
         setError(null);
       },
       onDisconnect: () => {
+        logWifiDiag("[DeviceConn] WiFi onDisconnect");
         setConnectionType((prev) => {
           if (prev === "wifi") setDeviceName(null);
           return prev === "wifi" ? null : prev;
@@ -86,6 +89,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
         setConnecting(false);
       },
       onError: (msg) => {
+        logWifiDiag("[DeviceConn] WiFi onError: " + msg);
         setConnecting(false);
         setError(msg);
       },
@@ -179,14 +183,20 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
   const connectViaWifi = useCallback(async (hostOrUrl: string, port?: number) => {
     setError(null);
     setConnecting(true);
+    logWifiDiag(`[DeviceConn] connectViaWifi start hostOrUrl=${hostOrUrl} port=${port ?? "default"}`);
     try {
       rxPlaybackHandleRef.current?.destroy();
       rxPlaybackHandleRef.current = null;
+      logWifiDiag("[DeviceConn] calling ws.connect…");
       await ws.connect(hostOrUrl, port);
+      logWifiDiag("[DeviceConn] ws.connect resolved; starting createRxPlayback…");
       const { volume: savedVolume } = getPersistedRadioState();
       const handle = await createRxPlayback(savedVolume);
       rxPlaybackHandleRef.current = handle;
+      logWifiDiag("[DeviceConn] createRxPlayback OK; WiFi path ready");
     } catch (e) {
+      const err = e instanceof Error ? e.message : String(e);
+      logWifiDiag("[DeviceConn] connectViaWifi catch: " + err);
       rxPlaybackHandleRef.current?.destroy();
       rxPlaybackHandleRef.current = null;
       await ws.disconnect().catch(() => {});
