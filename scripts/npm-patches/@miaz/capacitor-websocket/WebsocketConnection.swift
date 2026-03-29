@@ -59,7 +59,8 @@ class SocketConnection {
                 self.connected = false
             case .error(let error):
                 self.connected = false
-                self.pluginContext.notifyListeners("\(self.name):error", data: ["cause": error ?? "Unknown Error"])
+                let cause = error.map { String(describing: $0) } ?? "Unknown Error"
+                self.pluginContext.notifyListeners("\(self.name):error", data: ["cause": cause])
             case .peerClosed:
                 self.pluginContext.notifyListeners("\(self.name):message", data: ["data": "Peer closed"])
             }

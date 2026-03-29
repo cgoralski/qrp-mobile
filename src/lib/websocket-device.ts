@@ -1,8 +1,8 @@
 /**
  * WebSocket client transport for KV4P-HT over WiFi.
- * In the browser: uses native WebSocket (ws:// to the board).
- * In the Capacitor native app: uses @miaz/capacitor-websocket (plain ws://, no cert step).
- * Same KV4P binary protocol: send/receive frames as WebSocket binary messages.
+ * - Browser / Capacitor iOS: WKWebView `WebSocket` (ws:// to the board works; avoids Starscream plugin issues).
+ * - Capacitor Android: @miaz/capacitor-websocket (cleartext / WebView quirks).
+ * Firmware sends KV4P frames as WebSocket TEXT (base64) and accepts BIN or TEXT; see wifi_ws.cpp.
  */
 
 const DEFAULT_WS_PORT = 8765;
@@ -26,7 +26,25 @@ async function isNative(): Promise<boolean> {
   }
 }
 
+/** Android uses the Capacitor plugin; iOS uses WKWebView WebSocket (more reliable to ws:// LAN). */
+async function shouldUseNativeWebsocketPlugin(): Promise<boolean> {
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+  } catch {
+    return false;
+  }
+}
+
 async function clearConnection(): Promise<void> {
+  if (ws) {
+    try {
+      ws.close();
+    } catch {
+      /* ignore */
+    }
+    ws = null;
+  }
   const native = await isNative();
   if (native) {
     nativeConnected = false;
@@ -43,15 +61,6 @@ async function clearConnection(): Promise<void> {
       await CapacitorWebsocket.disconnect({ name: PLUGIN_SOCKET_NAME });
     } catch {
       /* ignore */
-    }
-  } else {
-    if (ws) {
-      try {
-        ws.close();
-      } catch {
-        /* ignore */
-      }
-      ws = null;
     }
   }
 }
@@ -213,17 +222,28 @@ async function connectNative(url: string): Promise<void> {
  * @param urlOrHost - Full URL (ws://host:port) or hostname/IP (e.g. 192.168.4.1)
  * @param port - Optional port when urlOrHost is hostname/IP (default 8765)
  */
-export async function connect(urlOrHost: string, port?: number): Promise<void> {
-  const native = await isNative();
-  const url = buildWsUrl(urlOrHost, port);
-
-  if (native) {
-    return connectNative(url);
+function deliverWsMessageData(data: unknown): void {
+  if (!onDataCb) return;
+  if (data instanceof ArrayBuffer) {
+    onDataCb(new Uint8Array(data));
+    return;
   }
+  if (typeof data === "string") {
+    try {
+      onDataCb(base64ToUint8Array(data));
+    } catch {
+      /* ignore invalid base64 */
+    }
+  }
+}
 
+/**
+ * Standard WebSocket (browser or Capacitor iOS WKWebView).
+ */
+async function connectStandardWebSocket(url: string): Promise<void> {
   if (!isWifiSupported()) {
     onErrorCb?.("WebSocket is not supported in this browser.");
-    return;
+    return Promise.reject(new Error("WebSocket is not supported"));
   }
 
   await clearConnection();
@@ -235,10 +255,33 @@ export async function connect(urlOrHost: string, port?: number): Promise<void> {
   }
 
   return new Promise((resolve, reject) => {
+    let settled = false;
+    const timeout = globalThis.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      try {
+        ws?.close();
+      } catch {
+        /* ignore */
+      }
+      ws = null;
+      const msg = "Connection timeout.";
+      onErrorCb?.(msg);
+      reject(new Error(msg));
+    }, 15000);
+
+    const done = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      globalThis.clearTimeout(timeout);
+      fn();
+    };
+
     try {
       ws = new WebSocket(url);
       ws.binaryType = "arraybuffer";
     } catch (e) {
+      globalThis.clearTimeout(timeout);
       const msg = e instanceof Error ? e.message : String(e);
       onErrorCb?.(msg);
       reject(new Error(msg));
@@ -248,7 +291,7 @@ export async function connect(urlOrHost: string, port?: number): Promise<void> {
     ws.onopen = () => {
       console.log("[WebSocket] Connected to", url);
       onConnectCb?.(url);
-      resolve();
+      done(() => resolve());
     };
 
     ws.onclose = (ev) => {
@@ -259,40 +302,44 @@ export async function connect(urlOrHost: string, port?: number): Promise<void> {
       const part = ev.reason?.trim() || `code ${ev.code}`;
       const msg = failed ? `Connection failed: ${part}` : null;
       if (failed && msg) {
-        onErrorCb?.(msg);
-        reject(new Error(msg));
+        done(() => {
+          onErrorCb?.(msg);
+          reject(new Error(msg));
+        });
       } else {
-        resolve();
+        done(() => resolve());
       }
     };
 
     ws.onerror = () => {
       const msg = "Connection failed.";
-      onErrorCb?.(msg);
-      reject(new Error(msg));
+      done(() => {
+        onErrorCb?.(msg);
+        reject(new Error(msg));
+      });
     };
 
     ws.onmessage = (event) => {
-      if (event.data instanceof ArrayBuffer && onDataCb) {
-        onDataCb(new Uint8Array(event.data));
-      }
+      deliverWsMessageData(event.data);
     };
   });
+}
+
+export async function connect(urlOrHost: string, port?: number): Promise<void> {
+  const url = buildWsUrl(urlOrHost, port);
+
+  if (await shouldUseNativeWebsocketPlugin()) {
+    return connectNative(url);
+  }
+
+  return connectStandardWebSocket(url);
 }
 
 /**
  * Disconnect from the WebSocket server.
  */
 export async function disconnect(): Promise<void> {
-  const native = await isNative();
-  if (native) {
-    await clearConnection();
-    notifyDisconnected();
-    return;
-  }
-  if (ws) {
-    ws.close(1000, "User disconnect");
-  }
+  await clearConnection();
   notifyDisconnected();
 }
 
@@ -300,8 +347,11 @@ export async function disconnect(): Promise<void> {
  * Send raw bytes to the board (KV4P protocol frames).
  */
 export async function write(data: Uint8Array): Promise<void> {
-  const native = await isNative();
-  if (native) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(data);
+    return;
+  }
+  if (await shouldUseNativeWebsocketPlugin()) {
     if (!nativeConnected) throw new Error("Not connected");
     const { CapacitorWebsocket } = await import("@miaz/capacitor-websocket");
     await CapacitorWebsocket.send({
@@ -310,8 +360,5 @@ export async function write(data: Uint8Array): Promise<void> {
     });
     return;
   }
-  if (!ws || ws.readyState !== WebSocket.OPEN) {
-    throw new Error("Not connected");
-  }
-  ws.send(data);
+  throw new Error("Not connected");
 }

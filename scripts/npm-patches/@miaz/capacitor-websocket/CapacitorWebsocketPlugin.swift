@@ -37,13 +37,13 @@ public class CapacitorWebsocketPlugin: CAPPlugin {
     }
 
     @objc public func connect(_ call: CAPPluginCall) {
-        guard var connection = getSocket(call) else { return }
+        guard let connection = getSocket(call) else { return }
         connection.connect()
         call.resolve()
     }
 
     @objc public func disconnect(_ call: CAPPluginCall) {
-        guard var connection = getSocket(call) else { return }
+        guard let connection = getSocket(call) else { return }
         connection.disconnect()
         call.resolve()
     }
