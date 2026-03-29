@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
-import { logWifiDiag } from "@/lib/wifi-diagnostics";
+import { logWifiDiag, previewBytesHex } from "@/lib/wifi-diagnostics";
 import {
   Kv4pParser,
   buildPacket,
@@ -130,16 +130,26 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
       try {
         // On retry (quick replug, no HELLO): send STOP twice to try to clear board state before CONFIG.
         if (isRetry) {
-          await sendData(buildPacket(CMD_HOST_STOP));
+          const s1 = buildPacket(CMD_HOST_STOP);
+          logWifiDiag(`[KV4P] handshake TX STOP ${previewBytesHex(s1)}`);
+          await sendData(s1);
           await new Promise((r) => setTimeout(r, 100));
-          await sendData(buildPacket(CMD_HOST_STOP));
+          const s2 = buildPacket(CMD_HOST_STOP);
+          logWifiDiag(`[KV4P] handshake TX STOP(2) ${previewBytesHex(s2)}`);
+          await sendData(s2);
           await new Promise((r) => setTimeout(r, 80));
         } else {
-          await sendData(buildPacket(CMD_HOST_STOP));
+          const s0 = buildPacket(CMD_HOST_STOP);
+          logWifiDiag(`[KV4P] handshake TX STOP ${previewBytesHex(s0)}`);
+          await sendData(s0);
           await new Promise((r) => setTimeout(r, 80));
         }
-        await sendData(buildPacket(CMD_HOST_CONFIG, buildConfig(true)));
-        await sendData(buildPacket(CMD_HOST_RSSI, buildRssiState(true)));
+        const cfg = buildPacket(CMD_HOST_CONFIG, buildConfig(true));
+        logWifiDiag(`[KV4P] handshake TX CONFIG ${previewBytesHex(cfg)}`);
+        await sendData(cfg);
+        const rssi = buildPacket(CMD_HOST_RSSI, buildRssiState(true));
+        logWifiDiag(`[KV4P] handshake TX RSSI ${previewBytesHex(rssi)}`);
+        await sendData(rssi);
         console.log("[KV4P] Handshake sent (STOP, CONFIG, RSSI)" + (isRetry ? ` (retry ${handshakeRetryCountRef.current}/${HANDSHAKE_RETRY_MAX})` : ""));
         logWifiDiag("[KV4P] handshake sent (STOP, CONFIG, RSSI)" + (isRetry ? ` retry=${handshakeRetryCountRef.current}` : ""));
       } catch (e) {
@@ -195,6 +205,13 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
         const n = ++parsedPacketCountRef.current;
         if (n <= 25 || n % 100 === 0) {
           console.log("[KV4P] packet #" + n + " cmd=0x" + cmd.toString(16).padStart(2, "0") + " plen=" + params.length);
+        }
+        if (n <= 45 || n % 80 === 0) {
+          const hex =
+            params.length > 64
+              ? `${params.length}b (hex omitted)`
+              : previewBytesHex(params, 24);
+          logWifiDiag(`[KV4P] pkt #${n} cmd=0x${cmd.toString(16).padStart(2, "0")} ${hex}`);
         }
         switch (cmd) {
           case CMD_SMETER_REPORT:

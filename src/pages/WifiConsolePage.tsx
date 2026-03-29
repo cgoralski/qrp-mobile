@@ -13,6 +13,7 @@ import {
   getWifiDiagSnapshot,
   logWifiDiag,
   subscribeWifiDiag,
+  WIFI_DIAG_MAX_ENTRIES,
   type WifiDiagEntry,
 } from "@/lib/wifi-diagnostics";
 import { BAND_CONFIGS, type BandId } from "@/lib/hardware";
@@ -28,6 +29,8 @@ function formatTime(ts: number): string {
 export default function WifiConsolePage() {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLPreElement>(null);
+  /** When false, user scrolled up — do not jump to bottom on each new line. */
+  const stickToBottomRef = useRef(true);
   const [lines, setLines] = useState<WifiDiagEntry[]>(() => getWifiDiagSnapshot());
   const [wifiProvisioningOpen, setWifiProvisioningOpen] = useState(false);
 
@@ -92,10 +95,46 @@ export default function WifiConsolePage() {
     })();
   }, [savedWifiHost, savedWifiPort, refreshLines]);
 
+  const handleLogScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const threshold = 96;
+    stickToBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  }, []);
+
   useEffect(() => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el || !stickToBottomRef.current) return;
+    el.scrollTop = el.scrollHeight;
   }, [lines]);
+
+  const jumpToLatest = useCallback(() => {
+    stickToBottomRef.current = true;
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
+
+  useEffect(() => {
+    const onVis = () => {
+      logWifiDiag(`[Life] visibilityState=${document.visibilityState}`);
+    };
+    const onPageShow = (e: Event) => {
+      const pe = e as PageTransitionEvent;
+      logWifiDiag(`[Life] pageshow persisted=${pe.persisted === true}`);
+    };
+    const onPageHide = (e: Event) => {
+      const pe = e as PageTransitionEvent;
+      logWifiDiag(`[Life] pagehide persisted=${pe.persisted === true}`);
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, []);
 
   const prevUiSig = useRef("");
   useEffect(() => {
@@ -172,7 +211,7 @@ export default function WifiConsolePage() {
         </div>
       </header>
 
-      <div className="flex flex-wrap gap-2 px-3 py-2 border-b border-border/40" data-no-swipe>
+      <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border/40" data-no-swipe>
         <Button type="button" variant="secondary" size="sm" className="gap-1.5" onClick={handleCopy}>
           <ClipboardCopy className="h-3.5 w-3.5" />
           Copy all
@@ -186,6 +225,9 @@ export default function WifiConsolePage() {
             Dismiss error
           </Button>
         )}
+        <Button type="button" variant="outline" size="sm" className="ml-auto" onClick={jumpToLatest}>
+          Jump to latest
+        </Button>
       </div>
 
       <div className="px-3 py-2 text-[10px] font-mono text-muted-foreground space-y-0.5 border-b border-border/30 shrink-0">
@@ -210,7 +252,8 @@ export default function WifiConsolePage() {
 
       <pre
         ref={scrollRef}
-        className="flex-1 min-h-0 overflow-auto px-3 py-2 pb-[max(1rem,env(safe-area-inset-bottom))] font-mono text-[10px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words"
+        onScroll={handleLogScroll}
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-2 pb-2 font-mono text-[10px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words"
       >
         {lines.length === 0 ? (
           <span className="text-muted-foreground">No log lines yet. Tap Connect → Connect to board.</span>
@@ -223,6 +266,13 @@ export default function WifiConsolePage() {
           ))
         )}
       </pre>
+
+      <div className="shrink-0 border-t border-border/40 px-3 py-1.5 text-[9px] font-mono text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-0.5 pb-[max(0.35rem,env(safe-area-inset-bottom))]">
+        <span>
+          Buffer: <span className="text-foreground/80">{lines.length}</span> / {WIFI_DIAG_MAX_ENTRIES} lines
+        </span>
+        <span className="opacity-80">Scroll up for history; new lines append at bottom.</span>
+      </div>
 
       <WifiProvisioningModal
         open={wifiProvisioningOpen}

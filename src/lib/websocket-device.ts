@@ -1,4 +1,4 @@
-import { logWifiDiag } from "@/lib/wifi-diagnostics";
+import { logWifiDiag, previewBytesHex } from "@/lib/wifi-diagnostics";
 
 /**
  * WebSocket client transport for KV4P-HT over WiFi.
@@ -21,6 +21,8 @@ let onErrorCb: ((message: string) => void) | null = null;
 let onDataCb: ((data: Uint8Array) => void) | null = null;
 let wsRxDiagCount = 0;
 let wsTxDiagCount = 0;
+/** When native plugin reported connected (for delta logs on RST/errors). */
+let nativeOpenAtMs: number | null = null;
 
 /** True for Capacitor shell (iOS or Android) — use native plugin, not WKWebView WebSocket. */
 async function isCapacitorNativeApp(): Promise<boolean> {
@@ -46,6 +48,7 @@ async function clearConnection(): Promise<void> {
   }
 
   nativeConnected = false;
+  nativeOpenAtMs = null;
   for (const h of pluginListeners) {
     try {
       await h.remove();
@@ -146,26 +149,49 @@ async function connectNative(url: string): Promise<void> {
   await clearConnection();
 
   return new Promise((resolve, reject) => {
+    /** Prevents reject() after resolve() when Starscream errors arrive post-handshake. */
+    let connectOutcomeSettled = false;
+
     const timeout = setTimeout(() => {
+      if (connectOutcomeSettled) return;
+      connectOutcomeSettled = true;
       logWifiDiag("[WS] native timeout 15s");
-      reject(new Error("Connection timeout"));
       onErrorCb?.("Connection timeout.");
+      reject(new Error("Connection timeout"));
     }, 15000);
+
+    const finishNativeError = (msg: string) => {
+      clearTimeout(timeout);
+      const openMs = nativeOpenAtMs;
+      if (openMs != null) {
+        logWifiDiag(`[WS] native plugin error (after open, ${Date.now() - openMs}ms): ${msg}`);
+      } else {
+        logWifiDiag("[WS] native plugin connect error: " + msg);
+      }
+      nativeConnected = false;
+      nativeOpenAtMs = null;
+      onErrorCb?.(msg);
+      if (!connectOutcomeSettled) {
+        connectOutcomeSettled = true;
+        reject(new Error(msg));
+      }
+    };
 
     const onConnected = () => {
       clearTimeout(timeout);
       nativeConnected = true;
+      nativeOpenAtMs = Date.now();
       console.log("[WebSocket] Connected to", url);
       logWifiDiag("[WS] native plugin: connected event");
       onConnectCb?.(url);
-      resolve();
+      if (!connectOutcomeSettled) {
+        connectOutcomeSettled = true;
+        resolve();
+      }
     };
+
     const onConnectError = (event: { exception?: string }) => {
-      clearTimeout(timeout);
-      const msg = event?.exception ?? "Connection failed.";
-      logWifiDiag("[WS] native plugin connect error: " + msg);
-      onErrorCb?.(msg);
-      reject(new Error(msg));
+      finishNativeError(event?.exception ?? "Connection failed.");
     };
 
     (async () => {
@@ -180,9 +206,17 @@ async function connectNative(url: string): Promise<void> {
           (event: { data: string }) => {
             try {
               const bytes = base64ToUint8Array(event.data);
+              wsRxDiagCount += 1;
+              const n = wsRxDiagCount;
+              if (n <= 40 || n % 50 === 0) {
+                logWifiDiag(`[WS] rx(native) #${n} ${previewBytesHex(bytes)}`);
+              }
               onDataCb?.(bytes);
             } catch {
-              /* ignore decode errors */
+              wsRxDiagCount += 1;
+              if (wsRxDiagCount <= 8) {
+                logWifiDiag(`[WS] rx(native) #${wsRxDiagCount} base64 decode failed`);
+              }
             }
           }
         );
@@ -197,8 +231,14 @@ async function connectNative(url: string): Promise<void> {
         const hDisconnected = await CapacitorWebsocket.addListener(
           `${PLUGIN_SOCKET_NAME}:disconnected`,
           () => {
-            logWifiDiag("[WS] native plugin: disconnected event");
+            const openMs = nativeOpenAtMs;
+            if (openMs != null) {
+              logWifiDiag(`[WS] native plugin: disconnected event (was open ${Date.now() - openMs}ms)`);
+            } else {
+              logWifiDiag("[WS] native plugin: disconnected event");
+            }
             nativeConnected = false;
+            nativeOpenAtMs = null;
             notifyDisconnected();
           }
         );
@@ -225,8 +265,11 @@ async function connectNative(url: string): Promise<void> {
         clearTimeout(timeout);
         const msg = e instanceof Error ? e.message : String(e);
         logWifiDiag("[WS] native exception: " + msg);
-        onErrorCb?.(msg);
-        reject(e);
+        if (!connectOutcomeSettled) {
+          connectOutcomeSettled = true;
+          onErrorCb?.(msg);
+          reject(e);
+        }
       }
     })();
   });
@@ -406,8 +449,8 @@ export async function disconnect(): Promise<void> {
 export async function write(data: Uint8Array): Promise<void> {
   wsTxDiagCount += 1;
   const tn = wsTxDiagCount;
-  if (tn <= 12 || tn % 60 === 0) {
-    logWifiDiag(`[WS] tx #${tn} ${data.length} bytes`);
+  if (tn <= 50 || tn % 60 === 0) {
+    logWifiDiag(`[WS] tx #${tn} ${previewBytesHex(data)}`);
   }
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(data);
