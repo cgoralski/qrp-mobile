@@ -31,7 +31,25 @@ import {
   CMD_WINDOW_UPDATE,
   CMD_RX_AUDIO,
   CMD_HELLO,
+  CMD_DEBUG_INFO,
+  CMD_DEBUG_ERROR,
+  CMD_DEBUG_WARN,
+  CMD_DEBUG_DEBUG,
+  CMD_DEBUG_TRACE,
 } from "@/lib/kv4p-protocol";
+
+/** Device → host only: firmware `debug.h` / `_LOGI` etc. (same numeric values as some HOST_* constants but never received from wire as host commands). */
+const BOARD_DEBUG_LEVEL: Record<number, string> = {
+  [CMD_DEBUG_INFO]: "INFO",
+  [CMD_DEBUG_ERROR]: "ERROR",
+  [CMD_DEBUG_WARN]: "WARN",
+  [CMD_DEBUG_DEBUG]: "DEBUG",
+  [CMD_DEBUG_TRACE]: "TRACE",
+};
+
+function isBoardDebugPacket(cmd: number): boolean {
+  return BOARD_DEBUG_LEVEL[cmd] !== undefined;
+}
 
 interface Kv4pContextValue {
   /** Current S-meter (0–9). From device COMMAND_SMETER_REPORT, calibrated. */
@@ -85,6 +103,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
   const handshakeRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handshakeRetryCountRef = useRef(0);
   const HANDSHAKE_RETRY_MAX = 2;
+  const boardDebugWifiLogCountRef = useRef(0);
 
   const sendCommand = useCallback(
     (cmd: number, params?: Uint8Array) => {
@@ -206,7 +225,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
         if (n <= 25 || n % 100 === 0) {
           console.log("[KV4P] packet #" + n + " cmd=0x" + cmd.toString(16).padStart(2, "0") + " plen=" + params.length);
         }
-        if (n <= 45 || n % 80 === 0) {
+        if (!isBoardDebugPacket(cmd) && (n <= 45 || n % 80 === 0)) {
           const hex =
             params.length > 64
               ? `${params.length}b (hex omitted)`
@@ -214,6 +233,24 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
           logWifiDiag(`[KV4P] pkt #${n} cmd=0x${cmd.toString(16).padStart(2, "0")} ${hex}`);
         }
         switch (cmd) {
+          case CMD_DEBUG_INFO:
+          case CMD_DEBUG_ERROR:
+          case CMD_DEBUG_WARN:
+          case CMD_DEBUG_DEBUG:
+          case CMD_DEBUG_TRACE: {
+            boardDebugWifiLogCountRef.current += 1;
+            const d = boardDebugWifiLogCountRef.current;
+            if (d <= 35 || d % 45 === 0) {
+              const level = BOARD_DEBUG_LEVEL[cmd] ?? "?";
+              const text = new TextDecoder("utf-8", { fatal: false })
+                .decode(params)
+                .replace(/\r?\n/g, "↵")
+                .trim();
+              const short = text.length > 200 ? `${text.slice(0, 197)}…` : text;
+              logWifiDiag(`[KV4P] board ${level} (${params.length}b): ${short}`);
+            }
+            break;
+          }
           case CMD_SMETER_REPORT:
             if (params.length >= 1) setRssi(rawRssiToSUnits(parseRssi(params)));
             break;
@@ -284,6 +321,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
       windowSizeRef.current = 0;
       rxAudioChunkCountRef.current = 0;
       parsedPacketCountRef.current = 0;
+      boardDebugWifiLogCountRef.current = 0;
       handshakeSentRef.current = false;
       versionReceivedRef.current = false;
       handshakeRetryCountRef.current = 0;
