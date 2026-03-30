@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "QRP Mobile",
+    "description": "KV4P mobile app (Vite + React + Capacitor)",
+    "repository": "https://github.com/cgoralski/qrp-mobile.git"
+  },
+  "actions": [
+    {
+      "id": "build_web",
+      "label": "Web UI build (Vite → dist/)",
+      "command": "if [[ \"${FULL_REBUILD:-0}\" == \"1\" ]]; then npm ci; elif [[ ! -d node_modules ]]; then npm ci; fi; npm run build; echo \"==> Web build done. Output: $(pwd)/dist/\""
+    },
+    {
+      "id": "flash_kv4p",
+      "label": "Flash KV4P firmware (PlatformIO)",
+      "command": "if [[ ! -f firmware/microcontroller/platformio.ini ]]; then echo \"error: missing firmware/microcontroller/platformio.ini\" >&2; exit 1; fi; if command -v pio >/dev/null 2>&1; then P=pio; elif command -v platformio >/dev/null 2>&1; then P=platformio; else echo \"error: PlatformIO not found. Install: brew install platformio\" >&2; exit 1; fi; cd firmware/microcontroller && \"$P\" run -e esp32dev -t upload; echo \"==> Firmware upload finished.\""
+    },
+    {
+      "id": "ios_sync_xcode",
+      "label": "Capacitor iOS sync + Xcode",
+      "command": "set -e; if [[ -f scripts/apply-npm-patches.sh ]]; then bash scripts/apply-npm-patches.sh; fi; npm run build:capacitor; npx cap sync ios; if command -v pod >/dev/null 2>&1; then (cd ios/App && pod install); else echo \"warning: pod not in PATH — install: brew install cocoapods\" >&2; fi; if [[ \"$(uname -s)\" == Darwin ]]; then open ios/App/App.xcworkspace; else echo \"Open ios/App/App.xcworkspace manually (non-macOS).\"; fi"
+    }
+  ],
+  "menu": {
+    "defaultAction": "build_web",
+    "afterDefaultPrompts": [
+      {
+        "prompt": "Flash the KV4P Board?",
+        "actionId": "flash_kv4p"
+      },
+      {
+        "prompt": "Open the project in Xcode afterwards?",
+        "actionId": "ios_sync_xcode"
+      }
+    ]
+  }
+}

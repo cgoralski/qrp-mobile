@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cgoralski/qrp-mobile/orchestrator/schema/build.schema.json",
+  "title": ".build catalog",
+  "type": "object",
+  "required": ["schemaVersion", "project", "actions", "menu"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "project": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "repository": { "type": "string", "description": "Clone URL (informational)" }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "command"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "command": { "type": "string", "description": "Shell script body; cwd is project root then optional cwd" },
+          "cwd": { "type": "string", "default": "." }
+        }
+      }
+    },
+    "menu": {
+      "type": "object",
+      "properties": {
+        "defaultAction": { "type": "string", "description": "Action id for default / CI run" },
+        "afterDefaultPrompts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["prompt", "actionId"],
+            "properties": {
+              "prompt": { "type": "string" },
+              "actionId": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

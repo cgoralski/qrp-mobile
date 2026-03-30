@@ -3,6 +3,7 @@
 This folder is your **working copy** of the KV4P ESP32 firmware. Use it for all edits and for building `firmware.bin`.
 
 - **Open in PlatformIO:** open `firmware/microcontroller/` (the folder containing `platformio.ini`).
+- **From the repo build menu:** root [`.build`](../.build) defines a “Flash KV4P firmware” action; run `bash scripts/build.sh` (or your Projects stub) and choose QRP Mobile, or use PlatformIO manually as above.
 - **Open in Arduino IDE:** open `firmware/microcontroller/kv4p_ht_esp32_wroom_32/kv4p_ht_esp32_wroom_32.ino`.
 
 The **pristine reference** (developer source + local stubs, unchanged) is in **`.original-poc/`** at the repo root. Do not edit that folder; use it only to compare or resync.
