@@ -2,8 +2,8 @@
 
 This folder is your **working copy** of the KV4P ESP32 firmware. Use it for all edits and for building `firmware.bin`.
 
-- **Open in PlatformIO:** open `firmware/microcontroller-original-src/` (the folder containing `platformio.ini`).
-- **Open in Arduino IDE:** open `firmware/microcontroller-original-src/kv4p_ht_esp32_wroom_32/kv4p_ht_esp32_wroom_32.ino`.
+- **Open in PlatformIO:** open `firmware/microcontroller/` (the folder containing `platformio.ini`).
+- **Open in Arduino IDE:** open `firmware/microcontroller/kv4p_ht_esp32_wroom_32/kv4p_ht_esp32_wroom_32.ino`.
 
 The **pristine reference** (developer source + local stubs, unchanged) is in **`.original-poc/`** at the repo root. Do not edit that folder; use it only to compare or resync.
 

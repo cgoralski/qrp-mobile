@@ -12,7 +12,7 @@ config.adc_pin = hw.pins.pinAudioIn;
 
 Without this, the ADC may use a library default pin instead of your board’s mic input (e.g. GPIO 34), so no audio is captured → no Opus frames → no `COMMAND_RX_AUDIO` sent to the app.
 
-**Change:** In the sketch’s `rxAudio.h` (in `firmware/microcontroller-original-src/kv4p_ht_esp32_wroom_32/` or `.original-poc/...`), `initI2SRx()` sets `config.adc_pin = hw.pins.pinAudioIn;`.
+**Change:** In the sketch’s `rxAudio.h` (in `firmware/microcontroller/kv4p_ht_esp32_wroom_32/` or `.original-poc/...`), `initI2SRx()` sets `config.adc_pin = hw.pins.pinAudioIn;`.
 
 If your AudioTools version uses a different config field (e.g. `pin_adc`), adjust the name to match your library.
 

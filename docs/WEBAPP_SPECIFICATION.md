@@ -564,4 +564,4 @@ No change is required. The same firmware and protocol are used. Ensure the board
 
 ---
 
-*End of Web App Build Specification. For the canonical protocol changelog, see `firmware/microcontroller-original-src/kv4p_ht_esp32_wroom_32/readme.md`.*
+*End of Web App Build Specification. For the canonical protocol changelog, see `firmware/microcontroller/kv4p_ht_esp32_wroom_32/readme.md`.*

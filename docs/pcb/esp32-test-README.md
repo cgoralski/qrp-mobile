@@ -4,7 +4,7 @@ Requirements:
 
 * You can build and upload code from PlatformIO to the ESP32 boards.  Both projects:
   * `pcb/KiCAD/esp32-test-code/kv4p-ht-v2-esp32-test/`
-  * `firmware/microcontroller-original-src/`
+  * `firmware/microcontroller/`
 * I think parts of `showmeconsole.ph` require a POSIX platform, specifically the `select()` call.  Unknown what this will do on a non-POSIX platform (looking at you, Windows)
 
 ## Burning firmware

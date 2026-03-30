@@ -556,7 +556,7 @@ Host enforces min/max per band and sets `txAllowed` so PTT is disabled out-of-ba
 ### 9.2 ESP32 Firmware
 
 - **Arduino:** Open `.ino` in Arduino IDE; board “ESP32 Dev Module”; Tools → Events Run On → Core 0. Libraries: EspSoftwareSerial, DRA818 (manual install from GitHub release), AudioTools (and Opus codec).
-- **PlatformIO:** Open `firmware/microcontroller-original-src/` (or the folder containing the .ino); build and upload. ESP32 core 2.0.x recommended.
+- **PlatformIO:** Open `firmware/microcontroller/` (or the folder containing the .ino); build and upload. ESP32 core 2.0.x recommended.
 - **Firmware version:** Stored in `.ino` (e.g. FIRMWARE_VER = 15). Host minimum version in app (e.g. FirmwareUtils.PACKAGED_FIRMWARE_VER = 15).
 
 ### 9.3 Flashing ESP32 from Phone
@@ -615,4 +615,4 @@ Use this checklist when rebuilding the app on a different OS (e.g. iOS, Flutter,
 
 ---
 
-*End of specification. For the canonical protocol changelog and examples, see `firmware/microcontroller-original-src/kv4p_ht_esp32_wroom_32/readme.md`.*
+*End of specification. For the canonical protocol changelog and examples, see `firmware/microcontroller/kv4p_ht_esp32_wroom_32/readme.md`.*

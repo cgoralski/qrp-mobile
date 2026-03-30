@@ -82,7 +82,7 @@
 
 1. **Open the Project:**
    - Go to `File` > `Open`.
-   - Navigate and open: `firmware/microcontroller-original-src/kv4p_ht_esp32_wroom_32/kv4p_ht_esp32_wroom_32.ino`.
+   - Navigate and open: `firmware/microcontroller/kv4p_ht_esp32_wroom_32/kv4p_ht_esp32_wroom_32.ino`.
 
 ### Building the Project (Arduino IDE)
 
@@ -126,7 +126,7 @@
 
 1. **Open VSCode.**
 2. **Open the Project Directory:**
-   - Navigate to `firmware/microcontroller-original-src/`.
+   - Navigate to `firmware/microcontroller/`.
    - Open this directory in VSCode by selecting `File` > `Open Folder` and choosing the specified path.
    - Ensure that the directory contains the `platformio.ini` file to recognize it as a PlatformIO project.
    - *Note:* Opening the root directory may prevent VSCode from recognizing it as a PlatformIO project.

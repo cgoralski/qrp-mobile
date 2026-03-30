@@ -8,5 +8,5 @@ globs: firmware/**/*
 
 The user has given **permission to rebuild the firmware whenever it is required**.
 
-- After making changes under `firmware/` that affect the built output (e.g. `.ino`, `.h`, `.cpp`, `platformio.ini`), run `pio run -e esp32dev` from `firmware/microcontroller-original-src/` without asking.
+- After making changes under `firmware/` that affect the built output (e.g. `.ino`, `.h`, `.cpp`, `platformio.ini`), run `pio run -e esp32dev` from `firmware/microcontroller/` without asking.
 - No need to ask for confirmation before running the firmware build.
