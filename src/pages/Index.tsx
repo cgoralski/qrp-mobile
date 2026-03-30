@@ -15,7 +15,6 @@ import MapScreen from "@/components/MapScreen";
 import SerialLogScreen from "@/components/SerialLogScreen";
 import SettingsScreen from "@/components/SettingsScreen";
 import { useCaptions } from "@/hooks/use-captions";
-import { useRxAudioPlayback } from "@/hooks/useRxAudioPlayback";
 import { useTxAudio } from "@/hooks/useTxAudio";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
 import { useKv4p } from "@/contexts/Kv4pContext";
@@ -234,8 +233,6 @@ const Index = () => {
     rxPlaybackHandleRef,
   } = useDeviceConnection();
   const { rssi: deviceRssi, sendPttDown, sendPttUp, sendGroup, sendStop, sendCommand, requestVersion, version: deviceVersion } = useKv4p();
-
-  useRxAudioPlayback();
 
   // Capture mic and send TX Opus frames to device while PTT is down and connected
   const onTxEncoded = useCallback((data: Uint8Array) => sendCommand(CMD_HOST_TX_AUDIO, data), [sendCommand]);

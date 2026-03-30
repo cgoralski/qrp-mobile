@@ -34,8 +34,10 @@ interface DeviceConnectionContextValue {
   isWifiSupported: boolean;
   sendData: (data: Uint8Array) => Promise<void>;
   setOnData: (callback: ((data: Uint8Array) => void) | null) => void;
-  /** RX playback handle created when user clicks Connect (USB). Cleared on disconnect. */
+  /** RX playback handle created after Connect (USB or Wi‑Fi). Cleared on disconnect. */
   rxPlaybackHandleRef: React.MutableRefObject<RxPlaybackHandle | null>;
+  /** Incremented when a new playback handle is assigned so hooks can re-attach after async create. */
+  rxPlaybackEpoch: number;
 }
 
 const DeviceConnectionContext = createContext<DeviceConnectionContextValue | null>(null);
@@ -45,6 +47,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
   const [deviceName, setDeviceName] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rxPlaybackEpoch, setRxPlaybackEpoch] = useState(0);
   const onDataRef = useRef<((data: Uint8Array) => void) | null>(null);
   const rxPlaybackHandleRef = useRef<RxPlaybackHandle | null>(null);
   const serialLog = useSerialLog();
@@ -176,6 +179,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
       const { volume: savedVolume } = getPersistedRadioState();
       const handle = await createRxPlayback(savedVolume);
       rxPlaybackHandleRef.current = handle;
+      setRxPlaybackEpoch((e) => e + 1);
     } catch (e) {
       rxPlaybackHandleRef.current?.destroy();
       rxPlaybackHandleRef.current = null;
@@ -198,6 +202,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
       const { volume: savedVolume } = getPersistedRadioState();
       const handle = await createRxPlayback(savedVolume);
       rxPlaybackHandleRef.current = handle;
+      setRxPlaybackEpoch((e) => e + 1);
       logWifiDiag("[DeviceConn] createRxPlayback OK; WiFi path ready");
     } catch (e) {
       const err = e instanceof Error ? e.message : String(e);
@@ -216,6 +221,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
     if (connectionType === "wifi") await ws.disconnect();
     rxPlaybackHandleRef.current?.destroy();
     rxPlaybackHandleRef.current = null;
+    setRxPlaybackEpoch((e) => e + 1);
     setConnectionType(null);
     setDeviceName(null);
   }, [connectionType]);
@@ -237,6 +243,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
     sendData,
     setOnData,
     rxPlaybackHandleRef,
+    rxPlaybackEpoch,
   };
 
   return (

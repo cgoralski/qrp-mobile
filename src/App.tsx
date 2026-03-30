@@ -7,6 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import { DeviceConnectionProvider } from "@/contexts/DeviceConnectionContext";
 import { SerialLogProvider } from "@/contexts/SerialLogContext";
 import { Kv4pProvider } from "@/contexts/Kv4pContext";
+import { RxAudioPlaybackHost } from "@/components/RxAudioPlaybackHost";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import WifiConsolePage from "./pages/WifiConsolePage";
@@ -25,6 +26,7 @@ const App = () => (
         <SerialLogProvider>
           <DeviceConnectionProvider>
             <Kv4pProvider>
+            <RxAudioPlaybackHost />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/wifi-console" element={<WifiConsolePage />} />
