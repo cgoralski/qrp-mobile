@@ -15,6 +15,7 @@ import { createRxPlayback, type RxPlaybackHandle } from "@/lib/rx-audio-playback
 import { getPersistedRadioState } from "@/lib/radio-storage";
 import { useSerialLog } from "@/contexts/SerialLogContext";
 import { logWifiDiag } from "@/lib/wifi-diagnostics";
+import { RadioLinkKeepAlive } from "@/plugins/radio-link-keepalive";
 
 export type ConnectionType = "usb" | "ble" | "wifi" | null;
 
@@ -68,6 +69,18 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
     } else if (connectionType === "wifi" && ws.isConnected()) {
       await ws.write(data);
     }
+  }, [connectionType]);
+
+  // Native: keep process + Wi‑Fi active when screen is off (WLAN path). Android: FGS + locks; iOS: audio background.
+  useEffect(() => {
+    if (connectionType !== "wifi") return;
+    void RadioLinkKeepAlive.enable().catch((e) => {
+      console.warn("[RadioLinkKeepAlive] enable failed:", e);
+      logWifiDiag("[RadioLinkKeepAlive] enable failed: " + (e instanceof Error ? e.message : String(e)));
+    });
+    return () => {
+      void RadioLinkKeepAlive.disable().catch(() => {});
+    };
   }, [connectionType]);
 
   // WebSocket (WiFi) callbacks

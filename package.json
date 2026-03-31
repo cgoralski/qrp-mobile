@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "capacitor:copy:after": "node scripts/patch-ios-package-class-list.mjs",
     "ios:sync": "npm run build:capacitor && npx cap sync ios",
     "ios:open": "npx cap open ios",
     "postinstall": "bash scripts/apply-npm-patches.sh",
