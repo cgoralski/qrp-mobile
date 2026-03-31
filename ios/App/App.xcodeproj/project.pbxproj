@@ -12,6 +12,7 @@
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
 		B7A1F0022FED796500168520 /* AppBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A1F0012FED796500168520 /* AppBridgeViewController.swift */; };
 		A1B2C3D41FED11110000AAAA /* RadioLinkKeepAlivePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D31FED11110000AAAA /* RadioLinkKeepAlivePlugin.swift */; };
+		E2E3F4A41FED22220000BBBB /* RxPcmAudioPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E3F4A31FED22220000BBBB /* RxPcmAudioPlugin.swift */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
@@ -26,6 +27,7 @@
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B7A1F0012FED796500168520 /* AppBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBridgeViewController.swift; sourceTree = "<group>"; };
 		A1B2C3D31FED11110000AAAA /* RadioLinkKeepAlivePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioLinkKeepAlivePlugin.swift; sourceTree = "<group>"; };
+		E2E3F4A31FED22220000BBBB /* RxPcmAudioPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RxPcmAudioPlugin.swift; sourceTree = "<group>"; };
 		504EC30C1FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -81,6 +83,7 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				B7A1F0012FED796500168520 /* AppBridgeViewController.swift */,
 				A1B2C3D31FED11110000AAAA /* RadioLinkKeepAlivePlugin.swift */,
+				E2E3F4A31FED22220000BBBB /* RxPcmAudioPlugin.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -218,6 +221,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				B7A1F0022FED796500168520 /* AppBridgeViewController.swift in Sources */,
 				A1B2C3D41FED11110000AAAA /* RadioLinkKeepAlivePlugin.swift in Sources */,
+				E2E3F4A41FED22220000BBBB /* RxPcmAudioPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

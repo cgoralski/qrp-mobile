@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const jsonPath = path.join(__dirname, "../ios/App/App/capacitor.config.json");
 /** Swift module is the Xcode target name (default "App"). */
-const EXTRA_CLASSES = ["App.RadioLinkKeepAlivePlugin"];
+const EXTRA_CLASSES = ["App.RadioLinkKeepAlivePlugin", "App.RxPcmAudioPlugin"];
 
 if (!fs.existsSync(jsonPath)) {
   process.exit(0);

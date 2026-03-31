@@ -1,5 +1,7 @@
 /**
- * RX audio playback: decode Opus chunks from the device and play via Web Audio API.
+ * RX audio playback: decode Opus chunks from the device.
+ * - iOS native: AVAudioEngine PCM (continues when screen locks; WKWebView Web Audio does not).
+ * - Else: Web Audio API scheduling.
  * Matches firmware: 48 kHz, mono, Opus (narrowband, 40 ms frames).
  */
 
@@ -28,12 +30,111 @@ export interface RxPlaybackHandle {
   volumeDown(): void;
 }
 
+function int16PcmToBase64(int16: Int16Array): string {
+  const u8 = new Uint8Array(int16.buffer, int16.byteOffset, int16.byteLength);
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < u8.length; i += chunk) {
+    bin += String.fromCharCode.apply(null, Array.from(u8.subarray(i, i + chunk)) as unknown as number[]);
+  }
+  return btoa(bin);
+}
+
 /**
- * Initialize RX playback: Opus decoder + AudioContext, returns handle to push chunks and destroy.
- * Call from a user gesture (e.g. after connect) so AudioContext can start.
- * @param initialVolume Optional saved volume (0.1–3); clamped and used instead of VOLUME_DEFAULT.
+ * iOS Capacitor: decode in JS, play PCM natively (background-safe).
  */
-export async function createRxPlayback(initialVolume?: number): Promise<RxPlaybackHandle> {
+async function createIosNativeRxPlayback(initialVolume?: number): Promise<RxPlaybackHandle> {
+  const { RxPcmAudio } = await import("@/plugins/rx-pcm-audio");
+  const decoder = new OpusDecoder();
+  await decoder.ready;
+  await RxPcmAudio.prepare({ sampleRate: SAMPLE_RATE });
+
+  const clampedDefault =
+    initialVolume != null && Number.isFinite(initialVolume)
+      ? Math.max(VOLUME_MIN, Math.min(VOLUME_MAX, initialVolume))
+      : VOLUME_DEFAULT;
+  let currentGain = clampedDefault;
+  let destroyed = false;
+  let firstPlayLogged = false;
+
+  function clampGain(g: number): number {
+    return Math.max(VOLUME_MIN, Math.min(VOLUME_MAX, g));
+  }
+
+  /** Serialize native enqueue so frame order is preserved. */
+  let enqueueChain: Promise<void> = Promise.resolve();
+
+  async function decodeAndEnqueue(data: Uint8Array): Promise<void> {
+    if (destroyed || data.length === 0) return;
+    const result = decoder.decodeFrame(data);
+    if (!result?.channelData?.[0] || result.samplesDecoded === 0) return;
+    const ch = result.channelData[0];
+    const n = result.samplesDecoded;
+    const int16 = new Int16Array(n);
+    const g = currentGain;
+    for (let i = 0; i < n; i++) {
+      let s = ch[i] * g;
+      s = Math.max(-1, Math.min(1, s));
+      int16[i] = Math.max(-32768, Math.min(32767, Math.round(s * 32767)));
+    }
+    const b64 = int16PcmToBase64(int16);
+    await RxPcmAudio.enqueueInt16({ b64 });
+    if (!firstPlayLogged) {
+      firstPlayLogged = true;
+      console.log("[RX audio] first frame (iOS native PCM engine)");
+    }
+  }
+
+  function pushChunk(data: Uint8Array): void {
+    enqueueChain = enqueueChain
+      .then(() => decodeAndEnqueue(data))
+      .catch(() => {
+        /* bad frame or bridge error */
+      });
+  }
+
+  function destroy(): void {
+    if (destroyed) return;
+    destroyed = true;
+    void enqueueChain
+      .catch(() => {})
+      .finally(() => {
+        void RxPcmAudio.stop();
+        try {
+          decoder.free();
+        } catch {
+          /* decoder may already be freed */
+        }
+      });
+  }
+
+  return {
+    pushChunk,
+    destroy,
+    resumeIfSuspended: async () => {
+      /* Native engine does not use suspended Web Audio */
+    },
+    getVolume: () => (destroyed ? VOLUME_DEFAULT : currentGain),
+    setVolume: (gain: number) => {
+      if (destroyed) return;
+      currentGain = clampGain(gain);
+    },
+    volumeUp: () => {
+      currentGain = clampGain(currentGain + VOLUME_STEP);
+    },
+    volumeDown: () => {
+      currentGain = clampGain(currentGain - VOLUME_STEP);
+    },
+    get destroyed() {
+      return destroyed;
+    },
+  };
+}
+
+/**
+ * Web / Android: Web Audio API.
+ */
+async function createWebRxPlayback(initialVolume?: number): Promise<RxPlaybackHandle> {
   const decoder = new OpusDecoder();
   await decoder.ready;
 
@@ -50,6 +151,11 @@ export async function createRxPlayback(initialVolume?: number): Promise<RxPlayba
   let currentGain = clampedDefault;
   gainNode.gain.value = currentGain;
   gainNode.connect(ctx.destination);
+
+  let nextStartTime = 0;
+  let playoutPrimed = false;
+  let destroyed = false;
+  let firstPlayLogged = false;
 
   function clampGain(g: number): number {
     return Math.max(VOLUME_MIN, Math.min(VOLUME_MAX, g));
@@ -73,15 +179,10 @@ export async function createRxPlayback(initialVolume?: number): Promise<RxPlayba
     setVolume(currentGain - VOLUME_STEP);
   }
 
-  let nextStartTime = 0;
-  let playoutPrimed = false;
-  let destroyed = false;
-  let firstPlayLogged = false;
-
   function pushChunk(data: Uint8Array): void {
     if (destroyed || data.length === 0) return;
     if (ctx.state === "suspended") {
-      ctx.resume();
+      void ctx.resume();
     }
     try {
       const result = decoder.decodeFrame(data);
@@ -109,7 +210,7 @@ export async function createRxPlayback(initialVolume?: number): Promise<RxPlayba
 
       if (!firstPlayLogged) {
         firstPlayLogged = true;
-        console.log("[RX audio] first frame played to speakers");
+        console.log("[RX audio] first frame played to speakers (Web Audio)");
       }
     } catch {
       // Skip corrupted or invalid frames
@@ -144,4 +245,15 @@ export async function createRxPlayback(initialVolume?: number): Promise<RxPlayba
       return destroyed;
     },
   };
+}
+
+/**
+ * Initialize RX playback. On iOS Capacitor, uses native PCM engine for lock-screen playback.
+ */
+export async function createRxPlayback(initialVolume?: number): Promise<RxPlaybackHandle> {
+  const { Capacitor } = await import("@capacitor/core");
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+    return createIosNativeRxPlayback(initialVolume);
+  }
+  return createWebRxPlayback(initialVolume);
 }
