@@ -7,9 +7,9 @@ import { OpusDecoder } from "opus-decoder";
 
 const SAMPLE_RATE = 48000;
 /** First samples start after this delay so bursts + Wi‑Fi jitter do not underrun the graph. */
-const INITIAL_PLAYOUT_DELAY_S = 0.12;
+const INITIAL_PLAYOUT_DELAY_S = 0.22;
 /** Rebuild this much lead when the schedule drifts behind (reduces chop from uneven chunk arrival). */
-const MIN_PLAYOUT_LEAD_S = 0.045;
+const MIN_PLAYOUT_LEAD_S = 0.09;
 const VOLUME_MIN = 0.1;
 const VOLUME_MAX = 3;
 const VOLUME_STEP = 0.2;

@@ -134,7 +134,7 @@ void rxAudioLoop() {
     mute.setActive(squelched);
     // Drain pending PCM/encode in one loop tick so Wi‑Fi gets steady packets
     // instead of one small copy per full loop() pass.
-    constexpr int kMaxCopyBursts = 32;
+    constexpr int kMaxCopyBursts = 48;
     int bursts = 0;
     size_t moved;
     do {

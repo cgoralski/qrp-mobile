@@ -42,14 +42,27 @@ class WsStream : public Stream {
   /** Clear the client (called from handler on disconnect). */
   void clearClient();
 
+  /** After server loop: flush coalesced outbound data if older than time threshold. */
+  void flushPendingOutboundTx();
+
  private:
   static const size_t RBUF_SIZE = 4096;
+  static const size_t TX_ACCUM_SIZE = 2048;
+  static const size_t TX_ACCUM_HIGH_WM = 1024;
+  static const uint32_t TX_ACCUM_MAX_MS = 10;
+
   uint8_t rbuf_[RBUF_SIZE];
   size_t rhead_;
   size_t rtail_;
   int clientNum_;  // Links2004 client index, or -1 if none
 
+  uint8_t txAccum_[TX_ACCUM_SIZE];
+  size_t txAccumLen_;
+  uint32_t txAccumFirstMs_;
+
   size_t rbufCount() const;
+  void flushTxAccum_();
+  bool sendTxtB64_(const uint8_t* data, size_t len);
 };
 
 /** Call from setup() after boardSetup(). Starts AP and WebSocket server. */

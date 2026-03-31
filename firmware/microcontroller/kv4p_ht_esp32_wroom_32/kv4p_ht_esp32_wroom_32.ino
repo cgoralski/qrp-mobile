@@ -34,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Stream* g_hostStream = &Serial;
 FrameParser parserWs(wifi_ws_getStream(), &handleCommands);
 
-const uint16_t FIRMWARE_VER = 16;
+const uint16_t FIRMWARE_VER = 17;
 
 const uint32_t RSSI_REPORT_INTERVAL_MS = 100;
 const uint16_t USB_BUFFER_SIZE = 1024*2;
@@ -265,4 +265,8 @@ void loop() {
   rxAudioLoop();
   txAudioLoop();
   rssiLoop();
+  if (wifi_ws_hasClient()) {
+    g_hostStream = &wifi_ws_getStream();
+    rxAudioLoop();
+  }
 }
