@@ -74,12 +74,15 @@ export function parseRssi(data: Uint8Array): number {
 
 /**
  * Map raw RSSI (0–255) from COMMAND_SMETER_REPORT to S-units (0–9) for display.
- * Formula from spec: 9.73*ln(0.0297*val)-1.88, clamped to 0–9.
+ * Uses max(log formula from spec, linear scale) so weak signals still move the bar — the pure log
+ * curve maps most sub‑~40 raw values to 0 and looks “dead” with typical SA818 UART RSSI payloads.
  */
 export function rawRssiToSUnits(raw: number): number {
   if (raw <= 0) return 0;
-  const s = 9.73 * Math.log(0.0297 * raw) - 1.88;
-  return Math.max(0, Math.min(9, Math.round(s)));
+  const linear = Math.round((raw / 255) * 9);
+  const logS = 9.73 * Math.log(0.0297 * raw) - 1.88;
+  const logClamped = Math.max(0, Math.min(9, Math.round(logS)));
+  return Math.max(0, Math.min(9, Math.max(linear, logClamped)));
 }
 
 export function parseWindowUpdate(data: Uint8Array): number {

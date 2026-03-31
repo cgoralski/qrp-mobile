@@ -273,7 +273,7 @@ const Index = () => {
       console.log("[KV4P] Sending GROUP freqTx=" + freq + " freqRx=" + freq + " squelch=" + squelch);
       sendGroup({ freqTx: freq, freqRx: freq, squelch });
     },
-    [connected, deviceVersion, activeChannel, channelA, channelB, squelchA, squelchB, sendGroup]
+    [connected, deviceVersion, activeChannel, channelA, channelB, squelch, sendGroup]
   );
   const sendGroupNowRef = useRef(sendGroupNow);
   sendGroupNowRef.current = sendGroupNow;
@@ -322,7 +322,9 @@ const Index = () => {
     prevActiveChannelRef.current = activeChannel;
   }, [connected, deviceVersion, activeChannel, sendGroupNow]);
 
-  // Debounce: send frequency to board 800ms after last keypad change; or immediately on Enter / TUNE (squelch has its own effect)
+  // Debounce: send frequency 800ms after keypad edits to channel A/B only.
+  // Do not depend on activeChannel — VFO A↔B already sends GROUP immediately; including activeChannel
+  // scheduled a duplicate GROUP ~800ms after every switch (second SA818 retune → audible drop).
   useEffect(() => {
     if (!connected) return;
     sendTimeoutRef.current = setTimeout(() => sendGroupNowRef.current(), 800);
@@ -332,13 +334,13 @@ const Index = () => {
         sendTimeoutRef.current = null;
       }
     };
-  }, [connected, activeChannel, channelA, channelB]);
+  }, [connected, channelA, channelB]);
 
   // Send GROUP when squelch changes for the active VFO (same freq, new squelch)
   useEffect(() => {
     if (!connected) return;
     sendGroupNow();
-  }, [squelchA, squelchB]);
+  }, [connected, squelchA, squelchB, sendGroupNow]);
 
   // Reset any browser-induced scroll offset whenever the tab changes.
   // On mobile, opening a keyboard in APRS chat can push window.scrollY up;

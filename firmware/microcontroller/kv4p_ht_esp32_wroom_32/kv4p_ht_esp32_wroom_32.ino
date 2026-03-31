@@ -34,9 +34,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Stream* g_hostStream = &Serial;
 FrameParser parserWs(wifi_ws_getStream(), &handleCommands);
 
-const uint16_t FIRMWARE_VER = 17;
+const uint16_t FIRMWARE_VER = 18;
 
-const uint32_t RSSI_REPORT_INTERVAL_MS = 100;
+/** SA818 “RSSI?” UART line can take >10ms; longer interval avoids starving rxAudioLoop. */
+const uint32_t RSSI_REPORT_INTERVAL_MS = 250;
 const uint16_t USB_BUFFER_SIZE = 1024*2;
 
 DRA818 sa818_vhf(&Serial2, SA818_VHF);
@@ -113,7 +114,8 @@ void setup() {
   }
   // Communication with DRA818V radio module via GPIO pins
   Serial2.begin(9600, SERIAL_8N1, hw.pins.pinRfModuleRxd, hw.pins.pinRfModuleTxd);
-  Serial2.setTimeout(10);  // Very short so we don't tie up rx audio while reading from radio module (responses are tiny so this is ok)
+  // Default for command traffic; rssiLoop() temporarily raises timeout for readString() after “RSSI?”
+  Serial2.setTimeout(10);
   //
   debugSetup();
   // Begin in STOPPED mode
@@ -235,8 +237,12 @@ void rssiLoop() {
       // TODO fix the dra818 library's implementation of rssi(). Right now it just drops the
       // return value from the module, and just tells us success/fail.
       // int rssi = dra->rssi();
+      // readString() uses Stream timeout between chars; 10ms is too short for the module to start
+      // replying → empty reads and no SMETER to the app. Restore fast timeout after the query.
+      Serial2.setTimeout(100);
       Serial2.println("RSSI?");
       String rssiResponse = Serial2.readString();
+      Serial2.setTimeout(10);
       if (rssiResponse.length() > 7) {
         String rssiStr = rssiResponse.substring(5);
         int rssiInt    = rssiStr.toInt();
