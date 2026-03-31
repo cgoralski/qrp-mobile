@@ -1,0 +1,12 @@
+---
+description: After tested code changes, commit and push to origin so collaborators can git pull
+alwaysApply: true
+---
+
+# Git: push tested changes to GitHub
+
+This repo’s remote is **origin** (e.g. `cgoralski/qrp-mobile` on GitHub).
+
+- After changes are **implemented, linted, built, and tests run** (and firmware built when relevant), **commit** with a clear message and **`git push origin main`** (or the active branch).
+- Do **not** leave fixes only on the server/workspace: collaborators expect **`git pull`** to receive the same code.
+- If push fails (auth, conflicts), fix or report immediately; do not treat the task as done until the remote is updated or the blocker is explicit.
