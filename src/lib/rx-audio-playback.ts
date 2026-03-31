@@ -6,6 +6,10 @@
 import { OpusDecoder } from "opus-decoder";
 
 const SAMPLE_RATE = 48000;
+/** First samples start after this delay so bursts + Wi‑Fi jitter do not underrun the graph. */
+const INITIAL_PLAYOUT_DELAY_S = 0.12;
+/** Rebuild this much lead when the schedule drifts behind (reduces chop from uneven chunk arrival). */
+const MIN_PLAYOUT_LEAD_S = 0.045;
 const VOLUME_MIN = 0.1;
 const VOLUME_MAX = 3;
 const VOLUME_STEP = 0.2;
@@ -70,6 +74,7 @@ export async function createRxPlayback(initialVolume?: number): Promise<RxPlayba
   }
 
   let nextStartTime = 0;
+  let playoutPrimed = false;
   let destroyed = false;
   let firstPlayLogged = false;
 
@@ -84,8 +89,12 @@ export async function createRxPlayback(initialVolume?: number): Promise<RxPlayba
 
       const { channelData, samplesDecoded, sampleRate } = result;
       const now = ctx.currentTime;
-      if (nextStartTime < now) {
-        nextStartTime = now;
+      if (!playoutPrimed) {
+        nextStartTime = now + INITIAL_PLAYOUT_DELAY_S;
+        playoutPrimed = true;
+      }
+      if (nextStartTime < now + MIN_PLAYOUT_LEAD_S) {
+        nextStartTime = now + MIN_PLAYOUT_LEAD_S;
       }
 
       const duration = samplesDecoded / sampleRate;

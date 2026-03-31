@@ -113,6 +113,10 @@ void initI2SRx() {
   effects.begin(rxInfo);
   // open output
   rxOut.begin(rxInfo);
+  // Avoid StreamCopy's default check_available + delay(10ms) when I2S briefly
+  // reports 0 bytes — that caused bursty sends and choppy Wi‑Fi RX playback.
+  rxCopier.setCheckAvailable(false);
+  rxCopier.setDelayOnNoData(0);
   rxStreamConfigured = true;
 }
 
@@ -128,7 +132,15 @@ void endI2SRx() {
 void rxAudioLoop() {
   if (mode == MODE_RX) {
     mute.setActive(squelched);
-    rxCopier.copy();
+    // Drain pending PCM/encode in one loop tick so Wi‑Fi gets steady packets
+    // instead of one small copy per full loop() pass.
+    constexpr int kMaxCopyBursts = 32;
+    int bursts = 0;
+    size_t moved;
+    do {
+      moved = rxCopier.copy();
+      bursts++;
+    } while (moved > 0 && bursts < kMaxCopyBursts);
     esp_task_wdt_reset();
   }
 }
