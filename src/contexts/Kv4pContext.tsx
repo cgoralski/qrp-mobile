@@ -225,7 +225,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
         if (n <= 25 || n % 100 === 0) {
           console.log("[KV4P] packet #" + n + " cmd=0x" + cmd.toString(16).padStart(2, "0") + " plen=" + params.length);
         }
-        if (!isBoardDebugPacket(cmd) && (n <= 45 || n % 80 === 0)) {
+        if (!isBoardDebugPacket(cmd) && (n <= 45 || n % 200 === 0)) {
           const hex =
             params.length > 64
               ? `${params.length}b (hex omitted)`
@@ -310,7 +310,8 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
       parser.reset();
       parserRef.current = null;
     };
-  }, [setOnData, sendData]);
+    // sendData omitted from deps: unused here; extra deps recreated the parser and dropped the RX handler briefly.
+  }, [setOnData]);
 
   useEffect(() => {
     if (!connected) {

@@ -51,7 +51,8 @@ export function useRxAudioPlayback(): void {
     };
   }, [connected, usePlayback, rxPlaybackEpoch, rxPlaybackHandleRef]);
 
-  // WKWebView may re-suspend AudioContext while the screen is locked; poke resume + speaker route periodically.
+  // WKWebView may re-suspend Web Audio when locked; keep interval coarse so we do not add ~1s cadence
+  // load on the bridge / audio session while visible (some WebViews report visibility oddly).
   useEffect(() => {
     if (!connected || !usePlayback) return;
     const id = window.setInterval(() => {
@@ -59,7 +60,7 @@ export function useRxAudioPlayback(): void {
         void RadioLinkKeepAlive.ensureSpeakerOutput();
         void rxPlaybackHandleRef.current?.resumeIfSuspended();
       }
-    }, 800);
+    }, 4000);
     return () => clearInterval(id);
   }, [connected, usePlayback, rxPlaybackEpoch, rxPlaybackHandleRef]);
 }

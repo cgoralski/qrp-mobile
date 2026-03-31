@@ -155,6 +155,12 @@ const SpeakerGrille = () => (
 
 const TAB_ORDER: TabId[] = ["voice", "aprs", "contacts", "scanner", "map", "serial", "settings"];
 
+/**
+ * Survives Index unmount (HashRouter → Wi-Fi console). If this lived in useRef, leaving the radio
+ * page reset it and remounting re-fired STOP+GROUP — RX audio died until another GROUP (e.g. VFO tap).
+ */
+let initialStopAndGroupDoneForThisConnection = false;
+
 const Index = () => {
   const navigate = useNavigate();
   const persistedRadio = useMemo(() => getPersistedRadioState(), []);
@@ -289,27 +295,30 @@ const Index = () => {
   // Match Android handshake: send GROUP only after we have received COMMAND_VERSION from the board.
   // Send STOP first so the board is in MODE_STOPPED; then GROUP so it transitions to MODE_RX and starts RX audio.
   // Retry GROUP once after 250ms so a single lost packet doesn't require replugging.
-  const groupSentAfterVersionRef = useRef(false);
   useEffect(() => {
     if (!connected) {
-      groupSentAfterVersionRef.current = false;
+      initialStopAndGroupDoneForThisConnection = false;
       return;
     }
-    if (deviceVersion && !groupSentAfterVersionRef.current) {
-      groupSentAfterVersionRef.current = true;
-      sendStop();
-      const t1 = window.setTimeout(() => {
-        sendGroupNow();
-        groupRetryRef.current = window.setTimeout(() => sendGroupNowRef.current(), 250);
-      }, 100);
-      return () => {
-        window.clearTimeout(t1);
-        if (groupRetryRef.current !== null) {
-          window.clearTimeout(groupRetryRef.current);
-          groupRetryRef.current = null;
-        }
-      };
+    if (!deviceVersion || initialStopAndGroupDoneForThisConnection) {
+      return;
     }
+    sendStop();
+    const t1 = window.setTimeout(() => {
+      sendGroupNow();
+      groupRetryRef.current = window.setTimeout(() => {
+        sendGroupNowRef.current();
+        initialStopAndGroupDoneForThisConnection = true;
+        groupRetryRef.current = null;
+      }, 250);
+    }, 100);
+    return () => {
+      window.clearTimeout(t1);
+      if (groupRetryRef.current !== null) {
+        window.clearTimeout(groupRetryRef.current);
+        groupRetryRef.current = null;
+      }
+    };
   }, [connected, deviceVersion, sendGroupNow, sendStop]);
 
   // On VFO switch (A ↔ B), send GROUP immediately so the board tunes to the new channel and RX audio flows without reboot.

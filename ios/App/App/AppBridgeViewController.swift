@@ -14,6 +14,12 @@ final class AppBridgeViewController: CAPBridgeViewController {
         bridge?.webView?.backgroundColor = .systemBackground
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        bridge?.webView?.setNeedsLayout()
+        bridge?.webView?.layoutIfNeeded()
+    }
+
     override func instanceDescriptor() -> InstanceDescriptor {
         if let stale = KeyValueStore.standard["serverBasePath", as: String.self], !stale.isEmpty {
             NSLog("⚡️ QRP Mobile: clearing persisted serverBasePath (was: %@) — using bundled public/", stale)
