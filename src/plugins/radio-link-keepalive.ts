@@ -9,6 +9,8 @@ import { registerPlugin } from "@capacitor/core";
 export interface RadioLinkKeepAlivePlugin {
   enable(): Promise<void>;
   disable(): Promise<void>;
+  /** Native (iOS): keep RX on built-in speaker when locked; no-op elsewhere. */
+  ensureSpeakerOutput(): Promise<void>;
 }
 
 export const RadioLinkKeepAlive = registerPlugin<RadioLinkKeepAlivePlugin>("RadioLinkKeepAlive", {
@@ -17,5 +19,6 @@ export const RadioLinkKeepAlive = registerPlugin<RadioLinkKeepAlivePlugin>("Radi
       /* PWA: browser cannot hold LAN socket across sleep */
     },
     disable: async () => {},
+    ensureSpeakerOutput: async () => {},
   },
 });

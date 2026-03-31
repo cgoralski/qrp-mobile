@@ -40,4 +40,10 @@ public class RadioLinkPlugin extends Plugin {
             call.reject("Failed to stop radio link service: " + e.getMessage(), e);
         }
     }
+
+    /** iOS uses this to re-apply loudspeaker routing; media on Android already uses speaker by default. */
+    @PluginMethod
+    public void ensureSpeakerOutput(PluginCall call) {
+        call.resolve();
+    }
 }
