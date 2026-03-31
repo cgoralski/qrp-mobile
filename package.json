@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "capacitor:copy:after": "node scripts/patch-ios-package-class-list.mjs",
-    "ios:sync": "npm run build:capacitor && npx cap sync ios",
+    "capacitor:sync:after": "node scripts/patch-ios-package-class-list.mjs",
+    "patch:ios-cap-plugins": "node scripts/patch-ios-package-class-list.mjs",
+    "ios:sync": "npm run build:capacitor && npx cap sync ios && node scripts/patch-ios-package-class-list.mjs",
     "ios:open": "npx cap open ios",
     "postinstall": "bash scripts/apply-npm-patches.sh",
     "build:capacitor": "vite build --mode capacitor && node scripts/assert-capacitor-dist.mjs"

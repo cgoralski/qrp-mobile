@@ -1,6 +1,12 @@
 /**
- * Capacitor iOS `copy` overwrites `packageClassList` with only classes found under
- * node_modules plugins. Re-append App-target plugins so they still register.
+ * Capacitor iOS `generateIOSPackageJSON` only scans node_modules plugins for @objc
+ * names — Swift plugins that live in the App target (e.g. RxPcmAudioPlugin) are
+ * never added. Without them, JS shows "plugin is not implemented on ios".
+ *
+ * This runs after `cap copy` / `cap sync` (via capacitor:copy:after, capacitor:sync:after,
+ * and a final run at the end of `npm run ios:sync`). You can also run:
+ *   npm run patch:ios-cap-plugins
+ *
  * @see https://github.com/ionic-team/capacitor/blob/main/cli/src/util/iosplugin.ts
  */
 import fs from "fs";
