@@ -62,7 +62,9 @@ class SocketConnection {
                 let cause = error.map { String(describing: $0) } ?? "Unknown Error"
                 self.pluginContext.notifyListeners("\(self.name):error", data: ["cause": cause])
             case .peerClosed:
-                self.pluginContext.notifyListeners("\(self.name):message", data: ["data": "Peer closed"])
+                // Do not inject a fake :message (would corrupt KV4P binary/base64 parsing). Treat as disconnect.
+                self.connected = false
+                self.pluginContext.notifyListeners("\(self.name):disconnected", data: ["code": 1006, "reason": "peerClosed"])
             }
         }
     }

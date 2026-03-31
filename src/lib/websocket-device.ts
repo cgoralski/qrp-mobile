@@ -11,6 +11,28 @@ import { logWifiDiag, previewBytesHex } from "@/lib/wifi-diagnostics";
 const DEFAULT_WS_PORT = 8765;
 const PLUGIN_SOCKET_NAME = "board";
 
+/**
+ * Map POSIX / Starscream errors to short UI copy. Detailed logs still use the raw string.
+ */
+export function formatWifiTransportError(raw: string): string {
+  const s = raw.trim();
+  const lower = s.toLowerCase();
+  if (
+    lower.includes("connection reset by peer") ||
+    lower.includes("rawvalue: 54") ||
+    (lower.includes("posixerrorcode") && lower.includes("54"))
+  ) {
+    return "Wi‑Fi link to the radio dropped (connection reset). Stay on KV4P-Radio — the app reconnects when you return to it, or tap Connect.";
+  }
+  if (lower.includes("broken pipe") || lower.includes("rawvalue: 32")) {
+    return "Wi‑Fi link to the radio closed unexpectedly. Reconnect while on KV4P-Radio.";
+  }
+  if (lower.includes("timed out") || lower.includes("timeout")) {
+    return "Wi‑Fi connection timed out. Join KV4P-Radio and wait for the board to finish booting, then tap Connect.";
+  }
+  return s.length > 220 ? `${s.slice(0, 217)}…` : s;
+}
+
 let ws: WebSocket | null = null;
 let nativeConnected = false;
 let pluginListeners: Array<{ remove: () => Promise<void> }> = [];
@@ -168,12 +190,16 @@ async function connectNative(url: string): Promise<void> {
       } else {
         logWifiDiag("[WS] native plugin connect error: " + msg);
       }
+      const hadOpen = nativeOpenAtMs != null;
       nativeConnected = false;
       nativeOpenAtMs = null;
-      onErrorCb?.(msg);
+      if (hadOpen) {
+        notifyDisconnected();
+      }
+      onErrorCb?.(formatWifiTransportError(msg));
       if (!connectOutcomeSettled) {
         connectOutcomeSettled = true;
-        reject(new Error(msg));
+        reject(new Error(formatWifiTransportError(msg)));
       }
     };
 
@@ -203,21 +229,9 @@ async function connectNative(url: string): Promise<void> {
 
         const hMessage = await CapacitorWebsocket.addListener(
           `${PLUGIN_SOCKET_NAME}:message`,
-          (event: { data: string }) => {
-            try {
-              const bytes = base64ToUint8Array(event.data);
-              wsRxDiagCount += 1;
-              const n = wsRxDiagCount;
-              if (n <= 40 || n % 50 === 0) {
-                logWifiDiag(`[WS] rx(native) #${n} ${previewBytesHex(bytes)}`);
-              }
-              onDataCb?.(bytes);
-            } catch {
-              wsRxDiagCount += 1;
-              if (wsRxDiagCount <= 8) {
-                logWifiDiag(`[WS] rx(native) #${wsRxDiagCount} base64 decode failed`);
-              }
-            }
+          (event: { data?: unknown }) => {
+            if (event?.data === undefined || event?.data === null) return;
+            deliverWsMessageData(event.data);
           }
         );
         pluginListeners.push(hMessage);

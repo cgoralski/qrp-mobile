@@ -7,10 +7,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import * as ble from "@/lib/ble-device";
 import * as serial from "@/lib/serial-device";
 import * as ws from "@/lib/websocket-device";
-import { saveWifiHostFromUrl } from "@/lib/wifi-storage";
+import { getSavedWifiHost, getSavedWifiPort, saveWifiHostFromUrl } from "@/lib/wifi-storage";
 import { createRxPlayback, type RxPlaybackHandle } from "@/lib/rx-audio-playback";
 import { getPersistedRadioState } from "@/lib/radio-storage";
 import { useSerialLog } from "@/contexts/SerialLogContext";
@@ -51,9 +53,26 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
   const [rxPlaybackEpoch, setRxPlaybackEpoch] = useState(0);
   const onDataRef = useRef<((data: Uint8Array) => void) | null>(null);
   const rxPlaybackHandleRef = useRef<RxPlaybackHandle | null>(null);
+  /** After a successful Wi‑Fi connect, allow one auto-reconnect when the app returns to foreground. */
+  const wifiAutoReconnectEnabledRef = useRef(false);
+  const connectingRef = useRef(connecting);
+  const connectionTypeRef = useRef(connectionType);
+  const connectViaWifiRef = useRef<(host: string, port?: number) => Promise<void>>(async () => {});
   const serialLog = useSerialLog();
 
   const connected = connectionType !== null;
+
+  const clearWifiAutoReconnect = useCallback(() => {
+    wifiAutoReconnectEnabledRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    connectingRef.current = connecting;
+  }, [connecting]);
+
+  useEffect(() => {
+    connectionTypeRef.current = connectionType;
+  }, [connectionType]);
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -83,6 +102,35 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
     };
   }, [connectionType]);
 
+  // Native: after sleep/unlock, TCP may RST; reconnect once if we had a good Wi‑Fi session.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let handle: { remove: () => Promise<void> } | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    void App.addListener("appStateChange", ({ isActive }) => {
+      if (!isActive) return;
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        timeoutId = undefined;
+        if (!wifiAutoReconnectEnabledRef.current) return;
+        if (connectingRef.current || connectionTypeRef.current !== null) return;
+        const host = getSavedWifiHost();
+        if (!host) return;
+        logWifiDiag("[DeviceConn] app foreground: auto-reconnect Wi‑Fi");
+        void connectViaWifiRef.current(host, getSavedWifiPort());
+      }, 750);
+    }).then((h) => {
+      handle = h;
+    });
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      void handle?.remove();
+    };
+  }, []);
+
   // WebSocket (WiFi) callbacks
   useEffect(() => {
     ws.setCallbacks({
@@ -98,6 +146,9 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
       },
       onDisconnect: () => {
         logWifiDiag("[DeviceConn] WiFi onDisconnect");
+        rxPlaybackHandleRef.current?.destroy();
+        rxPlaybackHandleRef.current = null;
+        setRxPlaybackEpoch((e) => e + 1);
         setConnectionType((prev) => {
           if (prev === "wifi") setDeviceName(null);
           return prev === "wifi" ? null : prev;
@@ -106,6 +157,9 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
       },
       onError: (msg) => {
         logWifiDiag("[DeviceConn] WiFi onError: " + msg);
+        rxPlaybackHandleRef.current?.destroy();
+        rxPlaybackHandleRef.current = null;
+        setRxPlaybackEpoch((e) => e + 1);
         setConnecting(false);
         setError(msg);
         // Same as onDisconnect: drop Wi‑Fi link so UI is not "connected" with a stale socket.
@@ -123,6 +177,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
   useEffect(() => {
     ble.setCallbacks({
       onConnect: (name) => {
+        clearWifiAutoReconnect();
         serial.disconnectSerial().catch(() => {});
         ws.disconnect().catch(() => {});
         setConnectionType("ble");
@@ -144,12 +199,13 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
       onData: (data) => onDataRef.current?.(data),
     });
     return () => ble.setCallbacks({});
-  }, []);
+  }, [clearWifiAutoReconnect]);
 
   // Serial callbacks. No auto-reconnect: user must tap "Connect to device" each time (including after refresh).
   useEffect(() => {
     serial.setSerialCallbacks({
       onConnect: () => {
+        clearWifiAutoReconnect();
         ble.disconnect().catch(() => {});
         ws.disconnect().catch(() => {});
         setConnectionType("usb");
@@ -169,9 +225,10 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
       onSerialTxChunk: serialLog?.appendTx ?? undefined,
     });
     return () => serial.setSerialCallbacks({});
-  }, [serialLog?.appendRx, serialLog?.appendTx]);
+  }, [clearWifiAutoReconnect, serialLog?.appendRx, serialLog?.appendTx]);
 
   const connect = useCallback(async () => {
+    clearWifiAutoReconnect();
     setError(null);
     setConnecting(true);
     try {
@@ -179,9 +236,10 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
     } catch {
       setConnecting(false);
     }
-  }, []);
+  }, [clearWifiAutoReconnect]);
 
   const connectViaUsb = useCallback(async () => {
+    clearWifiAutoReconnect();
     setError(null);
     setConnecting(true);
     try {
@@ -200,7 +258,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
       setConnecting(false);
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, []);
+  }, [clearWifiAutoReconnect]);
 
   const connectViaWifi = useCallback(async (hostOrUrl: string, port?: number) => {
     setError(null);
@@ -216,6 +274,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
       const handle = await createRxPlayback(savedVolume);
       rxPlaybackHandleRef.current = handle;
       setRxPlaybackEpoch((e) => e + 1);
+      wifiAutoReconnectEnabledRef.current = true;
       logWifiDiag("[DeviceConn] createRxPlayback OK; WiFi path ready");
     } catch (e) {
       const err = e instanceof Error ? e.message : String(e);
@@ -228,7 +287,12 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
     }
   }, []);
 
+  useEffect(() => {
+    connectViaWifiRef.current = connectViaWifi;
+  }, [connectViaWifi]);
+
   const disconnect = useCallback(async () => {
+    clearWifiAutoReconnect();
     if (connectionType === "ble") await ble.disconnect();
     if (connectionType === "usb") await serial.disconnectSerial();
     if (connectionType === "wifi") await ws.disconnect();
@@ -237,7 +301,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
     setRxPlaybackEpoch((e) => e + 1);
     setConnectionType(null);
     setDeviceName(null);
-  }, [connectionType]);
+  }, [clearWifiAutoReconnect, connectionType]);
 
   const value: DeviceConnectionContextValue = {
     connected,

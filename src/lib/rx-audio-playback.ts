@@ -1,6 +1,8 @@
 /**
  * RX audio playback: decode Opus chunks from the device.
- * - iOS native: AVAudioEngine PCM (continues when screen locks; WKWebView Web Audio does not).
+ * - iOS native: AVAudioEngine PCM — the *engine* keeps running, but Opus decode + enqueue still run in
+ *   WKWebView JS. When the screen locks, iOS often suspends JS / Capacitor bridge delivery, so RX can go
+ *   silent until unlock unless we move decode (or the whole RX path) fully native (future work).
  * - Else: Web Audio API scheduling.
  * Matches firmware: 48 kHz, mono, Opus (narrowband, 40 ms frames).
  */

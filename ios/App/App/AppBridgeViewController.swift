@@ -7,6 +7,13 @@ import Capacitor
 /// empty, the runtime loads from `Library/NoCloud/ionic_built_snapshots/...` instead of the app bundle — the
 /// synced `public/index.html` is never used (black screen; Safari console often empty).
 final class AppBridgeViewController: CAPBridgeViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Cold launch: transparent WKWebView can look like a black screen until the first paint.
+        bridge?.webView?.isOpaque = true
+        bridge?.webView?.backgroundColor = .systemBackground
+    }
+
     override func instanceDescriptor() -> InstanceDescriptor {
         if let stale = KeyValueStore.standard["serverBasePath", as: String.self], !stale.isEmpty {
             NSLog("⚡️ QRP Mobile: clearing persisted serverBasePath (was: %@) — using bundled public/", stale)
