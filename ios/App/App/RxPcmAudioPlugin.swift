@@ -32,6 +32,32 @@ public class RxPcmAudioPlugin: CAPPlugin, CAPBridgedPlugin {
         pcmFormat = nil
     }
 
+    /// Build graph and start playback. Caller must configure `AVAudioSession` first (prepare / ensureReady).
+    private func installPlaybackEngine(sampleRate: Double) throws {
+        guard let fmt = AVAudioFormat(
+            commonFormat: .pcmFormatInt16,
+            sampleRate: sampleRate,
+            channels: 1,
+            interleaved: true
+        ) else {
+            throw NSError(domain: "RxPcmAudio", code: 1, userInfo: [NSLocalizedDescriptionKey: "bad audio format"])
+        }
+
+        let eng = AVAudioEngine()
+        let node = AVAudioPlayerNode()
+        eng.attach(node)
+        eng.connect(node, to: eng.mainMixerNode, format: fmt)
+
+        try eng.start()
+        node.play()
+
+        stateLock.lock()
+        engine = eng
+        playerNode = node
+        pcmFormat = fmt
+        stateLock.unlock()
+    }
+
     @objc public func prepare(_ call: CAPPluginCall) {
         let rate = call.getDouble("sampleRate") ?? 48_000
         scheduleQueue.async {
@@ -39,31 +65,7 @@ public class RxPcmAudioPlugin: CAPPlugin, CAPBridgedPlugin {
             do {
                 try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
                 try AVAudioSession.sharedInstance().setActive(true)
-
-                guard let fmt = AVAudioFormat(
-                    commonFormat: .pcmFormatInt16,
-                    sampleRate: rate,
-                    channels: 1,
-                    interleaved: true
-                ) else {
-                    call.reject("RxPcmAudio: bad audio format")
-                    return
-                }
-
-                let eng = AVAudioEngine()
-                let node = AVAudioPlayerNode()
-                eng.attach(node)
-                eng.connect(node, to: eng.mainMixerNode, format: fmt)
-
-                try eng.start()
-                node.play()
-
-                self.stateLock.lock()
-                self.engine = eng
-                self.playerNode = node
-                self.pcmFormat = fmt
-                self.stateLock.unlock()
-
+                try self.installPlaybackEngine(sampleRate: rate)
                 call.resolve()
             } catch {
                 self.tearDown()
@@ -111,8 +113,9 @@ public class RxPcmAudioPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    /// After WKWebView TX (getUserMedia + AudioContext), AVAudioSession often leaves playback inert until
-    /// session is re-activated and the engine/player are running again.
+    /// After WKWebView TX (getUserMedia + AudioContext), the shared session is reconfigured. Soft
+    /// `engine.start()` / `play()` is often not enough — the graph can look alive but output stays silent
+    /// until a full rebuild (same as app reconnect calling `prepare`).
     @objc public func ensureReady(_ call: CAPPluginCall) {
         scheduleQueue.async {
             do {
@@ -125,27 +128,16 @@ public class RxPcmAudioPlugin: CAPPlugin, CAPBridgedPlugin {
             }
 
             self.stateLock.lock()
-            let eng = self.engine
-            let node = self.playerNode
+            let rate = self.pcmFormat?.sampleRate ?? 48_000
             self.stateLock.unlock()
 
-            guard let engine = eng, let player = node else {
+            self.tearDown()
+            do {
+                try self.installPlaybackEngine(sampleRate: rate)
                 call.resolve()
-                return
+            } catch {
+                call.reject("RxPcmAudio ensureReady rebuild: \(error.localizedDescription)")
             }
-
-            if !engine.isRunning {
-                do {
-                    try engine.start()
-                } catch {
-                    call.reject("RxPcmAudio ensureReady start: \(error.localizedDescription)")
-                    return
-                }
-            }
-            if !player.isPlaying {
-                player.play()
-            }
-            call.resolve()
         }
     }
 
