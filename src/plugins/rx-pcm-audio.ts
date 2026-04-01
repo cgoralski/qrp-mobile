@@ -7,6 +7,8 @@ export interface RxPcmAudioPlugin {
   prepare(options: { sampleRate: number }): Promise<void>;
   /** Mono s16le PCM, base64-encoded (matches AVAudioFormat pcmFormatInt16 interleaved). */
   enqueueInt16(options: { b64: string }): Promise<void>;
+  /** Re-activate session + engine after WKWebView TX (mic) steals AVAudioSession. */
+  ensureReady(): Promise<void>;
   stop(): Promise<void>;
 }
 
@@ -14,6 +16,7 @@ export const RxPcmAudio = registerPlugin<RxPcmAudioPlugin>("RxPcmAudio", {
   web: {
     prepare: async () => {},
     enqueueInt16: async () => {},
+    ensureReady: async () => {},
     stop: async () => {},
   },
 });

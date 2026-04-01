@@ -11,6 +11,7 @@ public class RxPcmAudioPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "prepare", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "enqueueInt16", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "ensureReady", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stop", returnType: CAPPluginReturnPromise)
     ]
 
@@ -106,6 +107,44 @@ public class RxPcmAudioPlugin: CAPPlugin, CAPBridgedPlugin {
             }
 
             node.scheduleBuffer(buffer, completionHandler: nil)
+            call.resolve()
+        }
+    }
+
+    /// After WKWebView TX (getUserMedia + AudioContext), AVAudioSession often leaves playback inert until
+    /// session is re-activated and the engine/player are running again.
+    @objc public func ensureReady(_ call: CAPPluginCall) {
+        scheduleQueue.async {
+            do {
+                let session = AVAudioSession.sharedInstance()
+                try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+                try session.setActive(true)
+            } catch {
+                call.reject("RxPcmAudio ensureReady session: \(error.localizedDescription)")
+                return
+            }
+
+            self.stateLock.lock()
+            let eng = self.engine
+            let node = self.playerNode
+            self.stateLock.unlock()
+
+            guard let engine = eng, let player = node else {
+                call.resolve()
+                return
+            }
+
+            if !engine.isRunning {
+                do {
+                    try engine.start()
+                } catch {
+                    call.reject("RxPcmAudio ensureReady start: \(error.localizedDescription)")
+                    return
+                }
+            }
+            if !player.isPlaying {
+                player.play()
+            }
             call.resolve()
         }
     }

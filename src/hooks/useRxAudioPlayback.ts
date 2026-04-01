@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
 import { useKv4p } from "@/contexts/Kv4pContext";
 import { RadioLinkKeepAlive } from "@/plugins/radio-link-keepalive";
@@ -63,4 +63,41 @@ export function useRxAudioPlayback(): void {
     }, 4000);
     return () => clearInterval(id);
   }, [connected, usePlayback, rxPlaybackEpoch, rxPlaybackHandleRef]);
+}
+
+/**
+ * WKWebView TX uses getUserMedia + AudioContext, which reconfigures AVAudioSession on iOS and can
+ * leave the native RX AVAudioEngine inert until session/engine are restored. Reconnect/navigation
+ * fixed it indirectly (new prepare); this runs after PTT release.
+ */
+export function usePostPttRxRecovery(isTransmitting: boolean): void {
+  const { connected, connectionType, rxPlaybackHandleRef } = useDeviceConnection();
+  const prevTx = useRef(false);
+  const usePlayback = connectionType === "usb" || connectionType === "wifi";
+
+  useEffect(() => {
+    const wasTx = prevTx.current;
+    prevTx.current = isTransmitting;
+    if (!connected || !usePlayback) return;
+    if (!wasTx || isTransmitting) return;
+
+    const t = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const { Capacitor } = await import("@capacitor/core");
+          if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+            const { RxPcmAudio } = await import("@/plugins/rx-pcm-audio");
+            await RxPcmAudio.ensureReady();
+            void RadioLinkKeepAlive.ensureSpeakerOutput();
+            return;
+          }
+        } catch (e) {
+          console.warn("[RX audio] post-PTT restore failed:", e);
+        }
+        void rxPlaybackHandleRef.current?.resumeIfSuspended();
+      })();
+    }, 100);
+
+    return () => window.clearTimeout(t);
+  }, [isTransmitting, connected, usePlayback, rxPlaybackHandleRef]);
 }

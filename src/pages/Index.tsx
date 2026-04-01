@@ -16,6 +16,7 @@ import SerialLogScreen from "@/components/SerialLogScreen";
 import SettingsScreen from "@/components/SettingsScreen";
 import { useCaptions } from "@/hooks/use-captions";
 import { useTxAudio } from "@/hooks/useTxAudio";
+import { usePostPttRxRecovery } from "@/hooks/useRxAudioPlayback";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
 import { useKv4p } from "@/contexts/Kv4pContext";
 import { CMD_HOST_TX_AUDIO } from "@/lib/kv4p-protocol";
@@ -243,6 +244,7 @@ const Index = () => {
   // Capture mic and send TX Opus frames to device while PTT is down and connected
   const onTxEncoded = useCallback((data: Uint8Array) => sendCommand(CMD_HOST_TX_AUDIO, data), [sendCommand]);
   useTxAudio(connected && isTransmitting, connected && isTransmitting ? onTxEncoded : null);
+  usePostPttRxRecovery(isTransmitting);
 
   // Set board band from device version (rfModuleType: 0 = VHF, 1 = UHF)
   useEffect(() => {
