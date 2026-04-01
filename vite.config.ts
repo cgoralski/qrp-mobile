@@ -35,10 +35,17 @@ function capacitorNativeHtmlPlugin(): Plugin {
         // 3. Inject a classic (non-module) diagnostic script at the very top of <body>
         //    This runs synchronously before any module script, guaranteed.
         const diagScript = `
-<style>body{background:#0f172a!important}#cap-diag{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;font:14px/1.5 system-ui,-apple-system,sans-serif;color:#94a3b8;background:#0f172a;padding:20px;text-align:center}#cap-diag.err{color:#fca5a5}</style>
+<style>
+body{background:#0f172a!important}
+#cap-diag{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;font:14px/1.5 system-ui,-apple-system,sans-serif;color:#94a3b8;background:#0f172a;padding:20px;text-align:center}
+#cap-diag.err{color:#fca5a5}
+.cap-spin{width:44px;height:44px;border-radius:50%;border:3px solid rgba(56,189,248,0.2);border-top-color:#38bdf8;animation:cap-spin-rot 0.85s linear infinite;box-sizing:border-box}
+@keyframes cap-spin-rot{to{transform:rotate(360deg)}}
+</style>
 <div id="cap-diag">
-  <div style="font-size:20px;font-weight:600;color:#38bdf8">QRP Mobile</div>
-  <div id="cap-diag-msg">Loading app…</div>
+  <div style="font-size:20px;font-weight:600;color:#38bdf8;letter-spacing:0.02em">QRP Mobile</div>
+  <div class="cap-spin" aria-hidden="true"></div>
+  <div id="cap-diag-msg" style="font-size:13px;opacity:0.85">Loading app…</div>
 </div>
 <script>
 (function(){
@@ -57,7 +64,8 @@ function capacitorNativeHtmlPlugin(): Plugin {
 })();
 </script>`;
 
-        out = out.replace(/<body>/, `<body>${diagScript}`);
+        // Match `<body>` or `<body …>` (index.html uses inline styles on body)
+        out = out.replace(/<body([^>]*)>/, `<body$1>${diagScript}`);
         return out;
       },
     },
