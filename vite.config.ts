@@ -37,15 +37,21 @@ function capacitorNativeHtmlPlugin(): Plugin {
         const diagScript = `
 <style>
 body{background:#0f172a!important}
-#cap-diag{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;font:14px/1.5 system-ui,-apple-system,sans-serif;color:#94a3b8;background:#0f172a;padding:20px;text-align:center}
-#cap-diag.err{color:#fca5a5}
-.cap-spin{width:44px;height:44px;border-radius:50%;border:3px solid rgba(56,189,248,0.2);border-top-color:#38bdf8;animation:cap-spin-rot 0.85s linear infinite;box-sizing:border-box}
+#cap-diag{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;font:16px/1.5 system-ui,-apple-system,sans-serif;background:#0f172a;padding:20px;text-align:center}
+#cap-diag.err .cap-loading,#cap-diag.err .cap-title{color:#fca5a5!important}
+#cap-diag.err .cap-spin{border-color:rgba(248,113,113,0.25)!important;border-top-color:#fca5a5!important}
+.cap-stack{display:flex;flex-direction:column;align-items:center;gap:22px;transform:translateY(-11vh)}
+.cap-title{font-size:clamp(28px,8vw,34px);font-weight:700;color:#e2e8f0;letter-spacing:0.06em;margin:0}
+.cap-spin{width:48px;height:48px;border-radius:50%;border:3px solid rgba(148,163,184,0.28);border-top-color:#cbd5e1;animation:cap-spin-rot 0.85s linear infinite;box-sizing:border-box}
+.cap-loading{font-size:18px;font-weight:500;color:#94a3b8;margin:0}
 @keyframes cap-spin-rot{to{transform:rotate(360deg)}}
 </style>
 <div id="cap-diag">
-  <div style="font-size:20px;font-weight:600;color:#38bdf8;letter-spacing:0.02em">QRP Mobile</div>
-  <div class="cap-spin" aria-hidden="true"></div>
-  <div id="cap-diag-msg" style="font-size:13px;opacity:0.85">Loading app…</div>
+  <div class="cap-stack">
+    <div class="cap-title">QRPMobile</div>
+    <div class="cap-spin" aria-hidden="true"></div>
+    <p id="cap-diag-msg" class="cap-loading">Loading...</p>
+  </div>
 </div>
 <script>
 (function(){

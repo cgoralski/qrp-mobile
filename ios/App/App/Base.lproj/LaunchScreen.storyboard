@@ -16,24 +16,32 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="QRP Mobile" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TTL-qm">
-                                <rect key="frame" x="0.0" y="0.0" width="200" height="28"/>
-                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="20"/>
-                                <color key="textColor" red="0.2196078431372549" green="0.74117647058823533" blue="0.97254901960784312" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="QRPMobile" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TTL-qm">
+                                <rect key="frame" x="0.0" y="0.0" width="240" height="36"/>
+                                <fontDescription key="fontDescription" type="system" weight="bold" pointSize="30"/>
+                                <color key="textColor" red="0.88627450980392153" green="0.90980392156862744" blue="0.94117647058823528" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" animating="YES" style="large" translatesAutoresizingMaskIntoConstraints="NO" id="SPN-qr">
                                 <rect key="frame" x="0.0" y="0.0" width="37" height="37"/>
-                                <color key="color" red="0.2196078431372549" green="0.74117647058823533" blue="0.97254901960784312" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="color" red="0.58039215686274515" green="0.63921568627450975" blue="0.72156862745098038" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </activityIndicatorView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Loading..." textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LDL-st">
+                                <rect key="frame" x="0.0" y="0.0" width="120" height="22"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="18"/>
+                                <color key="textColor" red="0.58039215686274515" green="0.63921568627450975" blue="0.72156862745098038" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" red="0.058823529411764705" green="0.090196078431372548" blue="0.16470588235294117" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="TTL-qm" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="c-title-x"/>
+                            <constraint firstItem="TTL-qm" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-110" id="c-title-y"/>
                             <constraint firstItem="SPN-qr" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="c-spin-x"/>
-                            <constraint firstItem="SPN-qr" firstAttribute="top" secondItem="TTL-qm" secondAttribute="bottom" constant="24" id="c-spin-below-title"/>
-                            <constraint firstItem="TTL-qm" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-32" id="c-title-y"/>
+                            <constraint firstItem="SPN-qr" firstAttribute="top" secondItem="TTL-qm" secondAttribute="bottom" constant="32" id="c-spin-below-title"/>
+                            <constraint firstItem="LDL-st" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="c-load-x"/>
+                            <constraint firstItem="LDL-st" firstAttribute="top" secondItem="SPN-qr" secondAttribute="bottom" constant="14" id="c-load-below-spin"/>
                         </constraints>
                     </view>
                 </viewController>
