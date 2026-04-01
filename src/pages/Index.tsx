@@ -258,6 +258,8 @@ const Index = () => {
 
   const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const groupRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Squelch slider debounce — do not tie to `sendGroupNow` identity (that changes every VFO/freq edit). */
+  const squelchGroupDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [wifiProvisioningOpen, setWifiProvisioningOpen] = useState(false);
   const [squelchSliderOpen, setSquelchSliderOpen] = useState(false);
   const savedWifiHost = getSavedWifiHost();
@@ -347,11 +349,29 @@ const Index = () => {
     };
   }, [connected, channelA, channelB]);
 
-  // Send GROUP when squelch changes for the active VFO (same freq, new squelch)
+  // Apply squelch to the module only when squelchA/B (or link/version) change — not when `sendGroupNow`
+  // is recreated on VFO/frequency edits. Otherwise every A↔B switch sent an extra GROUP and could race
+  // the debounced frequency path, leaving RX silent until reconnect.
   useEffect(() => {
-    if (!connected) return;
-    sendGroupNow();
-  }, [connected, squelchA, squelchB, sendGroupNow]);
+    if (!connected || !deviceVersion) {
+      if (squelchGroupDebounceRef.current !== null) {
+        clearTimeout(squelchGroupDebounceRef.current);
+        squelchGroupDebounceRef.current = null;
+      }
+      return;
+    }
+    if (squelchGroupDebounceRef.current !== null) clearTimeout(squelchGroupDebounceRef.current);
+    squelchGroupDebounceRef.current = setTimeout(() => {
+      squelchGroupDebounceRef.current = null;
+      sendGroupNowRef.current();
+    }, 160);
+    return () => {
+      if (squelchGroupDebounceRef.current !== null) {
+        clearTimeout(squelchGroupDebounceRef.current);
+        squelchGroupDebounceRef.current = null;
+      }
+    };
+  }, [connected, deviceVersion, squelchA, squelchB]);
 
   // Reset any browser-induced scroll offset whenever the tab changes.
   // On mobile, opening a keyboard in APRS chat can push window.scrollY up;
