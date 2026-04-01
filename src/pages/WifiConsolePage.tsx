@@ -16,6 +16,7 @@ import {
   WIFI_DIAG_MAX_ENTRIES,
   type WifiDiagEntry,
 } from "@/lib/wifi-diagnostics";
+import { getSessionStatsLine } from "@/lib/session-log";
 import { BAND_CONFIGS, type BandId } from "@/lib/hardware";
 import { toast } from "sonner";
 
@@ -148,7 +149,10 @@ export default function WifiConsolePage() {
   }, [connected, connectionType, connecting, error, refreshLines]);
 
   const handleCopy = async () => {
-    const text = formatWifiDiagExport(lines);
+    const text =
+      formatWifiDiagExport(lines) +
+      "\n\n--- Session counters (at copy time) ---\n" +
+      getSessionStatsLine();
     try {
       await navigator.clipboard.writeText(text);
       toast.success("Log copied to clipboard");
@@ -184,7 +188,7 @@ export default function WifiConsolePage() {
             Wi‑Fi console
           </h1>
           <p className="text-[10px] text-muted-foreground truncate">
-            WebSocket · device link · KV4P handshake
+            WebSocket · device link · KV4P · <span className="text-foreground/70">[Session]</span> startup trace
           </p>
         </div>
         <div className="shrink-0 flex items-center gap-1" data-no-swipe>
@@ -248,6 +252,13 @@ export default function WifiConsolePage() {
             {boardBand && BAND_CONFIGS[boardBand] ? `(${BAND_CONFIGS[boardBand].badge})` : ""}
           </p>
         )}
+        <p className="text-cyan-600/90 dark:text-cyan-400/90 leading-snug break-words">
+          {getSessionStatsLine()}
+        </p>
+        <p className="opacity-90">
+          Filter mentally for <code className="text-foreground/80">[Session</code> lines — elapsed ms is from JS
+          bundle load; counters summarize Wi‑Fi / RX / KV4P churn until you clear the log.
+        </p>
       </div>
 
       <pre

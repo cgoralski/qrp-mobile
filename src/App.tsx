@@ -8,6 +8,7 @@ import { DeviceConnectionProvider } from "@/contexts/DeviceConnectionContext";
 import { SerialLogProvider } from "@/contexts/SerialLogContext";
 import { Kv4pProvider } from "@/contexts/Kv4pContext";
 import { RxAudioPlaybackHost } from "@/components/RxAudioPlaybackHost";
+import { SessionLifecycleLogger } from "@/components/SessionLifecycleLogger";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import WifiConsolePage from "./pages/WifiConsolePage";
@@ -26,6 +27,7 @@ const App = () => (
         <SerialLogProvider>
           <DeviceConnectionProvider>
             <Kv4pProvider>
+            <SessionLifecycleLogger />
             <RxAudioPlaybackHost />
             <Routes>
               <Route path="/" element={<Index />} />

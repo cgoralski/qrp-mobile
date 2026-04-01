@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
 import { logWifiDiag, previewBytesHex } from "@/lib/wifi-diagnostics";
+import { bumpSessionStat, logSession } from "@/lib/session-log";
 import {
   Kv4pParser,
   buildPacket,
@@ -104,6 +105,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
   const handshakeRetryCountRef = useRef(0);
   const HANDSHAKE_RETRY_MAX = 2;
   const boardDebugWifiLogCountRef = useRef(0);
+  const wasConnectedRef = useRef(false);
 
   const sendCommand = useCallback(
     (cmd: number, params?: Uint8Array) => {
@@ -269,6 +271,12 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
               logWifiDiag(
                 `[KV4P] VERSION ver=${v.ver} radioStatus=${v.radioModuleStatus} rfModule=${v.rfModuleType} window=${v.windowSize} features=${v.features}`
               );
+              bumpSessionStat("kv4pVersionReceived");
+              logSession("kv4p_VERSION", {
+                ver: v.ver,
+                rf: v.rfModuleType,
+                window: v.windowSize,
+              });
             }
             break;
           case CMD_WINDOW_UPDATE:
@@ -315,6 +323,11 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!connected) {
+      if (wasConnectedRef.current) {
+        bumpSessionStat("kv4pDisconnectedReset");
+        logSession("kv4p_disconnected_reset_parser");
+      }
+      wasConnectedRef.current = false;
       logWifiDiag("[KV4P] disconnected → reset parser/handshake state");
       setRssi(0);
       setVersion(null);
@@ -333,12 +346,14 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
       parserRef.current?.reset();
       return;
     }
+    wasConnectedRef.current = true;
     // USB: wait 5s so the board can finish booting. WiFi: send handshake quickly to avoid idle timeout and get data flowing.
     const handshakeDelayMs = connectionType === "wifi" ? 400 : 5000;
     handshakeSentRef.current = false;
     versionReceivedRef.current = false;
     setHandshakePending(true);
     logWifiDiag(`[KV4P] connected type=${connectionType} handshake scheduled in ${handshakeDelayMs}ms`);
+    logSession("kv4p_handshake_scheduled", { type: connectionType ?? "?", delayMs: handshakeDelayMs });
     triggerHandshakeRef.current = () => {}; // Don't send on HELLO; only send after delay
     const t = window.setTimeout(() => {
       if (handshakeSentRef.current) return;

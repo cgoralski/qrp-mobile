@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { logWifiDiag, previewBytesHex } from "@/lib/wifi-diagnostics";
+import { logSession } from "@/lib/session-log";
 
 /**
  * WebSocket client transport for KV4P-HT over WiFi.
@@ -221,6 +222,7 @@ async function connectNative(url: string): Promise<void> {
       nativeOpenAtMs = Date.now();
       console.log("[WebSocket] Connected to", url);
       logWifiDiag("[WS] native plugin: connected event");
+      logSession("ws_native_tcp_open", { url: url.slice(0, 96) });
       onConnectCb?.(url);
       if (!connectOutcomeSettled) {
         connectOutcomeSettled = true;
@@ -412,6 +414,7 @@ async function connectStandardWebSocket(url: string): Promise<void> {
       sawOpen = true;
       console.log("[WebSocket] Connected to", url);
       logWifiDiag("[WS] standard: onopen readyState=" + ws!.readyState);
+      logSession("ws_standard_onopen", { url: url.slice(0, 96) });
       onConnectCb?.(url);
       done(() => resolve());
     };
@@ -452,6 +455,7 @@ async function connectStandardWebSocket(url: string): Promise<void> {
 export async function connect(urlOrHost: string, port?: number): Promise<void> {
   const url = buildWsUrl(urlOrHost, port);
   const nativeApp = await isCapacitorNativeApp();
+  logSession("ws_connect begin", { native: nativeApp, url: url.slice(0, 100) });
   logWifiDiag(`[WS] connect() → ${url} capacitorNative=${nativeApp}`);
 
   if (nativeApp) {

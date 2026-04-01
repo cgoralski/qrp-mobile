@@ -2,6 +2,10 @@ import { Component, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { initSessionLog, logSession } from "@/lib/session-log";
+
+initSessionLog();
+logSession("main.tsx bundle executed");
 
 declare global {
   interface Window {
@@ -27,6 +31,7 @@ class RootErrorBoundary extends Component<{ children: ReactNode }, { message: st
 
   componentDidCatch(error: Error) {
     diag(`React error: ${error.message}`, true);
+    logSession("React RootErrorBoundary", { error: error.message.slice(0, 240) });
   }
 
   render() {
@@ -48,19 +53,23 @@ try {
   const rootEl = document.getElementById("root");
   if (!rootEl) {
     diag("Missing #root element in index.html", true);
+    logSession("main missing #root", { fatal: true });
   } else {
     createRoot(rootEl).render(
       <RootErrorBoundary>
         <App />
       </RootErrorBoundary>,
     );
+    logSession("createRoot.render(App) called");
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         removeDiag();
+        logSession("main first paint rAF (diag overlay cleared)");
       });
     });
   }
 } catch (err) {
   const msg = err instanceof Error ? err.message : String(err);
   diag(`Fatal: ${msg}`, true);
+  logSession("main fatal", { error: msg.slice(0, 200) });
 }
