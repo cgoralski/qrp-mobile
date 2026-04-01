@@ -7,6 +7,7 @@ alwaysApply: true
 
 This repo’s remote is **origin** (e.g. `cgoralski/qrp-mobile` on GitHub).
 
-- After changes are **implemented, linted, built, and tests run** (and firmware built when relevant), **commit** with a clear message and **`git push origin main`** (or the active branch).
+- After changes are **implemented, linted, built, and tests run** (and firmware built when relevant), **commit** with a clear message and **`git push origin main`** (or the active branch). Treat **push as part of the same task**—not optional follow-up.
+- Applies to **firmware** (`firmware/microcontroller/…`), **iOS native** (`ios/`), and **app** (`src/`): if it is committed locally, it must be **on origin** before considering the work done.
 - Do **not** leave fixes only on the server/workspace: collaborators expect **`git pull`** to receive the same code.
 - If push fails (auth, conflicts), fix or report immediately; do not treat the task as done until the remote is updated or the blocker is explicit.
