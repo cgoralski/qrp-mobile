@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Radio, BookUser, Radio as RadioIcon } from "lucide-react";
 import type { TabId } from "@/components/BottomTabBar";
@@ -9,11 +9,6 @@ import ConnectionStatus from "@/components/ConnectionStatus";
 import WifiProvisioningModal from "@/components/WifiProvisioningModal";
 import { getSavedWifiHost, getSavedWifiPort } from "@/lib/wifi-storage";
 import { getPersistedRadioState, setPersistedRadioState, setPersistedVolume } from "@/lib/radio-storage";
-import APRSMessaging from "@/components/APRSMessaging";
-import ContactsScreen from "@/components/ContactsScreen";
-import MapScreen from "@/components/MapScreen";
-import SerialLogScreen from "@/components/SerialLogScreen";
-import SettingsScreen from "@/components/SettingsScreen";
 import { useCaptions } from "@/hooks/use-captions";
 import { useTxAudio } from "@/hooks/useTxAudio";
 import { usePostPttRxRecovery } from "@/hooks/useRxAudioPlayback";
@@ -156,6 +151,18 @@ const SpeakerGrille = () => (
 
 const TAB_ORDER: TabId[] = ["voice", "aprs", "contacts", "scanner", "map", "serial", "settings"];
 
+const APRSMessaging = lazy(() => import("@/components/APRSMessaging"));
+const ContactsScreen = lazy(() => import("@/components/ContactsScreen"));
+const MapScreen = lazy(() => import("@/components/MapScreen"));
+const SerialLogScreen = lazy(() => import("@/components/SerialLogScreen"));
+const SettingsScreen = lazy(() => import("@/components/SettingsScreen"));
+
+const tabStripColStyle = { width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 as const };
+
+const tabLazyFallback = (
+  <div className="flex flex-1 min-h-0 items-center justify-center bg-[#0f172a]" aria-busy="true" />
+);
+
 /**
  * Survives Index unmount (HashRouter → Wi-Fi console). If this lived in useRef, leaving the radio
  * page reset it and remounting re-fired STOP+GROUP — RX audio died until another GROUP (e.g. VFO tap).
@@ -170,6 +177,16 @@ const Index = () => {
   const [activeChannel, setActiveChannel] = useState<"A" | "B">(persistedRadio.activeChannel);
   const [inputBuffer, setInputBuffer] = useState("");
   const [activeTab, setActiveTab] = useState<TabId>("voice");
+  /** Defer loading heavy tab chunks (Supabase, Leaflet, etc.) until the user opens each tab once. */
+  const [tabsEverVisited, setTabsEverVisited] = useState<Set<TabId>>(() => new Set(["voice"]));
+  useEffect(() => {
+    setTabsEverVisited((prev) => {
+      if (prev.has(activeTab)) return prev;
+      const next = new Set(prev);
+      next.add(activeTab);
+      return next;
+    });
+  }, [activeTab]);
   const [isTransmitting, setIsTransmitting] = useState(false);
   const isTransmittingRef = useRef(false);
   useEffect(() => {
@@ -705,7 +722,7 @@ const Index = () => {
           }}
         >
           {/* ── Voice tab ── */}
-          <div className="flex flex-col items-center justify-start py-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+          <div className="flex flex-col items-center justify-start py-1" style={tabStripColStyle}>
             <div className="w-full relative">
             {/* SVG clipPath definition — tapered sides + rounded bottom corners */}
             <svg width="0" height="0" style={{ position: "absolute" }}>
@@ -901,31 +918,39 @@ const Index = () => {
             </div>
           </div>
 
-          {/* ── APRS tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
-            <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
+          {/* ── APRS tab (lazy chunk) ── */}
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={tabStripColStyle}>
+            {tabsEverVisited.has("aprs") ? (
+              <Suspense fallback={tabLazyFallback}>
+                <APRSMessaging myCallsign={myCallsign} onNavigateToSettings={() => setActiveTab("settings")} />
+              </Suspense>
+            ) : null}
           </div>
 
-          {/* ── Contacts tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
-            <ContactsScreen
-              onTuneChannel={(freq, channelName) => {
-                if (activeChannel === "A") {
-                  setChannelA(freq);
-                  setChannelAName(channelName || "CH A");
-                } else {
-                  setChannelB(freq);
-                  setChannelBName(channelName || "CH B");
-                }
-                sendGroupNow(freq);
-              }}
-              activeChannel={activeChannel}
-              boardBand={boardBand}
-            />
+          {/* ── Contacts tab (lazy chunk) ── */}
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={tabStripColStyle}>
+            {tabsEverVisited.has("contacts") ? (
+              <Suspense fallback={tabLazyFallback}>
+                <ContactsScreen
+                  onTuneChannel={(freq, channelName) => {
+                    if (activeChannel === "A") {
+                      setChannelA(freq);
+                      setChannelAName(channelName || "CH A");
+                    } else {
+                      setChannelB(freq);
+                      setChannelBName(channelName || "CH B");
+                    }
+                    sendGroupNow(freq);
+                  }}
+                  activeChannel={activeChannel}
+                  boardBand={boardBand}
+                />
+              </Suspense>
+            ) : null}
           </div>
 
-          {/* ── Scanner tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
+          {/* ── Scanner tab (lightweight — always mounted) ── */}
+          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={tabStripColStyle}>
             <div className="tab-panel flex flex-1 flex-col w-full">
               <div className="tab-header flex items-center justify-between px-3 py-2.5">
                 <div className="flex items-center gap-2">
@@ -944,19 +969,36 @@ const Index = () => {
             </div>
           </div>
 
-          {/* ── Map tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
-            <MapScreen myCallsign={myCallsign} />
+          {/* ── Map tab (lazy chunk — Leaflet) ── */}
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={tabStripColStyle}>
+            {tabsEverVisited.has("map") ? (
+              <Suspense fallback={tabLazyFallback}>
+                <MapScreen myCallsign={myCallsign} />
+              </Suspense>
+            ) : null}
           </div>
 
-          {/* ── Serial log tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
-            <SerialLogScreen />
+          {/* ── Serial log tab (lazy chunk) ── */}
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-1 pt-4 pb-1" style={tabStripColStyle}>
+            {tabsEverVisited.has("serial") ? (
+              <Suspense fallback={tabLazyFallback}>
+                <SerialLogScreen />
+              </Suspense>
+            ) : null}
           </div>
 
-          {/* ── Settings tab ── */}
-          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={{ width: `${100 / TAB_ORDER.length}%`, flexShrink: 0 }}>
-            <SettingsScreen myCallsign={myCallsign} onCallsignChange={handleCallsignChange} captionsLang={captions.lang} onCaptionsLangChange={captions.setLang} />
+          {/* ── Settings tab (lazy chunk) ── */}
+          <div className="flex flex-col flex-1 min-h-0 px-1 pt-4 pb-1" style={tabStripColStyle}>
+            {tabsEverVisited.has("settings") ? (
+              <Suspense fallback={tabLazyFallback}>
+                <SettingsScreen
+                  myCallsign={myCallsign}
+                  onCallsignChange={handleCallsignChange}
+                  captionsLang={captions.lang}
+                  onCaptionsLangChange={captions.setLang}
+                />
+              </Suspense>
+            ) : null}
           </div>
         </div>
         </div>

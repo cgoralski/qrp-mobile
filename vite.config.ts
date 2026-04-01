@@ -56,6 +56,19 @@ function capacitorNativeHtmlPlugin(): Plugin {
   };
 }
 
+/** Shared vendor splits: keeps a single `react-vendor` so lazy chunks (e.g. react-leaflet) never load a second React. */
+function rollupManualChunks(id: string): string | undefined {
+  if (!id.includes("node_modules")) return undefined;
+  if (id.includes("react-dom") || id.includes("/react/") || id.includes("\\react\\")) return "react-vendor";
+  if (id.includes("@radix-ui")) return "radix-ui";
+  if (id.includes("leaflet") || id.includes("react-leaflet")) return "leaflet";
+  if (id.includes("recharts")) return "recharts";
+  if (id.includes("@supabase")) return "supabase";
+  if (id.includes("@tanstack/react-query")) return "tanstack-query";
+  if (id.includes("opus-decoder")) return "opus-decoder";
+  return "vendor";
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isCapacitor = mode === "capacitor";
@@ -114,26 +127,11 @@ export default defineConfig(({ mode }) => {
       outDir: isCapacitor ? "dist-native" : "dist",
       emptyOutDir: true,
       modulePreload: isCapacitor ? false : undefined,
-      chunkSizeWarningLimit: isCapacitor ? 4000 : 950,
+      chunkSizeWarningLimit: isCapacitor ? 2000 : 950,
       rollupOptions: {
-        output: isCapacitor
-          ? {
-              // One ES module for the whole app: fixes WKWebView + satellite chunks where react-leaflet
-              // ran before shared React (TypeError: undefined is not an object (evaluating 'Z.createContext')).
-              inlineDynamicImports: true,
-            }
-          : {
-              manualChunks(id: string) {
-                if (!id.includes("node_modules")) return;
-                if (id.includes("react-dom") || id.includes("/react/")) return "react-vendor";
-                if (id.includes("@radix-ui")) return "radix-ui";
-                if (id.includes("leaflet") || id.includes("react-leaflet")) return "leaflet";
-                if (id.includes("recharts")) return "recharts";
-                if (id.includes("@supabase")) return "supabase";
-                if (id.includes("@tanstack/react-query")) return "tanstack-query";
-                return "vendor";
-              },
-            },
+        output: {
+          manualChunks: rollupManualChunks,
+        },
       },
     },
   };

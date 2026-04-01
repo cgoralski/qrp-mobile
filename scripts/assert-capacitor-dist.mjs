@@ -1,6 +1,9 @@
 /**
  * Ensures dist-native/ is the Capacitor bundle (npm run build:capacitor).
- * The site PWA lives in dist/; cap sync must never use that folder (leaflet-*.js chunks crash WKWebView).
+ * The site PWA lives in dist/; cap sync must never use that folder for native.
+ *
+ * Native builds use code splitting (lazy routes + tabs); `index.html` should
+ * reference only the entry module — additional chunks load via dynamic `import()`.
  */
 import fs from "fs";
 import path from "path";
@@ -36,33 +39,19 @@ if (/crossorigin/i.test(html)) {
   );
 }
 
-// Satellite chunks (web build) cause: TypeError: undefined is not an object (evaluating 'Z.createContext') in leaflet-*.js
-const forbiddenChunk =
-  /leaflet-[A-Za-z0-9_-]+\.js|react-vendor-[A-Za-z0-9_-]+\.js|vendor-[A-Za-z0-9_-]+\.js|tanstack-query-[A-Za-z0-9_-]+\.js|radix-ui-[A-Za-z0-9_-]+\.js|supabase-[A-Za-z0-9_-]+\.js/i;
-if (forbiddenChunk.test(html)) {
-  problems.push(
-    "dist-native/index.html references split vendor chunks (e.g. leaflet-*.js). Fix vite capacitor build (inlineDynamicImports).",
-  );
-}
-
 const assetsDir = path.join(NATIVE_ROOT, "assets");
 if (!fs.existsSync(assetsDir)) {
   problems.push("dist-native/assets/ missing.");
 } else {
   const jsFiles = fs.readdirSync(assetsDir).filter((f) => f.endsWith(".js"));
-  if (jsFiles.length !== 1) {
+  const entry = jsFiles.find((f) => /^index-[A-Za-z0-9_-]+\.js$/.test(f));
+  if (!entry) {
     problems.push(
-      `Capacitor native build must emit exactly ONE JS file in dist-native/assets/ (found ${jsFiles.length}: ${jsFiles.join(", ") || "(none)"}). ` +
-        "Wrong folder? cap sync copies webDir (dist-native), not dist/. Never run only npm run build before sync.",
+      `No entry bundle index-[hash].js in dist-native/assets/ (found: ${jsFiles.join(", ") || "(none)"}).`,
     );
-  } else {
-    const only = jsFiles[0];
-    if (!/^index-[A-Za-z0-9_-]+\.js$/.test(only)) {
-      problems.push(`Unexpected sole bundle name "${only}" (expected index-[hash].js).`);
-    }
-    if (/leaflet|vendor|react-vendor|radix|supabase|tanstack/i.test(only)) {
-      problems.push(`Sole JS file name looks like a web chunk: ${only}`);
-    }
+  }
+  if (jsFiles.length === 0) {
+    problems.push("dist-native/assets/ has no .js files.");
   }
 }
 
@@ -75,10 +64,10 @@ const jsListed = fs.readdirSync(assetsDir).filter((f) => f.endsWith(".js"));
 console.log("");
 console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 console.log("  Capacitor native bundle OK  →  dist-native/");
-console.log("  JS in dist-native/assets/:  " + jsListed.join(", "));
+console.log(`  JS chunks in dist-native/assets/: ${jsListed.length} file(s)`);
+console.log("     " + jsListed.sort().join(", "));
 console.log("");
 console.log("  For iOS/Android use ONLY dist-native/ (cap sync reads webDir).");
-console.log("  Ignore dist/ for native: npm run build puts leaflet-*.js chunks there");
-console.log("  for the website PWA — that is expected and must NOT be synced.");
+console.log("  Ignore dist/ for native: npm run build puts the PWA there.");
 console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 console.log("");
