@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
 import { useKv4p } from "@/contexts/Kv4pContext";
 import { RadioLinkKeepAlive } from "@/plugins/radio-link-keepalive";
+import { getSavedWifiHost, getSavedWifiPort } from "@/lib/wifi-storage";
+import { logSession } from "@/lib/session-log";
 
 /**
  * When connected over USB or Wi‑Fi: wire the RX playback handle to KV4P CMD_RX_AUDIO.
@@ -66,14 +68,19 @@ export function useRxAudioPlayback(): void {
 }
 
 /**
- * WKWebView TX uses getUserMedia + AudioContext, which reconfigures AVAudioSession on iOS and can
- * leave the native RX AVAudioEngine inert until session/engine are restored. Reconnect/navigation
- * fixed it indirectly (new prepare); this runs after PTT release.
+ * WKWebView TX uses getUserMedia + AudioContext, which reconfigures AVAudioSession on iOS. On Wi‑Fi,
+ * users still saw RX dead until a full "Connect to board" (new native WebSocket + new RX playback +
+ * KV4P handshake). `RxPcmAudio.ensureReady()` alone was not enough; recycle the Wi‑Fi link here.
+ * USB: keep native engine restore only.
  */
 export function usePostPttRxRecovery(isTransmitting: boolean): void {
-  const { connected, connectionType, rxPlaybackHandleRef } = useDeviceConnection();
+  const { connected, connectionType, rxPlaybackHandleRef, connectViaWifi } = useDeviceConnection();
   const prevTx = useRef(false);
   const usePlayback = connectionType === "usb" || connectionType === "wifi";
+  const connectionTypeRef = useRef(connectionType);
+  const connectedRef = useRef(connected);
+  connectionTypeRef.current = connectionType;
+  connectedRef.current = connected;
 
   useEffect(() => {
     const wasTx = prevTx.current;
@@ -86,6 +93,14 @@ export function usePostPttRxRecovery(isTransmitting: boolean): void {
         try {
           const { Capacitor } = await import("@capacitor/core");
           if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+            if (connectionTypeRef.current === "wifi" && connectedRef.current) {
+              const host = getSavedWifiHost();
+              if (host) {
+                logSession("post_ptt_ios_wifi_recycle", { host: host.slice(0, 48) });
+                await connectViaWifi(host, getSavedWifiPort());
+                return;
+              }
+            }
             const { RxPcmAudio } = await import("@/plugins/rx-pcm-audio");
             await RxPcmAudio.ensureReady();
             void RadioLinkKeepAlive.ensureSpeakerOutput();
@@ -96,8 +111,8 @@ export function usePostPttRxRecovery(isTransmitting: boolean): void {
         }
         void rxPlaybackHandleRef.current?.resumeIfSuspended();
       })();
-    }, 100);
+    }, 400);
 
     return () => window.clearTimeout(t);
-  }, [isTransmitting, connected, usePlayback, rxPlaybackHandleRef]);
+  }, [isTransmitting, connected, usePlayback, rxPlaybackHandleRef, connectViaWifi]);
 }
