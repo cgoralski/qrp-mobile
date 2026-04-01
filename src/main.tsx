@@ -17,11 +17,6 @@ function diag(text: string, isError?: boolean) {
   window.__capDiag?.(text, isError);
 }
 
-function removeDiag() {
-  const el = document.getElementById("cap-diag");
-  el?.remove();
-}
-
 class RootErrorBoundary extends Component<{ children: ReactNode }, { message: string | null }> {
   state: { message: string | null } = { message: null };
 
@@ -36,7 +31,6 @@ class RootErrorBoundary extends Component<{ children: ReactNode }, { message: st
 
   render() {
     if (this.state.message) {
-      removeDiag();
       return (
         <div style={{ padding: 16, color: "#f87171", background: "#0f172a", minHeight: "100vh", fontFamily: "system-ui, sans-serif" }}>
           <strong>UI error</strong>
@@ -61,10 +55,7 @@ try {
     );
     logSession("createRoot.render(App) called");
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        removeDiag();
-        logSession("main first paint rAF (diag overlay cleared)");
-      });
+      logSession("main first paint rAF");
     });
   }
 } catch (err) {
