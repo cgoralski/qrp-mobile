@@ -168,24 +168,33 @@ extern "C" void _esp_error_check_failed(esp_err_t rc, const char *file, int line
 
 void measureLoopFrequency() {
 #ifndef RELEASE
-  // Exponential Weighted Moving Average (EWMA) for loop time
+  // EWMA of loop() period (USB Serial only). Do not use _LOGI: debug_log_printf uses g_hostStream,
+  // so on Wi‑Fi it sends COMMAND_DEBUG_INFO on the same WebSocket as RX audio — ~1 Hz blocking
+  // traffic correlated with cyclic RX glitches on phones.
   static float avgLoopTime = 0;
-  const float alpha = 0.1;  // Smoothing factor (adjust as needed)
+  const float alpha = 0.1f;
   static uint32_t lastTime = 0;
   static uint32_t startTime = 0;
-  // Measure time per iteration
+  static bool primed = false;
   uint32_t now = micros();
+  if (!primed) {
+    primed = true;
+    startTime = now;
+    lastTime = now;
+    return;
+  }
   uint32_t duration = now - startTime;
   startTime = now;
-  // Apply EWMA filtering
-  avgLoopTime = alpha * duration + (1 - alpha) * avgLoopTime;
-  // Report every second
-  if (now - lastTime >= 1000000) {  // 1,000,000 µs = 1 second
-    float frequency = 1e6 / avgLoopTime;  // Convert loop time to frequency
-    _LOGI("Loop Time: %.2f µs, Frequency: %.2f Hz", avgLoopTime, frequency);
+  if (duration > 2UL * 1000000UL) {
+    return;
+  }
+  avgLoopTime = alpha * (float)duration + (1.0f - alpha) * avgLoopTime;
+  if ((uint32_t)(now - lastTime) >= 1000000UL) {
+    float frequency = avgLoopTime > 1.0f ? (1e6f / avgLoopTime) : 0.0f;
+    Serial.printf("[KV4P-HT] loop avg: %.0f us (%.1f Hz)\n", avgLoopTime, frequency);
     lastTime = now;
   }
-#endif  
+#endif
 }
 
 void inline debugSetup() {

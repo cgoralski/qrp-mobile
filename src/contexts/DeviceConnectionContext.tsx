@@ -58,6 +58,10 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
   const connectingRef = useRef(connecting);
   const connectionTypeRef = useRef(connectionType);
   const connectViaWifiRef = useRef<(host: string, port?: number) => Promise<void>>(async () => {});
+  /** iOS often RSTs local TCP when the “no internet” Wi‑Fi sheet appears; reconnect without waiting for app resume. */
+  const wifiDropReconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastWifiAutoReconnectAtRef = useRef(0);
+  const scheduleWifiDropReconnectRef = useRef<(source: string) => void>(() => {});
   const serialLog = useSerialLog();
 
   const connected = connectionType !== null;
@@ -65,6 +69,33 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
   const clearWifiAutoReconnect = useCallback(() => {
     wifiAutoReconnectEnabledRef.current = false;
   }, []);
+
+  const scheduleWifiDropReconnect = useCallback((source: string) => {
+    if (!Capacitor.isNativePlatform()) return;
+    if (!wifiAutoReconnectEnabledRef.current) return;
+    const host = getSavedWifiHost();
+    if (!host) return;
+    if (wifiDropReconnectTimerRef.current) clearTimeout(wifiDropReconnectTimerRef.current);
+    wifiDropReconnectTimerRef.current = setTimeout(() => {
+      wifiDropReconnectTimerRef.current = null;
+      if (!wifiAutoReconnectEnabledRef.current) return;
+      const now = Date.now();
+      if (now - lastWifiAutoReconnectAtRef.current < 1200) {
+        logWifiDiag("[DeviceConn] WiFi auto-reconnect skipped (cooldown)");
+        return;
+      }
+      if (connectingRef.current) return;
+      if (connectionTypeRef.current !== null) return;
+      lastWifiAutoReconnectAtRef.current = now;
+      logWifiDiag(`[DeviceConn] WiFi transient drop (${source}) → auto-reconnect ${host}`);
+      setError(null);
+      void connectViaWifiRef.current(host, getSavedWifiPort());
+    }, 400);
+  }, []);
+
+  useEffect(() => {
+    scheduleWifiDropReconnectRef.current = scheduleWifiDropReconnect;
+  }, [scheduleWifiDropReconnect]);
 
   useEffect(() => {
     connectingRef.current = connecting;
@@ -145,6 +176,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
         setError(null);
       },
       onDisconnect: () => {
+        const wasWifi = connectionTypeRef.current === "wifi";
         logWifiDiag("[DeviceConn] WiFi onDisconnect");
         rxPlaybackHandleRef.current?.destroy();
         rxPlaybackHandleRef.current = null;
@@ -154,8 +186,10 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
           return prev === "wifi" ? null : prev;
         });
         setConnecting(false);
+        if (wasWifi) scheduleWifiDropReconnectRef.current("disconnect");
       },
       onError: (msg) => {
+        const wasWifi = connectionTypeRef.current === "wifi";
         logWifiDiag("[DeviceConn] WiFi onError: " + msg);
         rxPlaybackHandleRef.current?.destroy();
         rxPlaybackHandleRef.current = null;
@@ -167,6 +201,7 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
           if (prev === "wifi") setDeviceName(null);
           return prev === "wifi" ? null : prev;
         });
+        if (wasWifi) scheduleWifiDropReconnectRef.current("error");
       },
       onData: (data) => onDataRef.current?.(data),
     });
@@ -293,6 +328,10 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
 
   const disconnect = useCallback(async () => {
     clearWifiAutoReconnect();
+    if (wifiDropReconnectTimerRef.current) {
+      clearTimeout(wifiDropReconnectTimerRef.current);
+      wifiDropReconnectTimerRef.current = null;
+    }
     if (connectionType === "ble") await ble.disconnect();
     if (connectionType === "usb") await serial.disconnectSerial();
     if (connectionType === "wifi") await ws.disconnect();

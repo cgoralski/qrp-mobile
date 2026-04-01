@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { logWifiDiag, previewBytesHex } from "@/lib/wifi-diagnostics";
 
 /**
@@ -11,26 +12,37 @@ import { logWifiDiag, previewBytesHex } from "@/lib/wifi-diagnostics";
 const DEFAULT_WS_PORT = 8765;
 const PLUGIN_SOCKET_NAME = "board";
 
+function iosNoInternetWifiHint(): string {
+  try {
+    if (Capacitor.getPlatform() !== "ios") return "";
+  } catch {
+    return "";
+  }
+  return " On iPhone/iPad: KV4P-Radio has no internet; if iOS asks, choose to keep using this Wi‑Fi for local access (not only cellular). That prompt can reset the link to the radio.";
+}
+
 /**
  * Map POSIX / Starscream errors to short UI copy. Detailed logs still use the raw string.
  */
 export function formatWifiTransportError(raw: string): string {
   const s = raw.trim();
   const lower = s.toLowerCase();
+  const hint = iosNoInternetWifiHint();
   if (
     lower.includes("connection reset by peer") ||
     lower.includes("rawvalue: 54") ||
     (lower.includes("posixerrorcode") && lower.includes("54"))
   ) {
-    return "Wi‑Fi link to the radio dropped (connection reset). Stay on KV4P-Radio — the app reconnects when you return to it, or tap Connect.";
+    return `Wi‑Fi link to the radio dropped (connection reset). The app will try to reconnect shortly while you stay on KV4P-Radio.${hint}`;
   }
   if (lower.includes("broken pipe") || lower.includes("rawvalue: 32")) {
-    return "Wi‑Fi link to the radio closed unexpectedly. Reconnect while on KV4P-Radio.";
+    return `Wi‑Fi link to the radio closed unexpectedly. Stay on KV4P-Radio; reconnecting if possible.${hint}`;
   }
   if (lower.includes("timed out") || lower.includes("timeout")) {
-    return "Wi‑Fi connection timed out. Join KV4P-Radio and wait for the board to finish booting, then tap Connect.";
+    return `Wi‑Fi connection timed out. Join KV4P-Radio and wait for the board to finish booting.${hint}`;
   }
-  return s.length > 220 ? `${s.slice(0, 217)}…` : s;
+  const base = s.length > 220 ? `${s.slice(0, 217)}…` : s;
+  return hint && base.length < 400 ? `${base}${hint}` : base;
 }
 
 let ws: WebSocket | null = null;

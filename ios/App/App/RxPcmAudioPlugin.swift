@@ -18,6 +18,8 @@ public class RxPcmAudioPlugin: CAPPlugin, CAPBridgedPlugin {
     private var playerNode: AVAudioPlayerNode?
     private var pcmFormat: AVAudioFormat?
     private let stateLock = NSLock()
+    /// Avoid main-queue contention with WKWebView (was causing ~periodic RX glitches on enqueue).
+    private let scheduleQueue = DispatchQueue(label: "com.qrpmobile.rxpcm", qos: .userInteractive)
 
     private func tearDown() {
         stateLock.lock()
@@ -31,7 +33,7 @@ public class RxPcmAudioPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc public func prepare(_ call: CAPPluginCall) {
         let rate = call.getDouble("sampleRate") ?? 48_000
-        DispatchQueue.main.async {
+        scheduleQueue.async {
             self.tearDown()
             do {
                 try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
@@ -79,37 +81,37 @@ public class RxPcmAudioPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
-        stateLock.lock()
-        let fmt = self.pcmFormat
-        let node = self.playerNode
-        stateLock.unlock()
+        scheduleQueue.async {
+            self.stateLock.lock()
+            let fmt = self.pcmFormat
+            let player = self.playerNode
+            self.stateLock.unlock()
 
-        guard let format = fmt, let player = node else {
-            call.resolve()
-            return
-        }
+            guard let format = fmt, let node = player else {
+                call.resolve()
+                return
+            }
 
-        let frameCount = data.count / MemoryLayout<Int16>.size
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frameCount)) else {
-            call.resolve()
-            return
-        }
-        buffer.frameLength = AVAudioFrameCount(frameCount)
+            let frameCount = data.count / MemoryLayout<Int16>.size
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frameCount)) else {
+                call.resolve()
+                return
+            }
+            buffer.frameLength = AVAudioFrameCount(frameCount)
 
-        data.withUnsafeBytes { raw in
-            guard let base = raw.bindMemory(to: Int16.self).baseAddress,
-                  let ch = buffer.int16ChannelData else { return }
-            ch[0].assign(from: base, count: frameCount)
-        }
+            data.withUnsafeBytes { raw in
+                guard let base = raw.bindMemory(to: Int16.self).baseAddress,
+                      let ch = buffer.int16ChannelData else { return }
+                ch[0].assign(from: base, count: frameCount)
+            }
 
-        DispatchQueue.main.async {
-            player.scheduleBuffer(buffer, completionHandler: nil)
+            node.scheduleBuffer(buffer, completionHandler: nil)
             call.resolve()
         }
     }
 
     @objc public func stop(_ call: CAPPluginCall) {
-        DispatchQueue.main.async {
+        scheduleQueue.async {
             self.tearDown()
             call.resolve()
         }
