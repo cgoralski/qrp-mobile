@@ -29,7 +29,7 @@ function capacitorNativeHtmlPlugin(): Plugin {
         // 2. Add onerror to the module script tag so we catch load failures visually
         out = out.replace(
           /<script\s+type="module"\s+src="([^"]+)">/gi,
-          `<script type="module" src="$1" onerror="document.getElementById('cap-diag').textContent='SCRIPT LOAD FAILED: $1'">`,
+          `<script type="module" src="$1" onerror="(function(){var r=document.getElementById('cap-diag-msg'),w=document.getElementById('cap-diag');if(r)r.textContent='SCRIPT LOAD FAILED: $1';if(w)w.className='err';})()">`,
         );
 
         // 3. Inject a classic (non-module) diagnostic script at the very top of <body>
@@ -42,8 +42,9 @@ body{background:#0f172a!important}
 #cap-diag.err .cap-spin{border-color:rgba(248,113,113,0.25)!important;border-top-color:#fca5a5!important}
 .cap-stack{display:flex;flex-direction:column;align-items:center;gap:22px;transform:translateY(-11vh)}
 .cap-title{font-size:clamp(28px,8vw,34px);font-weight:700;color:#e2e8f0;letter-spacing:0.06em;margin:0}
-.cap-spin{width:48px;height:48px;border-radius:50%;border:3px solid rgba(148,163,184,0.28);border-top-color:#cbd5e1;animation:cap-spin-rot 0.85s linear infinite;box-sizing:border-box}
+.cap-spin{width:48px;height:48px;border-radius:50%;border:3px solid rgba(148,163,184,0.28);border-top-color:#cbd5e1;box-sizing:border-box;will-change:transform;-webkit-animation:cap-spin-rot 0.85s linear infinite;animation:cap-spin-rot 0.85s linear infinite}
 .cap-loading{font-size:18px;font-weight:500;color:#94a3b8;margin:0}
+@-webkit-keyframes cap-spin-rot{to{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}
 @keyframes cap-spin-rot{to{transform:rotate(360deg)}}
 </style>
 <div id="cap-diag">
@@ -56,7 +57,7 @@ body{background:#0f172a!important}
 <script>
 (function(){
   var d=document.getElementById("cap-diag"),m=document.getElementById("cap-diag-msg");
-  function show(t,err){m.textContent=t;if(err)d.className="err";}
+  function show(t,err){if(!d||!m)return;if(err){m.textContent=t;d.className="err";}}
   window.__capDiag=show;
   window.addEventListener("error",function(ev){
     show("JS ERROR: "+(ev.message||"unknown")+" @ "+(ev.filename||"?").split("/").pop()+":"+ev.lineno,true);

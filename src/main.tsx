@@ -49,10 +49,9 @@ class RootErrorBoundary extends Component<{ children: ReactNode }, { message: st
 }
 
 try {
-  diag("Module loaded — mounting React…");
   const rootEl = document.getElementById("root");
   if (!rootEl) {
-    diag("Missing #root element in index.html", true);
+    diag("Missing #root in index.html", true);
     logSession("main missing #root", { fatal: true });
   } else {
     createRoot(rootEl).render(
