@@ -41,6 +41,11 @@ function scheduleNotify(): void {
   }, NOTIFY_DEBOUNCE_MS);
 }
 
+/** True when the Wi‑Fi console page is subscribed (use for high‑rate RX/TX trace only). */
+export function wifiDiagHasSubscribers(): boolean {
+  return listeners.size > 0;
+}
+
 /** Append one line (timestamp added when displayed; here we store epoch ms). */
 export function logWifiDiag(message: string): void {
   entries.push({ ts: Date.now(), message });
@@ -48,6 +53,15 @@ export function logWifiDiag(message: string): void {
     entries = entries.slice(-MAX_ENTRIES);
   }
   scheduleNotify();
+}
+
+/**
+ * Skip entirely when no console subscriber — avoids string work + ring-buffer churn on the audio hot path.
+ * Always use `logWifiDiag` for connection/session lines you need after opening the console later.
+ */
+export function logWifiDiagIfSubscribed(message: string): void {
+  if (listeners.size === 0) return;
+  logWifiDiag(message);
 }
 
 export function subscribeWifiDiag(onChange: () => void): () => void {

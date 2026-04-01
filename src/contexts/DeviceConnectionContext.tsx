@@ -190,7 +190,10 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
         timeoutId = undefined;
         bumpSessionStat("foregroundReconnectTimerFired");
         if (!wifiAutoReconnectEnabledRef.current) {
-          logSession("app_foreground_reconnect skipped", { reason: "wifi_auto_off" });
+          logSession("app_foreground_reconnect skipped", {
+            reason: "wifi_auto_off",
+            hint: "normal_until_first_successful_WiFi_connect",
+          });
           return;
         }
         if (connectingRef.current || connectionTypeRef.current !== null) {

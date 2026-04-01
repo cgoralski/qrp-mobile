@@ -259,6 +259,15 @@ export default function WifiConsolePage() {
           Filter mentally for <code className="text-foreground/80">[Session</code> lines — elapsed ms is from JS
           bundle load; counters summarize Wi‑Fi / RX / KV4P churn until you clear the log.
         </p>
+        <p className="opacity-85 text-[9px] leading-snug">
+          <span className="text-foreground/70">Note:</span>{" "}
+          <code className="text-foreground/80">wifi_auto_off</code> on foreground until you have connected to
+          the board once this session — then auto‑re‑connect after drops is allowed. Slow{" "}
+          <code className="text-foreground/80">wifi_ws.connect</code> (multi‑second) is usually iOS/AP TCP to
+          192.168.4.1, not JS. High‑rate <code className="text-foreground/80">[WS] rx</code> /{" "}
+          <code className="text-foreground/80">[KV4P] pkt</code> lines are only recorded while this console is
+          open (saves CPU for RX audio when you are on the radio screen).
+        </p>
       </div>
 
       <pre

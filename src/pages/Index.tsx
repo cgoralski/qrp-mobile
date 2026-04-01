@@ -182,21 +182,32 @@ const Index = () => {
   const squelch = activeChannel === "A" ? squelchA : squelchB;
 
   const radioPersistSkipFirst = useRef(true);
+  const radioPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (radioPersistSkipFirst.current) {
       radioPersistSkipFirst.current = false;
       return;
     }
-    setPersistedRadioState({
-      ...getPersistedRadioState(),
-      channelA,
-      channelB,
-      activeChannel,
-      channelAName,
-      channelBName,
-      squelchA,
-      squelchB,
-    });
+    if (radioPersistTimerRef.current !== null) clearTimeout(radioPersistTimerRef.current);
+    radioPersistTimerRef.current = setTimeout(() => {
+      radioPersistTimerRef.current = null;
+      setPersistedRadioState({
+        ...getPersistedRadioState(),
+        channelA,
+        channelB,
+        activeChannel,
+        channelAName,
+        channelBName,
+        squelchA,
+        squelchB,
+      });
+    }, 450);
+    return () => {
+      if (radioPersistTimerRef.current !== null) {
+        clearTimeout(radioPersistTimerRef.current);
+        radioPersistTimerRef.current = null;
+      }
+    };
   }, [channelA, channelB, activeChannel, channelAName, channelBName, squelchA, squelchB]);
   const [txPower, setTxPower] = useState<"high" | "low">("low");
   const [myCallsign, setMyCallsign] = useState<string>(
@@ -240,6 +251,7 @@ const Index = () => {
     rxPlaybackHandleRef,
   } = useDeviceConnection();
   const { rssi: deviceRssi, sendPttDown, sendPttUp, sendGroup, sendStop, sendCommand, requestVersion, version: deviceVersion } = useKv4p();
+  const boardFirmwareVer = deviceVersion?.ver ?? 0;
 
   // Capture mic and send TX Opus frames to device while PTT is down and connected
   const onTxEncoded = useCallback((data: Uint8Array) => sendCommand(CMD_HOST_TX_AUDIO, data), [sendCommand]);
@@ -260,6 +272,8 @@ const Index = () => {
   const groupRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Squelch slider debounce — do not tie to `sendGroupNow` identity (that changes every VFO/freq edit). */
   const squelchGroupDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Last squelch GROUP we applied (skip re-arming timer on spurious effect re-runs / same values). */
+  const lastSquelchGroupSentRef = useRef<{ a: number; b: number; fwVer: number } | null>(null);
   const [wifiProvisioningOpen, setWifiProvisioningOpen] = useState(false);
   const [squelchSliderOpen, setSquelchSliderOpen] = useState(false);
   const savedWifiHost = getSavedWifiHost();
@@ -349,21 +363,28 @@ const Index = () => {
     };
   }, [connected, channelA, channelB]);
 
-  // Apply squelch to the module only when squelchA/B (or link/version) change — not when `sendGroupNow`
-  // is recreated on VFO/frequency edits. Otherwise every A↔B switch sent an extra GROUP and could race
-  // the debounced frequency path, leaving RX silent until reconnect.
+  // Apply squelch via GROUP only when squelch levels or board firmware ver actually change.
+  // Depends on `boardFirmwareVer` (number), not `deviceVersion` object identity, so opening UI / parent
+  // re-renders do not cancel+re-arm the debounce timer (that was causing intermittent RX after touching SQ).
   useEffect(() => {
     if (!connected || !deviceVersion) {
       if (squelchGroupDebounceRef.current !== null) {
         clearTimeout(squelchGroupDebounceRef.current);
         squelchGroupDebounceRef.current = null;
       }
+      lastSquelchGroupSentRef.current = null;
+      return;
+    }
+    const fw = boardFirmwareVer;
+    const prev = lastSquelchGroupSentRef.current;
+    if (prev !== null && prev.a === squelchA && prev.b === squelchB && prev.fwVer === fw) {
       return;
     }
     if (squelchGroupDebounceRef.current !== null) clearTimeout(squelchGroupDebounceRef.current);
     squelchGroupDebounceRef.current = setTimeout(() => {
       squelchGroupDebounceRef.current = null;
       sendGroupNowRef.current();
+      lastSquelchGroupSentRef.current = { a: squelchA, b: squelchB, fwVer: fw };
     }, 160);
     return () => {
       if (squelchGroupDebounceRef.current !== null) {
@@ -371,7 +392,7 @@ const Index = () => {
         squelchGroupDebounceRef.current = null;
       }
     };
-  }, [connected, deviceVersion, squelchA, squelchB]);
+  }, [connected, deviceVersion, boardFirmwareVer, squelchA, squelchB]);
 
   // Reset any browser-induced scroll offset whenever the tab changes.
   // On mobile, opening a keyboard in APRS chat can push window.scrollY up;

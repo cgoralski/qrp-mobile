@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import { logWifiDiag, previewBytesHex } from "@/lib/wifi-diagnostics";
+import { logWifiDiag, logWifiDiagIfSubscribed, previewBytesHex } from "@/lib/wifi-diagnostics";
 import { logSession } from "@/lib/session-log";
 
 /**
@@ -314,28 +314,28 @@ function deliverWsMessageData(data: unknown): void {
   const n = wsRxDiagCount;
   if (data instanceof ArrayBuffer) {
     if (n <= 15 || n % 40 === 0) {
-      logWifiDiag(`[WS] rx #${n} ArrayBuffer len=${data.byteLength}`);
+      logWifiDiagIfSubscribed(`[WS] rx #${n} ArrayBuffer len=${data.byteLength}`);
     }
     onDataCb(new Uint8Array(data));
     return;
   }
   if (typeof data === "string") {
     if (n <= 15 || n % 40 === 0) {
-      logWifiDiag(`[WS] rx #${n} string len=${data.length} (base64 text from board)`);
+      logWifiDiagIfSubscribed(`[WS] rx #${n} string len=${data.length} (base64 text from board)`);
     }
     try {
       onDataCb(base64ToUint8Array(data));
     } catch {
-      if (n <= 5) logWifiDiag(`[WS] rx #${n} base64 decode failed`);
+      if (n <= 5) logWifiDiagIfSubscribed(`[WS] rx #${n} base64 decode failed`);
     }
     return;
   }
   if (typeof Blob !== "undefined" && data instanceof Blob) {
-    if (n <= 15) logWifiDiag(`[WS] rx #${n} Blob size=${data.size}`);
+    if (n <= 15) logWifiDiagIfSubscribed(`[WS] rx #${n} Blob size=${data.size}`);
     void data.arrayBuffer().then((buf) => {
       if (!onDataCb) return;
       if (n <= 15 || n % 40 === 0) {
-        logWifiDiag(`[WS] rx #${n} Blob→ArrayBuffer len=${buf.byteLength}`);
+        logWifiDiagIfSubscribed(`[WS] rx #${n} Blob→ArrayBuffer len=${buf.byteLength}`);
       }
       onDataCb(new Uint8Array(buf));
     });
@@ -480,7 +480,7 @@ export async function write(data: Uint8Array): Promise<void> {
   wsTxDiagCount += 1;
   const tn = wsTxDiagCount;
   if (tn <= 50 || tn % 60 === 0) {
-    logWifiDiag(`[WS] tx #${tn} ${previewBytesHex(data)}`);
+    logWifiDiagIfSubscribed(`[WS] tx #${tn} ${previewBytesHex(data)}`);
   }
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(data);

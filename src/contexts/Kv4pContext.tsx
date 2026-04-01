@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
-import { logWifiDiag, previewBytesHex } from "@/lib/wifi-diagnostics";
+import { logWifiDiag, logWifiDiagIfSubscribed, previewBytesHex } from "@/lib/wifi-diagnostics";
 import { bumpSessionStat, logSession } from "@/lib/session-log";
 import {
   Kv4pParser,
@@ -224,7 +224,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
     const parser = new Kv4pParser((cmd, params) => {
       try {
         const n = ++parsedPacketCountRef.current;
-        if (n <= 25 || n % 100 === 0) {
+        if (import.meta.env.DEV && (n <= 25 || n % 100 === 0)) {
           console.log("[KV4P] packet #" + n + " cmd=0x" + cmd.toString(16).padStart(2, "0") + " plen=" + params.length);
         }
         if (!isBoardDebugPacket(cmd) && (n <= 45 || n % 200 === 0)) {
@@ -232,7 +232,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
             params.length > 64
               ? `${params.length}b (hex omitted)`
               : previewBytesHex(params, 24);
-          logWifiDiag(`[KV4P] pkt #${n} cmd=0x${cmd.toString(16).padStart(2, "0")} ${hex}`);
+          logWifiDiagIfSubscribed(`[KV4P] pkt #${n} cmd=0x${cmd.toString(16).padStart(2, "0")} ${hex}`);
         }
         switch (cmd) {
           case CMD_DEBUG_INFO:
@@ -286,7 +286,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
             break;
           case CMD_RX_AUDIO: {
             const n = ++rxAudioChunkCountRef.current;
-            if (n <= 3 || n % 50 === 0) {
+            if (import.meta.env.DEV && (n <= 3 || n % 50 === 0)) {
               console.log("[KV4P] RX audio chunk #" + n + ",", params.length, "bytes");
             }
             const cb = onRxAudioRef.current;
