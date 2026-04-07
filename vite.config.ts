@@ -64,6 +64,9 @@ function capacitorNativeHtmlPlugin(): Plugin {
  */
 function rollupManualChunks(id: string): string | undefined {
   if (!id.includes("node_modules")) return undefined;
+  // scheduler is a react-dom dependency — must not land in `vendor` or you get
+  // react-vendor → vendor → react-vendor and `forwardRef` / `createContext` are undefined (iOS blank screen).
+  if (id.includes("/scheduler/") || id.includes("\\scheduler\\")) return "react-vendor";
   if (id.includes("react-dom") || id.includes("/react/") || id.includes("\\react\\")) return "react-vendor";
   if (id.includes("react-leaflet")) return "react-vendor";
   if (id.includes("/leaflet/") || id.includes("\\leaflet\\")) return "leaflet";
@@ -136,7 +139,9 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: isCapacitor ? 2000 : 950,
       rollupOptions: {
         output: {
-          manualChunks: rollupManualChunks,
+          // Capacitor/WKWebView: custom manualChunks created react-vendor ↔ vendor cycles
+          // (forwardRef / createContext undefined → blank #root). Use Rollup defaults for native.
+          ...(isCapacitor ? {} : { manualChunks: rollupManualChunks }),
         },
       },
     },
