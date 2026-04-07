@@ -89,8 +89,9 @@ export function useNativeWifiRxStallRecovery(): void {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    const SILENCE_MS = 6500;
-    const COOLDOWN_MS = 10000;
+    // Tight enough to catch “~2–3 s of audio then silence while still Connected” on iOS.
+    const SILENCE_MS = 3200;
+    const COOLDOWN_MS = 8000;
 
     const id = window.setInterval(() => {
       if (!connectedRef.current || connectionTypeRef.current !== "wifi" || !versionRef.current) return;
@@ -111,7 +112,7 @@ export function useNativeWifiRxStallRecovery(): void {
           console.warn("[RX audio] Wi‑Fi stall soft recovery failed:", e);
         }
       })();
-    }, 3000);
+    }, 2000);
 
     return () => clearInterval(id);
   }, [rxAudioLastChunkAtRef, rxPlaybackHandleRef]);
