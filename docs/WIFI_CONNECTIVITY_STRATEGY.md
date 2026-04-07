@@ -93,3 +93,11 @@ Libraries: ESP-IDF has **esp_websocket_client** (client) and you can run a small
 | 5 | App ↔ ESP32 | Control and audio over WebSockets on local WiFi (same KV4P protocol). |
 
 This approach is sound and aligns with common IoT patterns (e.g. smart home devices). Next concrete steps: implement the WebSocket server on the ESP32 and the WebSocket transport + “Connect via WiFi” (and optionally provisioning) in the web app.
+
+---
+
+## 6. Field operations: cloud data on iPhone (KV4P-Radio + cellular)
+
+The **KV4P-Radio** SSID is for **LAN** access to the board (WebSocket). It typically has **no internet**. For the **native iPhone app**, teams should **keep cellular data on** and **allow** iOS to use cellular when prompted while on that Wi‑Fi, so **Supabase** (repeaters, contacts sync) and **map tile** CDNs stay reachable. That is the **standard operating configuration** for up-to-date repeater lists and basemaps.
+
+See **[WIFI_INTERNET_QA.md](./WIFI_INTERNET_QA.md)** for the full policy, QA matrix, and app mitigations (offline banners, caches, map fallback).

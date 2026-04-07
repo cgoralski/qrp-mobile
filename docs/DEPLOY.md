@@ -108,3 +108,9 @@ npm ci
 npm run build
 # No nginx reload needed; root points at dist/
 ```
+
+## 6. iPhone field teams (Capacitor / native app)
+
+**Operational standard:** on **KV4P-Radio** Wi‑Fi, iPhones should **keep cellular data enabled** and **allow** iOS to use cellular for internet when prompted, so the app gets **up-to-date repeater data** (Supabase) and **live map tiles** (OpenStreetMap) while the radio link stays on the board’s LAN.
+
+Full checklist, rationale, and QA matrix: **[WIFI_INTERNET_QA.md](./WIFI_INTERNET_QA.md)**.
