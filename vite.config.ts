@@ -56,12 +56,18 @@ function capacitorNativeHtmlPlugin(): Plugin {
   };
 }
 
-/** Shared vendor splits: keeps a single `react-vendor` so lazy chunks (e.g. react-leaflet) never load a second React. */
+/**
+ * Shared vendor splits: single `react-vendor` for React.
+ * IMPORTANT: `react-leaflet` must live in `react-vendor`, not in the `leaflet` chunk.
+ * Putting both in one "leaflet" chunk created a cycle: react-vendor → leaflet → react-vendor,
+ * so `createContext` was undefined on iOS (blank screen after splash).
+ */
 function rollupManualChunks(id: string): string | undefined {
   if (!id.includes("node_modules")) return undefined;
   if (id.includes("react-dom") || id.includes("/react/") || id.includes("\\react\\")) return "react-vendor";
+  if (id.includes("react-leaflet")) return "react-vendor";
+  if (id.includes("/leaflet/") || id.includes("\\leaflet\\")) return "leaflet";
   if (id.includes("@radix-ui")) return "radix-ui";
-  if (id.includes("leaflet") || id.includes("react-leaflet")) return "leaflet";
   if (id.includes("recharts")) return "recharts";
   if (id.includes("@supabase")) return "supabase";
   if (id.includes("@tanstack/react-query")) return "tanstack-query";
