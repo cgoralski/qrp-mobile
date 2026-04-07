@@ -3,9 +3,20 @@ import {
   Search, Radio, X, Check, ChevronRight, Trash2,
   BookUser, Plus, Filter,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/features/cloud/supabaseClient";
+import { CloudFeaturesBanner } from "@/components/CloudFeaturesBanner";
+import { useNavigatorOnline } from "@/hooks/use-navigator-online";
 import type { BandId } from "@/lib/hardware";
 import { frequencyMatchesBand, BAND_CONFIGS } from "@/lib/hardware";
+import {
+  buildRepeaterFilterKey,
+  getCachedContactsJson,
+  getCachedRepeaterCountriesJson,
+  getCachedRepeaterSnapshotJson,
+  setCachedContactsJson,
+  setCachedRepeaterCountriesJson,
+  setCachedRepeaterSnapshotJson,
+} from "@/lib/cloud-data-cache";
 
 // ─────────────────────────────────────────────
 // Types
@@ -335,24 +346,48 @@ interface MyContactsTabProps {
   onTuneChannel: (freq: string, channelName?: string) => void;
   activeChannel: "A" | "B";
   boardBand: BandId;
+  onCloudDegraded: (degraded: boolean) => void;
 }
 
-const MyContactsTab = ({ onTuneChannel, activeChannel, boardBand }: MyContactsTabProps) => {
+const MyContactsTab = ({ onTuneChannel, activeChannel, boardBand, onCloudDegraded }: MyContactsTabProps) => {
+  const online = useNavigatorOnline();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [tunedId, setTunedId] = useState<string | null>(null);
 
-  // Load contacts
   const loadContacts = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from("contacts").select("*").order("created_at", { ascending: false });
-    if (data) setContacts(data as Contact[]);
-    setLoading(false);
-  }, []);
+    let showedCache = false;
+    try {
+      const cached = await getCachedContactsJson();
+      if (cached) {
+        const parsed = JSON.parse(cached) as Contact[];
+        if (Array.isArray(parsed)) {
+          setContacts(parsed);
+          showedCache = true;
+          setLoading(false);
+        }
+      }
+    } catch {
+      /* ignore bad cache */
+    }
 
-  useEffect(() => { loadContacts(); }, [loadContacts]);
+    const { data, error } = await supabase.from("contacts").select("*").order("created_at", { ascending: false });
+    if (data) {
+      setContacts(data as Contact[]);
+      void setCachedContactsJson(JSON.stringify(data));
+      onCloudDegraded(false);
+    } else if (error) {
+      onCloudDegraded(true);
+    }
+    setLoading(false);
+  }, [onCloudDegraded]);
+
+  useEffect(() => {
+    loadContacts();
+  }, [loadContacts, online]);
 
   const groups = useMemo(() => Array.from(new Set(contacts.map((c) => c.group_tag).filter(Boolean))) as string[], [contacts]);
 
@@ -375,7 +410,11 @@ const MyContactsTab = ({ onTuneChannel, activeChannel, boardBand }: MyContactsTa
 
   const handleDelete = async (id: string) => {
     await supabase.from("contacts").delete().eq("id", id);
-    setContacts((prev) => prev.filter((c) => c.id !== id));
+    setContacts((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      void setCachedContactsJson(JSON.stringify(next));
+      return next;
+    });
     if (tunedId === id) setTunedId(null);
   };
 
@@ -459,9 +498,11 @@ interface RepeaterBrowserTabProps {
   onTuneChannel: (freq: string, channelName?: string) => void;
   activeChannel: "A" | "B";
   boardBand: BandId;
+  onCloudDegraded: (degraded: boolean) => void;
 }
 
-const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProps) => {
+const RepeaterBrowserTab = ({ onTuneChannel, boardBand, onCloudDegraded }: RepeaterBrowserTabProps) => {
+  const online = useNavigatorOnline();
   const [repeaters, setRepeaters] = useState<Repeater[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
@@ -474,24 +515,51 @@ const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProp
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 40;
 
-  // Load available countries
   useEffect(() => {
-    supabase.from("repeaters").select("country").then(({ data }) => {
+    (async () => {
+      try {
+        const cached = await getCachedRepeaterCountriesJson();
+        if (cached) {
+          const list = JSON.parse(cached) as string[];
+          if (Array.isArray(list) && list.length) setCountries(list);
+        }
+      } catch {
+        /* ignore */
+      }
+      const { data, error } = await supabase.from("repeaters").select("country");
       if (data) {
         const unique = Array.from(new Set(data.map((r) => r.country))).sort();
         setCountries(unique);
+        void setCachedRepeaterCountriesJson(JSON.stringify(unique));
+        onCloudDegraded(false);
+      } else if (error) {
+        onCloudDegraded(true);
       }
-    });
-  }, []);
+    })();
+  }, [onCloudDegraded, online]);
 
-  // Load which repeaters are already in My List (contacts) so green tick persists across refresh/navigation
   useEffect(() => {
-    supabase.from("contacts").select("source_repeater_id").not("source_repeater_id", "is", null).then(({ data }) => {
+    (async () => {
+      try {
+        const cached = await getCachedContactsJson();
+        if (cached) {
+          const arr = JSON.parse(cached) as { source_repeater_id?: string | null }[];
+          if (Array.isArray(arr)) {
+            const ids = new Set(
+              arr.map((r) => r.source_repeater_id).filter((x): x is string => Boolean(x))
+            );
+            if (ids.size) setRepeaterIdsInContacts(ids);
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+      const { data } = await supabase.from("contacts").select("source_repeater_id").not("source_repeater_id", "is", null);
       if (data) {
         const ids = new Set((data as { source_repeater_id: string }[]).map((r) => r.source_repeater_id));
         setRepeaterIdsInContacts(ids);
       }
-    });
+    })();
   }, []);
 
   // Debounced search — re-runs when boardBand changes too
@@ -502,10 +570,29 @@ const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProp
     }, 350);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, selectedCountry, selectedMode, boardBand]);
+  }, [query, selectedCountry, selectedMode, boardBand, online]);
 
   const fetchRepeaters = async (pageNum: number) => {
     setLoading(true);
+    const filterKey = buildRepeaterFilterKey({
+      query,
+      selectedCountry,
+      selectedMode,
+      boardBand: boardBand ?? null,
+    });
+
+    if (pageNum === 0) {
+      try {
+        const snap = await getCachedRepeaterSnapshotJson(filterKey);
+        if (snap) {
+          const { rows } = JSON.parse(snap) as { rows: Repeater[] };
+          if (Array.isArray(rows) && rows.length) setRepeaters(rows);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
     let q = supabase
       .from("repeaters")
       .select("id,callsign,name,frequency,freq_offset,duplex,tone_mode,r_tone_freq,c_tone_freq,dtcs_code,mode,country,region,location_desc,comment")
@@ -518,16 +605,33 @@ const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProp
       q = q.or(`callsign.ilike.%${query}%,name.ilike.%${query}%,location_desc.ilike.%${query}%`);
     }
 
-    // Band filter — applied at the DB query level for efficiency
     if (boardBand && boardBand !== "DUAL") {
       const cfg = BAND_CONFIGS[boardBand];
       q = q.gte("frequency", cfg.minMHz).lte("frequency", cfg.maxMHz);
     }
 
-    const { data } = await q;
+    const { data, error } = await q;
     if (data) {
-      if (pageNum === 0) setRepeaters(data as Repeater[]);
-      else setRepeaters((prev) => [...prev, ...data as Repeater[]]);
+      if (pageNum === 0) {
+        setRepeaters(data as Repeater[]);
+        void setCachedRepeaterSnapshotJson(filterKey, JSON.stringify({ rows: data as Repeater[] }));
+      } else {
+        setRepeaters((prev) => [...prev, ...(data as Repeater[])]);
+      }
+      onCloudDegraded(false);
+    } else if (error) {
+      onCloudDegraded(true);
+      if (pageNum === 0) {
+        const snap = await getCachedRepeaterSnapshotJson(filterKey);
+        if (snap) {
+          try {
+            const { rows } = JSON.parse(snap) as { rows: Repeater[] };
+            if (Array.isArray(rows) && rows.length) setRepeaters(rows);
+          } catch {
+            /* ignore */
+          }
+        }
+      }
     }
     setLoading(false);
   };
@@ -553,6 +657,20 @@ const RepeaterBrowserTab = ({ onTuneChannel, boardBand }: RepeaterBrowserTabProp
     }).select().single();
     if (!error && data) {
       setRepeaterIdsInContacts((prev) => new Set([...prev, repeater.id]));
+      const row = data as unknown as Contact;
+      const cached = await getCachedContactsJson();
+      if (cached) {
+        try {
+          const arr = JSON.parse(cached) as Contact[];
+          if (Array.isArray(arr)) {
+            void setCachedContactsJson(
+              JSON.stringify([row, ...arr.filter((c) => c.id !== row.id)])
+            );
+          }
+        } catch {
+          /* ignore */
+        }
+      }
     }
   };
 
@@ -668,6 +786,12 @@ interface ContactsScreenProps {
 
 const ContactsScreen = ({ onTuneChannel, activeChannel, boardBand }: ContactsScreenProps) => {
   const [tab, setTab] = useState<"contacts" | "repeaters">("contacts");
+  const online = useNavigatorOnline();
+  const [contactsCloudBad, setContactsCloudBad] = useState(false);
+  const [repeatersCloudBad, setRepeatersCloudBad] = useState(false);
+
+  const cloudBannerKind =
+    !online ? "offline" : contactsCloudBad || repeatersCloudBad ? "cloud" : null;
 
   const bandCfg = boardBand && boardBand !== "DUAL" ? BAND_CONFIGS[boardBand] : null;
 
@@ -727,11 +851,25 @@ const ContactsScreen = ({ onTuneChannel, activeChannel, boardBand }: ContactsScr
         </div>
       </div>
 
+      <div className="px-2 pb-1 flex-shrink-0">
+        <CloudFeaturesBanner kind={cloudBannerKind} />
+      </div>
+
       {/* Tab content */}
       {tab === "contacts" ? (
-        <MyContactsTab onTuneChannel={onTuneChannel} activeChannel={activeChannel} boardBand={boardBand} />
+        <MyContactsTab
+          onTuneChannel={onTuneChannel}
+          activeChannel={activeChannel}
+          boardBand={boardBand}
+          onCloudDegraded={setContactsCloudBad}
+        />
       ) : (
-        <RepeaterBrowserTab onTuneChannel={onTuneChannel} activeChannel={activeChannel} boardBand={boardBand} />
+        <RepeaterBrowserTab
+          onTuneChannel={onTuneChannel}
+          activeChannel={activeChannel}
+          boardBand={boardBand}
+          onCloudDegraded={setRepeatersCloudBad}
+        />
       )}
     </div>
   );

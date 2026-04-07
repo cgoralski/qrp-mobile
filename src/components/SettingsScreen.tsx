@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Upload, Download, Trash2, CheckCircle2, XCircle,
   Loader2, ChevronDown, ChevronRight, Globe, AlertTriangle, Radio, Save, MapPin, RefreshCw, Map,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/features/cloud/supabaseClient";
+import { CloudFeaturesBanner, type CloudFeaturesBannerKind } from "@/components/CloudFeaturesBanner";
+import { useNavigatorOnline } from "@/hooks/use-navigator-online";
 
 interface ImportResult { inserted: number; total?: number; error?: string; }
 interface KmlImportResult { updated: number; error?: string; }
@@ -243,6 +245,30 @@ async function detectCountry(): Promise<{ country: string }> {
 
 /* ── Main component ── */
 const SettingsScreen = ({ myCallsign, onCallsignChange, captionsLang, onCaptionsLangChange }: SettingsScreenProps) => {
+  const online = useNavigatorOnline();
+  const [settingsCloudOk, setSettingsCloudOk] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!online) return;
+    let cancelled = false;
+    void supabase
+      .from("contacts")
+      .select("id")
+      .limit(1)
+      .then(({ error }) => {
+        if (!cancelled) setSettingsCloudOk(!error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [online]);
+
+  const settingsBannerKind = useMemo((): CloudFeaturesBannerKind | null => {
+    if (!online) return "offline";
+    if (settingsCloudOk === false) return "cloud";
+    return null;
+  }, [online, settingsCloudOk]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const kmlFileInputRef = useRef<HTMLInputElement>(null);
   const contactsFileInputRef = useRef<HTMLInputElement>(null);
@@ -470,6 +496,10 @@ const SettingsScreen = ({ myCallsign, onCallsignChange, captionsLang, onCaptions
       {/* Header */}
       <div className="tab-header flex items-center px-3 py-2.5">
         <span className="tab-section-title">SETTINGS</span>
+      </div>
+
+      <div className="px-2 pb-1">
+        <CloudFeaturesBanner kind={settingsBannerKind} />
       </div>
 
       {/* ── Callsign ── */}

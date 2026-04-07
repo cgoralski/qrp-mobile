@@ -1,13 +1,19 @@
 ---
-description: After tested code changes, commit and push to origin so collaborators can git pull
+description: Commit and push to GitHub after every substantive codebase change
 alwaysApply: true
 ---
 
-# Git: push tested changes to GitHub
+# Git: push changes to GitHub
 
-This repo’s remote is **origin** (e.g. `cgoralski/qrp-mobile` on GitHub).
+The **full codebase must stay in sync with GitHub** as changes are made.
 
-- After changes are **implemented, linted, built, and tests run** (and firmware built when relevant), **commit** with a clear message and **`git push origin main`** (or the active branch). Treat **push as part of the same task**—not optional follow-up.
-- Applies to **firmware** (`firmware/microcontroller/…`), **iOS native** (`ios/`), and **app** (`src/`): if it is committed locally, it must be **on origin** before considering the work done.
-- Do **not** leave fixes only on the server/workspace: collaborators expect **`git pull`** to receive the same code.
-- If push fails (auth, conflicts), fix or report immediately; do not treat the task as done until the remote is updated or the blocker is explicit.
+After **any** session that edits project files (source, config, docs that belong in repo, etc.):
+
+1. Run `git status` and ensure nothing important is missing from the commit.
+2. `git add` all intended paths (typically `git add -A` when the whole change set should ship).
+3. Commit with a **clear, complete-sentence** message describing what changed and why.
+4. `git push` to **`origin`** on the **current branch** (usually `main`). Do not leave local-only commits unless the user explicitly asked to hold the push.
+
+If `git push` fails (auth, network), report the error and what the user must fix; retry after fixes when possible.
+
+Do **not** commit secrets that should not be in git (one-off local env files, etc.); if `.gitignore` already excludes them, proceed.
