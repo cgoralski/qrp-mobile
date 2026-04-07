@@ -1,15 +1,17 @@
 import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+import { Capacitor } from "@capacitor/core";
 import * as ble from "@/lib/ble-device";
 import * as serial from "@/lib/serial-device";
 import * as ws from "@/lib/websocket-device";
 import { createRxPlayback, type RxPlaybackHandle } from "@/lib/rx-audio-playback";
+import { RadioLinkKeepAlive } from "@/plugins/radio-link-keepalive";
 import { getPersistedRadioState } from "@/lib/radio-storage";
 import {
   bumpSessionStat,
   logSession,
 } from "@/lib/session-log";
 import { logWifiDiag } from "@/lib/wifi-diagnostics";
-import type { ConnectionType } from "@/contexts/device-connection-types";
+import type { ConnectWifiOptions, ConnectionType } from "@/contexts/device-connection-types";
 
 export interface UseDeviceConnectionActionsParams {
   connectionType: ConnectionType;
@@ -32,7 +34,7 @@ export interface DeviceConnectionActions {
   sendData: (data: Uint8Array) => Promise<void>;
   connect: () => Promise<void>;
   connectViaUsb: () => Promise<void>;
-  connectViaWifi: (hostOrUrl: string, port?: number) => Promise<void>;
+  connectViaWifi: (hostOrUrl: string, port?: number, opts?: ConnectWifiOptions) => Promise<void>;
   disconnect: () => Promise<void>;
 }
 
@@ -106,25 +108,59 @@ export function useDeviceConnectionActions({
   }, [clearWifiAutoReconnect, logRxDestroyIfAny, rxPlaybackHandleRef, setConnecting, setError, setRxPlaybackEpoch]);
 
   const connectViaWifi = useCallback(
-    async (hostOrUrl: string, port?: number) => {
+    async (hostOrUrl: string, port?: number, opts?: ConnectWifiOptions) => {
+      const force = opts?.force === true;
       bumpSessionStat("wifiConnectStarted");
       logSession("wifi_connectViaWifi start", {
         hostOrUrl: String(hostOrUrl).slice(0, 80),
         port: port ?? "default",
+        force,
       });
       setError(null);
       setConnecting(true);
-      logWifiDiag(`[DeviceConn] connectViaWifi start hostOrUrl=${hostOrUrl} port=${port ?? "default"}`);
+      logWifiDiag(
+        `[DeviceConn] connectViaWifi start hostOrUrl=${hostOrUrl} port=${port ?? "default"} force=${force}`
+      );
       try {
+        if (!force && ws.isConnectedToBoard(hostOrUrl, port) && rxPlaybackHandleRef.current) {
+          setConnecting(false);
+          wifiAutoReconnectEnabledRef.current = true;
+          logSession("wifi_connectViaWifi skipped_duplicate", {});
+          logWifiDiag("[DeviceConn] connectViaWifi skipped — already on this board with RX playback");
+          return;
+        }
+        if (!force && ws.isConnectedToBoard(hostOrUrl, port) && !rxPlaybackHandleRef.current) {
+          logWifiDiag("[DeviceConn] WiFi TCP up; rebuilding RX playback only");
+          if (Capacitor.isNativePlatform()) {
+            await RadioLinkKeepAlive.enable().catch((e) => {
+              console.warn("[RadioLinkKeepAlive] enable before RX (rx-only) failed:", e);
+            });
+          }
+          const { volume: savedVolume } = getPersistedRadioState();
+          const handle = await createRxPlayback(savedVolume);
+          rxPlaybackHandleRef.current = handle;
+          setRxPlaybackEpoch((e) => e + 1);
+          wifiAutoReconnectEnabledRef.current = true;
+          setConnecting(false);
+          bumpSessionStat("wifiConnectSuccess");
+          logSession("wifi_connectViaWifi success", { rxOnly: true });
+          return;
+        }
+
         logRxDestroyIfAny("wifi_connect_prepare");
         rxPlaybackHandleRef.current?.destroy();
         rxPlaybackHandleRef.current = null;
         logWifiDiag("[DeviceConn] calling ws.connect…");
         const tWs = typeof performance !== "undefined" ? performance.now() : 0;
-        await ws.connect(hostOrUrl, port);
+        await ws.connect(hostOrUrl, port, force ? { force: true } : undefined);
         const wsMs = typeof performance !== "undefined" ? Math.round(performance.now() - tWs) : 0;
         logSession("wifi_ws.connect resolved", { ms: wsMs });
-        logWifiDiag("[DeviceConn] ws.connect resolved; starting createRxPlayback…");
+        logWifiDiag("[DeviceConn] ws.connect resolved; native keep-alive + createRxPlayback…");
+        if (Capacitor.isNativePlatform()) {
+          await RadioLinkKeepAlive.enable().catch((e) => {
+            console.warn("[RadioLinkKeepAlive] enable before RX failed:", e);
+          });
+        }
         const tRx = typeof performance !== "undefined" ? performance.now() : 0;
         const { volume: savedVolume } = getPersistedRadioState();
         const handle = await createRxPlayback(savedVolume);

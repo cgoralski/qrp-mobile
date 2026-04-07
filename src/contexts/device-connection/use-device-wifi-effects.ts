@@ -8,7 +8,7 @@ import { getSavedWifiHost, getSavedWifiPort, saveWifiHostFromUrl } from "@/lib/w
 import { logWifiDiag } from "@/lib/wifi-diagnostics";
 import { bumpSessionStat, logSession } from "@/lib/session-log";
 import { RadioLinkKeepAlive } from "@/plugins/radio-link-keepalive";
-import type { ConnectionType } from "@/contexts/device-connection-types";
+import type { ConnectWifiOptions, ConnectionType } from "@/contexts/device-connection-types";
 import type { RxPlaybackHandle } from "@/lib/rx-audio-playback";
 
 export interface UseDeviceWifiEffectsParams {
@@ -25,8 +25,10 @@ export interface UseDeviceWifiEffectsParams {
   connectionTypeRef: MutableRefObject<ConnectionType>;
   wifiAutoReconnectEnabledRef: MutableRefObject<boolean>;
   wifiDropReconnectTimerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>;
-  connectViaWifiRef: MutableRefObject<(host: string, port?: number) => Promise<void>>;
-  connectViaWifi: (hostOrUrl: string, port?: number) => Promise<void>;
+  connectViaWifiRef: MutableRefObject<
+    (host: string, port?: number, opts?: ConnectWifiOptions) => Promise<void>
+  >;
+  connectViaWifi: (hostOrUrl: string, port?: number, opts?: ConnectWifiOptions) => Promise<void>;
 }
 
 /**

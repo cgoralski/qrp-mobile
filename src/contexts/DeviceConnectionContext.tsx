@@ -8,7 +8,11 @@ import {
   type ReactNode,
 } from "react";
 import type { RxPlaybackHandle } from "@/lib/rx-audio-playback";
-import type { ConnectionType, DeviceConnectionContextValue } from "@/contexts/device-connection-types";
+import type {
+  ConnectWifiOptions,
+  ConnectionType,
+  DeviceConnectionContextValue,
+} from "@/contexts/device-connection-types";
 import { useSerialLog } from "@/contexts/SerialLogContext";
 import {
   bumpSessionStat,
@@ -35,7 +39,9 @@ export function DeviceConnectionProvider({ children }: { children: ReactNode }) 
   const wifiAutoReconnectEnabledRef = useRef(false);
   const connectingRef = useRef(connecting);
   const connectionTypeRef = useRef(connectionType);
-  const connectViaWifiRef = useRef<(host: string, port?: number) => Promise<void>>(async () => {});
+  const connectViaWifiRef = useRef<
+    (host: string, port?: number, opts?: ConnectWifiOptions) => Promise<void>
+  >(async () => {});
   const wifiDropReconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const serialLog = useSerialLog();
 

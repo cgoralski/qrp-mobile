@@ -2,7 +2,11 @@ import type { MutableRefObject } from "react";
 import * as serial from "@/lib/serial-device";
 import * as ws from "@/lib/websocket-device";
 import type { RxPlaybackHandle } from "@/lib/rx-audio-playback";
-import type { ConnectionType, DeviceConnectionContextValue } from "@/contexts/device-connection-types";
+import type {
+  ConnectWifiOptions,
+  ConnectionType,
+  DeviceConnectionContextValue,
+} from "@/contexts/device-connection-types";
 
 export interface DeviceConnectionSlices {
   connected: boolean;
@@ -14,7 +18,7 @@ export interface DeviceConnectionSlices {
   rxPlaybackHandleRef: MutableRefObject<RxPlaybackHandle | null>;
   connect: () => Promise<void>;
   connectViaUsb: () => Promise<void>;
-  connectViaWifi: (hostOrUrl: string, port?: number) => Promise<void>;
+  connectViaWifi: (hostOrUrl: string, port?: number, opts?: ConnectWifiOptions) => Promise<void>;
   disconnect: () => Promise<void>;
   clearError: () => void;
   sendData: (data: Uint8Array) => Promise<void>;

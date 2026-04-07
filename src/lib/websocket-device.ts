@@ -58,6 +58,8 @@ let wsRxDiagCount = 0;
 let wsTxDiagCount = 0;
 /** When native plugin reported connected (for delta logs on RST/errors). */
 let nativeOpenAtMs: number | null = null;
+/** URL of the active socket (normalized ws://…), for idempotent connect. */
+let activeWsUrl: string | null = null;
 
 /** True for Capacitor shell (iOS or Android) — use native plugin, not WKWebView WebSocket. */
 async function isCapacitorNativeApp(): Promise<boolean> {
@@ -71,6 +73,7 @@ async function isCapacitorNativeApp(): Promise<boolean> {
 
 async function clearConnection(): Promise<void> {
   logWifiDiag("[WS] clearConnection() start");
+  activeWsUrl = null;
   wsRxDiagCount = 0;
   wsTxDiagCount = 0;
   if (ws) {
@@ -121,6 +124,15 @@ export function isWifiSupported(): boolean {
 
 export function isConnected(): boolean {
   return (ws != null && ws.readyState === WebSocket.OPEN) || nativeConnected;
+}
+
+/**
+ * True when the transport is up to the same board URL (avoids a second connect() tearing down
+ * the first socket — common source of POSIX 54 "connection reset" on iOS).
+ */
+export function isConnectedToBoard(urlOrHost: string, port?: number): boolean {
+  if (!isConnected() || !activeWsUrl) return false;
+  return buildWsUrl(urlOrHost, port) === activeWsUrl;
 }
 
 export function setCallbacks(callbacks: {
@@ -219,6 +231,7 @@ async function connectNative(url: string): Promise<void> {
     const onConnected = () => {
       clearTimeout(timeout);
       nativeConnected = true;
+      activeWsUrl = url;
       nativeOpenAtMs = Date.now();
       console.log("[WebSocket] Connected to", url);
       logWifiDiag("[WS] native plugin: connected event");
@@ -412,6 +425,7 @@ async function connectStandardWebSocket(url: string): Promise<void> {
 
     ws.onopen = () => {
       sawOpen = true;
+      activeWsUrl = url;
       console.log("[WebSocket] Connected to", url);
       logWifiDiag("[WS] standard: onopen readyState=" + ws!.readyState);
       logSession("ws_standard_onopen", { url: url.slice(0, 96) });
@@ -452,8 +466,17 @@ async function connectStandardWebSocket(url: string): Promise<void> {
   });
 }
 
-export async function connect(urlOrHost: string, port?: number): Promise<void> {
+export async function connect(
+  urlOrHost: string,
+  port?: number,
+  opts?: { force?: boolean }
+): Promise<void> {
   const url = buildWsUrl(urlOrHost, port);
+  if (!opts?.force && isConnected() && activeWsUrl === url) {
+    logSession("ws_connect skipped_duplicate", { url: url.slice(0, 100) });
+    logWifiDiag("[WS] connect() skipped — already connected to " + url);
+    return;
+  }
   const nativeApp = await isCapacitorNativeApp();
   logSession("ws_connect begin", { native: nativeApp, url: url.slice(0, 100) });
   logWifiDiag(`[WS] connect() → ${url} capacitorNative=${nativeApp}`);

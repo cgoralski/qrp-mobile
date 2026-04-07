@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type MutableRefObject,
   type ReactNode,
 } from "react";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
@@ -82,6 +83,8 @@ interface Kv4pContextValue {
   sendCommand: (cmd: number, params?: Uint8Array) => void;
   /** Register/unregister RX audio callback. Set to a function to receive Opus chunks, or null to clear. */
   setOnRxAudio: (callback: ((data: Uint8Array) => void) | null) => void;
+  /** Last `Date.now()` when a device → host RX audio frame arrived; 0 if none this link. */
+  rxAudioLastChunkAtRef: MutableRefObject<number>;
 }
 
 const Kv4pContext = createContext<Kv4pContextValue | null>(null);
@@ -94,6 +97,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
   const windowSizeRef = useRef(0);
   const parserRef = useRef<Kv4pParser | null>(null);
   const onRxAudioRef = useRef<((data: Uint8Array) => void) | null>(null);
+  const rxAudioLastChunkAtRef = useRef(0);
   const rxAudioQueueRef = useRef<Uint8Array[]>([]);
   const RX_AUDIO_QUEUE_MAX = 30;
   const rxAudioChunkCountRef = useRef(0);
@@ -286,6 +290,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
             break;
           case CMD_RX_AUDIO: {
             const n = ++rxAudioChunkCountRef.current;
+            rxAudioLastChunkAtRef.current = Date.now();
             if (import.meta.env.DEV && (n <= 3 || n % 50 === 0)) {
               console.log("[KV4P] RX audio chunk #" + n + ",", params.length, "bytes");
             }
@@ -334,6 +339,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
       setHandshakePending(false);
       windowSizeRef.current = 0;
       rxAudioChunkCountRef.current = 0;
+      rxAudioLastChunkAtRef.current = 0;
       parsedPacketCountRef.current = 0;
       boardDebugWifiLogCountRef.current = 0;
       handshakeSentRef.current = false;
@@ -385,6 +391,7 @@ export function Kv4pProvider({ children }: { children: ReactNode }) {
     setRssiEnabled,
     sendCommand,
     setOnRxAudio,
+    rxAudioLastChunkAtRef,
   };
 
   return <Kv4pContext.Provider value={value}>{children}</Kv4pContext.Provider>;

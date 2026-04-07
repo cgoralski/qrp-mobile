@@ -1,4 +1,5 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
 import { useKv4p } from "@/contexts/Kv4pContext";
 import { RadioLinkKeepAlive } from "@/plugins/radio-link-keepalive";
@@ -69,6 +70,54 @@ export function useRxAudioPlayback(): void {
 }
 
 /**
+ * Native app + Wi‑Fi: socket can remain connected while RX PCM output goes silent (session/graph
+ * fights). If we had RX audio frames and then a multi-second gap, rebuild native audio without
+ * tearing down TCP.
+ */
+export function useNativeWifiRxStallRecovery(): void {
+  const { connected, connectionType, rxPlaybackHandleRef } = useDeviceConnection();
+  const { version, rxAudioLastChunkAtRef } = useKv4p();
+  const connectedRef = useRef(connected);
+  const connectionTypeRef = useRef(connectionType);
+  const versionRef = useRef(version);
+  const lastRecoveryAtRef = useRef(0);
+
+  connectedRef.current = connected;
+  connectionTypeRef.current = connectionType;
+  versionRef.current = version;
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const SILENCE_MS = 6500;
+    const COOLDOWN_MS = 10000;
+
+    const id = window.setInterval(() => {
+      if (!connectedRef.current || connectionTypeRef.current !== "wifi" || !versionRef.current) return;
+      const last = rxAudioLastChunkAtRef.current;
+      if (last <= 0) return;
+      const gap = Date.now() - last;
+      if (gap < SILENCE_MS) return;
+      if (Date.now() - lastRecoveryAtRef.current < COOLDOWN_MS) return;
+      lastRecoveryAtRef.current = Date.now();
+      logSession("wifi_native_rx_stall_soft_recovery", { gapMs: gap });
+      void (async () => {
+        try {
+          const { RxPcmAudio } = await import("@/plugins/rx-pcm-audio");
+          await RxPcmAudio.ensureReady();
+          await RadioLinkKeepAlive.ensureSpeakerOutput();
+          void rxPlaybackHandleRef.current?.resumeIfSuspended();
+        } catch (e) {
+          console.warn("[RX audio] Wi‑Fi stall soft recovery failed:", e);
+        }
+      })();
+    }, 3000);
+
+    return () => clearInterval(id);
+  }, [rxAudioLastChunkAtRef, rxPlaybackHandleRef]);
+}
+
+/**
  * Call from the **same synchronous turn** as PTT release (pointer/touch up) so browser Web Audio
  * `resume()` still qualifies as a user gesture. Delayed timers (see `usePostPttRxRecovery`) are not
  * enough: after TX stops, `resume()` is often ignored and RX stays silent.
@@ -126,7 +175,7 @@ export function usePostPttRxRecovery(isTransmitting: boolean): void {
               const host = getSavedWifiHost();
               if (host) {
                 logSession("post_ptt_ios_wifi_recycle", { host: host.slice(0, 48) });
-                await connectViaWifi(host, getSavedWifiPort());
+                await connectViaWifi(host, getSavedWifiPort(), { force: true });
                 return;
               }
             }

@@ -3,6 +3,9 @@ import type { RxPlaybackHandle } from "@/lib/rx-audio-playback";
 
 export type ConnectionType = "usb" | "ble" | "wifi" | null;
 
+/** Optional flags for `connectViaWifi` (e.g. post-PTT must tear down TCP even if URL matches). */
+export type ConnectWifiOptions = { force?: boolean };
+
 export interface DeviceConnectionContextValue {
   connected: boolean;
   connectionType: ConnectionType;
@@ -11,7 +14,7 @@ export interface DeviceConnectionContextValue {
   error: string | null;
   connect: () => Promise<void>;
   connectViaUsb: () => Promise<void>;
-  connectViaWifi: (hostOrUrl: string, port?: number) => Promise<void>;
+  connectViaWifi: (hostOrUrl: string, port?: number, opts?: ConnectWifiOptions) => Promise<void>;
   disconnect: () => Promise<void>;
   clearError: () => void;
   isBluetoothSupported: boolean;
