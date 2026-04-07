@@ -1,9 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type MutableRefObject } from "react";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
 import { useKv4p } from "@/contexts/Kv4pContext";
 import { RadioLinkKeepAlive } from "@/plugins/radio-link-keepalive";
 import { getSavedWifiHost, getSavedWifiPort } from "@/lib/wifi-storage";
 import { logSession } from "@/lib/session-log";
+import type { RxPlaybackHandle } from "@/lib/rx-audio-playback";
 
 /**
  * When connected over USB or Wi‑Fi: wire the RX playback handle to KV4P CMD_RX_AUDIO.
@@ -68,10 +69,38 @@ export function useRxAudioPlayback(): void {
 }
 
 /**
+ * Call from the **same synchronous turn** as PTT release (pointer/touch up) so browser Web Audio
+ * `resume()` still qualifies as a user gesture. Delayed timers (see `usePostPttRxRecovery`) are not
+ * enough: after TX stops, `resume()` is often ignored and RX stays silent.
+ * iOS native: immediately rebuild AVAudioEngine / session (`ensureReady`); complements the delayed
+ * Wi‑Fi recycle in `usePostPttRxRecovery` when needed.
+ */
+export function resumeRxPlaybackAfterPttRelease(
+  rxPlaybackHandleRef: MutableRefObject<RxPlaybackHandle | null>
+): void {
+  void rxPlaybackHandleRef.current?.resumeIfSuspended();
+  void (async () => {
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+        const { RxPcmAudio } = await import("@/plugins/rx-pcm-audio");
+        await RxPcmAudio.ensureReady();
+        await RadioLinkKeepAlive.ensureSpeakerOutput();
+      }
+    } catch {
+      /* ignore */
+    }
+  })();
+}
+
+/**
  * WKWebView TX uses getUserMedia + AudioContext, which reconfigures AVAudioSession on iOS. On Wi‑Fi,
  * users still saw RX dead until a full "Connect to board" (new native WebSocket + new RX playback +
  * KV4P handshake). `RxPcmAudio.ensureReady()` alone was not enough; recycle the Wi‑Fi link here.
  * USB: keep native engine restore only.
+ *
+ * Runs after a short delay; pair with `resumeRxPlaybackAfterPttRelease` on PTT up for gesture-safe
+ * Web Audio resume and immediate native engine rebuild.
  */
 export function usePostPttRxRecovery(isTransmitting: boolean): void {
   const { connected, connectionType, rxPlaybackHandleRef, connectViaWifi } = useDeviceConnection();

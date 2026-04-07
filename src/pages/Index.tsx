@@ -7,7 +7,7 @@ import { getSavedWifiHost, getSavedWifiPort } from "@/lib/wifi-storage";
 import { getPersistedRadioState, setPersistedRadioState, setPersistedVolume } from "@/lib/radio-storage";
 import { useCaptions } from "@/hooks/use-captions";
 import { useTxAudio } from "@/hooks/useTxAudio";
-import { usePostPttRxRecovery } from "@/hooks/useRxAudioPlayback";
+import { resumeRxPlaybackAfterPttRelease, usePostPttRxRecovery } from "@/hooks/useRxAudioPlayback";
 import { useDeviceConnection } from "@/contexts/DeviceConnectionContext";
 import { useKv4p } from "@/contexts/Kv4pContext";
 import { CMD_HOST_TX_AUDIO } from "@/lib/kv4p-protocol";
@@ -140,6 +140,12 @@ const Index = () => {
   const onTxEncoded = useCallback((data: Uint8Array) => sendCommand(CMD_HOST_TX_AUDIO, data), [sendCommand]);
   useTxAudio(connected && isTransmitting, connected && isTransmitting ? onTxEncoded : null);
   usePostPttRxRecovery(isTransmitting);
+
+  /** PTT up must resume RX in the same gesture as finger release; delayed recovery is not enough for Web Audio policy. */
+  const handlePttUp = useCallback(() => {
+    sendPttUp();
+    resumeRxPlaybackAfterPttRelease(rxPlaybackHandleRef);
+  }, [sendPttUp, rxPlaybackHandleRef]);
 
   // Set board band from device version (rfModuleType: 0 = VHF, 1 = UHF)
   useEffect(() => {
@@ -646,7 +652,7 @@ const Index = () => {
               onOpenSquelch={() => setSquelchSliderOpen(true)}
               connected={connected}
               onPttDown={sendPttDown}
-              onPttUp={sendPttUp}
+              onPttUp={handlePttUp}
               onTransmittingChange={setIsTransmitting}
               onOpenSettings={() => setActiveTab("settings")}
             />
